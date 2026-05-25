@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% block title %}Generate Lesson{% endblock %}
+{% block page_title %}AI Lesson Generator — {{ course.title }}{% endblock %}
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="page-card">
+      <form method="post" id="lesson-form">{% csrf_token %}
+        {% crispy form %}
+        
+        <!-- Slide count + Depth selectors -->
+        <div class="mt-3 mb-3 p-3 rounded-3" style="background:#f8fafc;border:1px solid #e2e8f0;">
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <label class="form-label fw-semibold mb-2" style="font-size:.825rem;">
+                <i class="bi bi-layers text-primary me-1"></i> Slide Count
+              </label>
+              <div class="d-flex gap-2 flex-wrap">
+                <input type="radio" class="btn-check" name="slide_count" id="sc_8"  value="8"  autocomplete="off">
+                <label class="btn btn-sm btn-outline-primary px-3" for="sc_8">8</label>
+                <input type="radio" class="btn-check" name="slide_count" id="sc_10" value="10" checked autocomplete="off">
+                <label class="btn btn-sm btn-outline-primary px-3" for="sc_10">10</label>
+                <input type="radio" class="btn-check" name="slide_count" id="sc_12" value="12" autocomplete="off">
+                <label class="btn btn-sm btn-outline-primary px-3" for="sc_12">12</label>
+                <input type="radio" class="btn-check" name="slide_count" id="sc_14" value="14" autocomplete="off">
+                <label class="btn btn-sm btn-outline-primary px-3" for="sc_14">14</label>
+              </div>
+              <div class="form-text">Number of slides in the generated presentation.</div>
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label fw-semibold mb-2" style="font-size:.825rem;">
+                <i class="bi bi-speedometer2 text-primary me-1"></i> Content Depth
+              </label>
+              <div class="d-flex gap-2">
+                <input type="radio" class="btn-check" name="depth" id="depth_overview" value="overview" checked autocomplete="off">
+                <label class="btn btn-sm btn-outline-secondary px-3" for="depth_overview">Overview</label>
+                <input type="radio" class="btn-check" name="depth" id="depth_detailed" value="detailed" autocomplete="off">
+                <label class="btn btn-sm btn-outline-secondary px-3" for="depth_detailed">Detailed</label>
+              </div>
+              <div class="form-text">Overview: concise bullets. Detailed: richer explanations.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-check mt-3 mb-3">
+          <input class="form-check-input" type="checkbox" name="skip_blueprint" id="skip_blueprint" value="true">
+          <label class="form-check-label" for="skip_blueprint">
+            Skip blueprint review and generate presentation directly
+          </label>
+          <div class="form-text">
+            By default, you'll review a blueprint before generating the presentation. Check this to skip that step.
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="page-card">
+      <h6 class="fw-bold mb-3"><i class="bi bi-info-circle text-primary"></i> How it works</h6>
+      <ol style="font-size:.875rem;color:#475569;padding-left:1.1rem;">
+        <li class="mb-2">Enter your topic and week number</li>
+        <li class="mb-2">Write your learning objectives (3–5 recommended)</li>
+        <li class="mb-2">AI reads your course syllabus and generates a full lesson outline</li>
+        <li class="mb-2">A PowerPoint file is built automatically and ready to download</li>
+      </ol>
+      {% if not course.syllabus %}
+      <div class="alert alert-warning py-2 mt-3" style="font-size:.825rem;">
+        <i class="bi bi-exclamation-triangle"></i>
+        Your course has no syllabus. <a href="{% url 'accounts:course_edit' course.pk %}">Add one</a>
+        for better AI output.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:20px;">
+      <div class="modal-body text-center py-4">
+        <div class="mb-3">
+          <div class="spinner-border text-primary" role="status" style="width:3rem;height:3rem;">
+            <span class="visually-hidden">Loading…</span>
+          </div>
+        </div>
+        <h5 class="fw-bold mb-2">Generating Presentation</h5>
+        <p class="text-muted small mb-3" id="lessonStatusMsg">Reading your syllabus and CILOs…</p>
+        <div class="progress mb-3" style="height:8px;">
+          <div id="lessonProgressBar" class="progress-bar progress-bar-striped progress-bar-animated"
+               role="progressbar" style="width:0%"></div>
+        </div>
+        <div class="small text-muted">This usually takes 15–30 seconds.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  #lessonProgressBar { transition: width 0.5s ease; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const form  = document.getElementById('lesson-form');
+  const modal = new bootstrap.Modal(document.getElementById('loadingModal'));
+
+  form.addEventListener('submit', function () {
+    modal.show();
+    const bar = document.getElementById('lessonProgressBar');
+    const msg = document.getElementById('lessonStatusMsg');
+    const steps = [
+      [300,  15, 'Reading your syllabus and CILOs…'],
+      [3000, 40, 'Building the slide structure…'],
+      [7000, 65, 'Writing slide content…'],
+      [12000, 85, 'Almost done…'],
+    ];
+    steps.forEach(function ([delay, pct, text]) {
+      setTimeout(function () {
+        bar.style.width = pct + '%';
+        msg.textContent = text;
+      }, delay);
+    });
+  });
+});
+</script>
+{% endblock %}

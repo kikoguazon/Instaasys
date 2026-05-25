@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block auth_content %}
+<style>
+  *, *::before, *::after { box-sizing:border-box; }
+  body { font-family:'Inter',system-ui,sans-serif;margin:0;
+         background:linear-gradient(135deg,#312e81,#4f46e5);
+         min-height:100vh;display:flex;align-items:center;justify-content:center; }
+  .card {
+    background:#fff;border-radius:20px;padding:3rem 2.5rem;
+    max-width:440px;width:calc(100% - 2rem);text-align:center;
+    box-shadow:0 20px 60px rgba(0,0,0,.18);
+  }
+  .lock-icon {
+    width:72px;height:72px;border-radius:18px;
+    background:#fef3c7;display:flex;align-items:center;justify-content:center;
+    margin:0 auto 1.5rem;font-size:2rem;color:#d97706;
+  }
+  h5 { font-weight:800;color:#0f172a;margin:0 0 .5rem;font-size:1.3rem; }
+  p  { font-size:.9rem;color:#64748b;margin:0 0 1.5rem;line-height:1.6; }
+  .how-to {
+    background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;
+    padding:1rem 1.25rem;font-size:.83rem;color:#475569;
+    text-align:left;margin-bottom:1.75rem;
+  }
+  .how-to ul { margin:.5rem 0 0;padding-left:1.25rem;line-height:1.9; }
+  .btn-back {
+    display:block;width:100%;padding:.75rem;border-radius:10px;
+    background:linear-gradient(135deg,#4f46e5,#6d28d9);color:#fff;
+    font-weight:700;font-size:.9rem;text-decoration:none;
+    transition:opacity .2s;
+  }
+  .btn-back:hover { opacity:.88;color:#fff; }
+</style>
+
+<div class="card">
+  <div class="lock-icon"><i class="bi bi-lock-fill"></i></div>
+  <h5>Registration Closed</h5>
+  <p>
+    Self-registration is not available on INSTAASYS.<br>
+    All accounts are created by administrators and instructors.
+  </p>
+  <div class="how-to">
+    <strong style="color:#0f172a;">How to get an account:</strong>
+    <ul>
+      <li><strong>Students —</strong> ask your instructor.</li>
+      <li><strong>Instructors —</strong> contact your system admin.</li>
+    </ul>
+  </div>
+  <a href="{% url 'accounts:login' %}" class="btn-back">
+    <i class="bi bi-arrow-left me-1"></i> Back to Login
+  </a>
+</div>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+{% endblock %}

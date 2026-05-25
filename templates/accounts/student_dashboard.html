@@ -1,0 +1,592 @@
+{% extends 'base.html' %}
+{% block title %}My Academic Progress — INSTAASYS{% endblock %}
+{% block page_title %}Academic Progress{% endblock %}
+{% block content %}
+<style>
+/* ── Banner ───────────────────────────────────────────────────────── */
+.stu-banner {
+  background: linear-gradient(135deg, #1e1b4b 0%, #4338ca 60%, #6d28d9 100%);
+  border-radius: 16px;
+  padding: 1.75rem 2rem;
+  color: #fff;
+  margin-bottom: 1.25rem;
+  position: relative;
+  overflow: hidden;
+}
+.stu-banner::before {
+  content:'';
+  position:absolute;
+  width:280px;height:280px;
+  border-radius:50%;
+  background:rgba(255,255,255,.04);
+  top:-100px;right:-60px;
+}
+.stu-banner-inner { position:relative;z-index:1; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1.5rem; }
+.stu-banner-left h2 { font-size:1.4rem; font-weight:800; margin:0 0 .25rem; }
+.stu-banner-left p  { font-size:.85rem; opacity:.75; margin:0; }
+.gwa-circle {
+  width: 90px; height: 90px;
+  border-radius: 50%;
+  border: 3px solid rgba(255,255,255,.3);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: rgba(255,255,255,.1);
+  flex-shrink: 0;
+}
+.gwa-value { font-size: 1.5rem; font-weight: 900; line-height: 1; }
+.gwa-label { font-size: .6rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; opacity: .7; margin-top: 2px; }
+
+/* ── Notifications ──────────────────────────────────────────────── */
+.notif-panel {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+.notif-title {
+  font-size: .75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: #92400e;
+  margin-bottom: .75rem;
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+}
+.notif-item {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .45rem 0;
+  border-bottom: 1px solid #fef3c7;
+  font-size: .83rem;
+}
+.notif-item:last-child { border-bottom: none; }
+.notif-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #f59e0b;
+  flex-shrink: 0;
+}
+.notif-course { font-weight: 700; color: #0f172a; }
+.notif-time   { font-size: .72rem; color: #92400e; margin-left: auto; white-space: nowrap; }
+
+/* ── Stat cards ─────────────────────────────────────────────────── */
+.stat-row { display: grid; grid-template-columns: repeat(4,1fr); gap: .875rem; margin-bottom: 1.25rem; }
+.stu-stat {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  display: flex; align-items: center; gap: .875rem;
+}
+.stu-stat-icon {
+  width:42px;height:42px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.2rem;flex-shrink:0;
+}
+.stu-stat-val { font-size:1.5rem;font-weight:900;color:#0f172a;line-height:1; }
+.stu-stat-lbl { font-size:.68rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.05em; }
+
+/* ── Section header ──────────────────────────────────────────────── */
+.sec-hdr {
+  font-size:.75rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.08em;color:#64748b;
+  margin:0 0 .875rem;display:flex;align-items:center;gap:.5rem;
+}
+
+/* ── Progress overview table ─────────────────────────────────────── */
+.prog-table { width:100%;border-collapse:collapse;font-size:.83rem; }
+.prog-table th {
+  background:#f8fafc;border-bottom:2px solid #e2e8f0;
+  padding:.6rem 1rem;font-size:.7rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:.06em;color:#64748b;
+  text-align:left;
+}
+.prog-table td { padding:.75rem 1rem;border-bottom:1px solid #f1f5f9;vertical-align:middle; }
+.prog-table tr:last-child td { border-bottom:none; }
+.prog-table tr:hover td { background:#f8fafc; }
+
+.prog-bar-wrap { height:7px;background:#f1f5f9;border-radius:4px;overflow:hidden;min-width:80px; }
+.prog-bar { height:100%;border-radius:4px;transition:width .6s ease; }
+
+.grade-pill {
+  display:inline-block;padding:.25rem .65rem;border-radius:20px;
+  font-size:.72rem;font-weight:700;white-space:nowrap;
+}
+.pill-pass   { background:#dcfce7;color:#166534; }
+.pill-fail   { background:#fee2e2;color:#991b1b; }
+.pill-pending{ background:#f1f5f9;color:#64748b; }
+
+/* ── Course cards ────────────────────────────────────────────────── */
+.course-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:1rem;margin-bottom:2rem; }
+.c-card {
+  background:#fff;border:1px solid #e2e8f0;border-radius:12px;
+  overflow:hidden;display:flex;flex-direction:column;
+  transition: box-shadow .2s, transform .2s;
+}
+.c-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,.08); transform: translateY(-2px); }
+.c-card-strip { height:4px; }
+.c-card-body  { padding:1.25rem;flex:1;display:flex;flex-direction:column;gap:.75rem; }
+.c-card-top   { display:flex;align-items:center;justify-content:space-between;gap:.5rem; }
+.c-code       { font-size:.72rem;font-weight:700;background:#eef2ff;color:#4f46e5;padding:.25rem .6rem;border-radius:6px; }
+.c-title      { font-size:.88rem;font-weight:700;color:#0f172a;margin:0;line-height:1.4; }
+.c-meta       { font-size:.75rem;color:#94a3b8; }
+
+.c-components { display:grid;grid-template-columns:1fr 1fr;gap:.5rem; }
+.c-comp {
+  background:#f8fafc;border-radius:8px;padding:.6rem .75rem;text-align:center;
+}
+.c-comp-val { font-size:1rem;font-weight:800;line-height:1;margin-bottom:2px; }
+.c-comp-lbl { font-size:.62rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.04em; }
+
+.c-final {
+  text-align:center;padding:.75rem;border-radius:10px;
+  border:1px solid;
+}
+.c-final-num { font-size:1.75rem;font-weight:900;line-height:1; }
+.c-final-eq  { font-size:.75rem;color:#64748b;margin-top:2px; }
+
+/* Attendance mini-bar */
+.att-mini {
+  display:flex;align-items:center;gap:.6rem;
+  background:#f8fafc;border-radius:8px;padding:.55rem .75rem;
+  font-size:.76rem;
+}
+.att-bar-bg  { flex:1;height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden; }
+.att-bar-fill{ height:100%;border-radius:3px;transition:width .6s ease; }
+
+/* Card action row */
+.c-actions { display:flex;gap:.5rem;margin-top:auto; }
+.c-actions .btn { flex:1;font-size:.78rem;padding:.4rem .6rem; }
+
+@media (max-width:768px) {
+  .stat-row { grid-template-columns:1fr 1fr; gap: .75rem; }
+  .stu-banner { padding: 1.5rem 1.25rem; border-radius: 12px; }
+  .stu-banner-inner { flex-direction:column;align-items:flex-start; gap: 1rem; }
+  .stu-banner-left h2 { font-size: 1.25rem; }
+  .stu-banner-left p { font-size: .8rem; }
+  .gwa-circle { width: 80px; height: 80px; }
+  .gwa-value { font-size: 1.35rem; }
+  .gwa-label { font-size: .55rem; }
+  
+  .notif-panel { padding: .875rem 1rem; border-radius: 10px; margin-bottom: 1rem; }
+  .notif-title { font-size: .7rem; margin-bottom: .6rem; }
+  .notif-item { font-size: .78rem; padding: .4rem 0; }
+  .notif-time { font-size: .68rem; }
+  
+  .stu-stat { padding: .875rem 1rem; gap: .65rem; border-radius: 10px; }
+  .stu-stat-icon { width: 36px; height: 36px; font-size: 1.1rem; }
+  .stu-stat-val { font-size: 1.35rem; }
+  .stu-stat-lbl { font-size: .62rem; }
+  
+  .sec-hdr { font-size: .7rem; margin-bottom: .75rem; }
+  
+  .page-card { padding: 1rem; border-radius: 12px; }
+  
+  .prog-table { font-size: .75rem; }
+  .prog-table th { padding: .5rem .65rem; font-size: .65rem; }
+  .prog-table td { padding: .6rem .65rem; }
+  .prog-table th:nth-child(3),
+  .prog-table td:nth-child(3),
+  .prog-table th:nth-child(4),
+  .prog-table td:nth-child(4) { display:none; }
+  .prog-bar-wrap { min-width: 60px; }
+  .grade-pill { font-size: .68rem; padding: .2rem .55rem; }
+  
+  .course-grid { grid-template-columns: 1fr; gap: .875rem; }
+  .c-card { border-radius: 10px; }
+  .c-card-body { padding: 1rem; gap: .65rem; }
+  .c-code { font-size: .68rem; padding: .2rem .5rem; }
+  .c-title { font-size: .82rem; }
+  .c-meta { font-size: .7rem; }
+  .c-comp { padding: .5rem .65rem; }
+  .c-comp-val { font-size: .9rem; }
+  .c-comp-lbl { font-size: .58rem; }
+  .c-final { padding: .65rem; }
+  .c-final-num { font-size: 1.5rem; }
+  .c-final-eq { font-size: .7rem; }
+  .att-mini { padding: .5rem .65rem; font-size: .72rem; }
+  .c-actions .btn { font-size: .72rem; padding: .35rem .5rem; }
+  
+  .card { border-radius: 10px; }
+  .card-body { padding: 1rem; }
+  .card-body h6 { font-size: .85rem; }
+  .card-body p { font-size: .78rem; }
+  .input-group .form-control { font-size: .8rem; padding: .5rem .75rem; }
+  .input-group .btn { font-size: .8rem; padding: .5rem .875rem; }
+}
+@media (max-width:480px) {
+  .course-grid { grid-template-columns:1fr; }
+  .stat-row { gap: .65rem; }
+  .stu-stat { padding: .75rem .875rem; }
+  .stu-stat-val { font-size: 1.25rem; }
+  .stu-banner { padding: 1.25rem 1rem; }
+  .stu-banner-left h2 { font-size: 1.15rem; }
+  .gwa-circle { width: 72px; height: 72px; }
+  .gwa-value { font-size: 1.25rem; }
+  .prog-table th:nth-child(5),
+  .prog-table td:nth-child(5),
+  .prog-table th:nth-child(6),
+  .prog-table td:nth-child(6) { display: none; }
+  .c-components { gap: .4rem; }
+  .c-comp { padding: .45rem .55rem; }
+}
+</style>
+
+<!-- ── Banner ─────────────────────────────────────────────────────── -->
+<div class="stu-banner">
+  <div class="stu-banner-inner">
+    <div class="stu-banner-left">
+      <h2>Hello, {{ user.first_name }}!</h2>
+      <p>
+        {% if gwa %}
+          Your current General Weighted Average is <strong>{{ gwa }}</strong>.
+          {% if gwa >= 75 %}Keep up the great work!{% else %}You can do better — check your grades below.{% endif %}
+        {% else %}
+          Your grades are still being processed. Check back soon.
+        {% endif %}
+      </p>
+      {% if user.student_id %}
+      <div style="margin-top:.5rem;font-size:.75rem;opacity:.6;">
+        <i class="bi bi-person-badge me-1"></i>{{ user.student_id }}
+        {% if user.department %}&nbsp;·&nbsp;{{ user.department }}{% endif %}
+      </div>
+      {% endif %}
+    </div>
+    <div class="gwa-circle">
+      <div class="gwa-value">{{ gwa|default:"—" }}</div>
+      <div class="gwa-label">GWA</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Join a Course ──────────────────────────────────────────────── -->
+<div class="card border-0 shadow-sm mb-3">
+  <div class="card-body">
+    <h6 class="fw-bold mb-1"><i class="bi bi-plus-circle me-2 text-primary"></i>Join a Subject</h6>
+    <p class="text-muted small mb-2">Enter the 6-character code your instructor shared to enroll instantly.</p>
+    <form method="post" action="{% url 'accounts:join_course' %}">
+      {% csrf_token %}
+      <div class="input-group">
+        <input type="text" name="code" class="form-control text-uppercase"
+               placeholder="Enter 6-character code" maxlength="6"
+               style="letter-spacing:.15em;font-weight:600;font-family:monospace;text-transform:uppercase;"
+               autocomplete="off" spellcheck="false">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-arrow-right me-1"></i> Join
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── Notifications ──────────────────────────────────────────────── -->
+{% if notifications %}
+<div class="notif-panel">
+  <div class="notif-title">
+    <i class="bi bi-bell-fill"></i>
+    Grade Updates (last 7 days)
+    <span style="background:#f59e0b;color:#fff;border-radius:20px;padding:.1rem .5rem;font-size:.65rem;font-weight:800;">
+      {{ notifications|length }}
+    </span>
+  </div>
+  {% for n in notifications %}
+  <div class="notif-item">
+    <div class="notif-dot"></div>
+    <span>
+      <span class="notif-course">{{ n.course.code }}</span>
+      &nbsp;—&nbsp;{{ n.course.title|truncatechars:40 }}
+      &nbsp;<span style="color:#64748b;font-size:.75rem;">grades were updated</span>
+    </span>
+    <span class="notif-time">
+      <i class="bi bi-clock me-1"></i>{{ n.updated_at|timesince }} ago
+    </span>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- ── Stat row ────────────────────────────────────────────────────── -->
+<div class="stat-row">
+  <div class="stu-stat">
+    <div class="stu-stat-icon" style="background:#eef2ff;color:#4f46e5;">
+      <i class="bi bi-book"></i>
+    </div>
+    <div>
+      <div class="stu-stat-val">{{ total_courses }}</div>
+      <div class="stu-stat-lbl">Enrolled</div>
+    </div>
+  </div>
+  <div class="stu-stat">
+    <div class="stu-stat-icon" style="background:#dcfce7;color:#16a34a;">
+      <i class="bi bi-patch-check"></i>
+    </div>
+    <div>
+      <div class="stu-stat-val">{{ passed_count }}</div>
+      <div class="stu-stat-lbl">Passed</div>
+    </div>
+  </div>
+  <div class="stu-stat">
+    <div class="stu-stat-icon" style="background:#fee2e2;color:#dc2626;">
+      <i class="bi bi-x-circle"></i>
+    </div>
+    <div>
+      <div class="stu-stat-val">{{ failed_count }}</div>
+      <div class="stu-stat-lbl">Failed</div>
+    </div>
+  </div>
+  <div class="stu-stat">
+    <div class="stu-stat-icon" style="background:#fef3c7;color:#d97706;">
+      <i class="bi bi-hourglass-split"></i>
+    </div>
+    <div>
+      <div class="stu-stat-val">{{ pending_count }}</div>
+      <div class="stu-stat-lbl">Pending</div>
+    </div>
+  </div>
+</div>
+
+{% if grade_data %}
+
+<!-- ── Progress Overview Table ────────────────────────────────────── -->
+<div class="page-card mb-4">
+  <p class="sec-hdr"><i class="bi bi-bar-chart-line"></i> Academic Progress Overview</p>
+  <div style="overflow-x:auto;">
+    <table class="prog-table">
+      <thead>
+        <tr>
+          <th>Subject</th>
+          <th>Program</th>
+          <th>Class Standing</th>
+          <th>Requirements</th>
+          <th>Examinations</th>
+          <th>Attendance</th>
+          <th>Final Grade</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in grade_data %}
+        <tr>
+          <td>
+            <div style="font-weight:700;color:#0f172a;">{{ item.course.code }}</div>
+            <div style="font-size:.75rem;color:#94a3b8;">{{ item.course.title|truncatechars:32 }}</div>
+          </td>
+          <td>
+            {% if item.course.program %}
+            <span style="background:#e0f2fe;color:#0369a1;font-size:.7rem;font-weight:700;padding:.2rem .55rem;border-radius:6px;">
+              {{ item.course.program }}
+            </span>
+            {% else %}—{% endif %}
+          </td>
+          <!-- CS bar -->
+          <td>
+            {% if item.record and item.record.class_standing %}
+            <div style="font-size:.8rem;font-weight:700;color:#4f46e5;margin-bottom:3px;">
+              {{ item.record.class_standing }}%
+            </div>
+            <div class="prog-bar-wrap">
+              <div class="prog-bar" style="width:{{ item.record.class_standing }}%;background:#6366f1;"></div>
+            </div>
+            {% else %}—{% endif %}
+          </td>
+          <!-- Requirement bar -->
+          <td>
+            {% if item.record and item.record.requirement_score %}
+            {% with pct=item.record.requirement_score %}
+            <div style="font-size:.8rem;font-weight:700;color:#059669;margin-bottom:3px;">
+              {{ pct }}/{{ item.course.requirement_max }}
+            </div>
+            <div class="prog-bar-wrap">
+              <div class="prog-bar" style="width:{% widthratio pct item.course.requirement_max 100 %}%;background:#10b981;"></div>
+            </div>
+            {% endwith %}
+            {% else %}—{% endif %}
+          </td>
+          <!-- Exam bar -->
+          <td>
+            {% if item.record and item.record.examination_average %}
+            <div style="font-size:.8rem;font-weight:700;color:#7c3aed;margin-bottom:3px;">
+              {{ item.record.examination_average }}%
+            </div>
+            <div class="prog-bar-wrap">
+              <div class="prog-bar" style="width:{{ item.record.examination_average }}%;background:#8b5cf6;"></div>
+            </div>
+            {% else %}—{% endif %}
+          </td>
+          <!-- Attendance -->
+          <td>
+            {% if item.att_pct is not None %}
+            <div style="font-size:.8rem;font-weight:700;margin-bottom:3px;
+                        color:{% if item.att_pct >= 75 %}#059669{% else %}#dc2626{% endif %};">
+              {{ item.att_pct }}%
+            </div>
+            <div class="prog-bar-wrap">
+              <div class="prog-bar" style="width:{{ item.att_pct }}%;background:{% if item.att_pct >= 75 %}#10b981{% else %}#ef4444{% endif %};"></div>
+            </div>
+            {% else %}<span style="color:#94a3b8;font-size:.78rem;">No sessions</span>{% endif %}
+          </td>
+          <!-- Final -->
+          <td>
+            {% if item.record and item.record.final_grade %}
+            <span style="font-size:.95rem;font-weight:900;
+                         color:{% if item.record.passed %}#15803d{% else %}#b91c1c{% endif %};">
+              {{ item.record.final_grade }}
+            </span>
+            <span style="font-size:.72rem;color:#64748b;margin-left:.3rem;">
+              ({{ item.record.equivalent_grade }})
+            </span>
+            {% else %}—{% endif %}
+          </td>
+          <!-- Status pill -->
+          <td>
+            {% if item.record and item.record.final_grade %}
+              {% if item.record.passed %}
+              <span class="grade-pill pill-pass"><i class="bi bi-check-circle me-1"></i>Passed</span>
+              {% else %}
+              <span class="grade-pill pill-fail"><i class="bi bi-x-circle me-1"></i>Failed</span>
+              {% endif %}
+            {% else %}
+            <span class="grade-pill pill-pending"><i class="bi bi-clock me-1"></i>Pending</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── Course Cards ────────────────────────────────────────────────── -->
+<p class="sec-hdr"><i class="bi bi-grid-3x3-gap"></i> Subject Details</p>
+<div class="course-grid">
+  {% for item in grade_data %}
+  <div class="c-card">
+    <!-- top strip colour -->
+    <div class="c-card-strip" style="background:
+      {% if item.record and item.record.final_grade %}
+        {% if item.record.passed %}linear-gradient(90deg,#059669,#34d399)
+        {% else %}linear-gradient(90deg,#dc2626,#f87171){% endif %}
+      {% else %}linear-gradient(90deg,#4f46e5,#7c3aed){% endif %};"></div>
+
+    <div class="c-card-body">
+      <!-- top row -->
+      <div class="c-card-top">
+        <span class="c-code">{{ item.course.code }}</span>
+        {% if item.record and item.record.final_grade %}
+          {% if item.record.passed %}
+          <span class="grade-pill pill-pass">Passed</span>
+          {% else %}
+          <span class="grade-pill pill-fail">Failed</span>
+          {% endif %}
+        {% else %}
+        <span class="grade-pill pill-pending">Pending</span>
+        {% endif %}
+      </div>
+
+      <div>
+        <div class="c-title">{{ item.course.title }}</div>
+        <div class="c-meta mt-1">
+          <i class="bi bi-person me-1"></i>{{ item.course.instructor.get_full_name }}
+          &nbsp;·&nbsp;{{ item.course.get_semester_display }} {{ item.course.school_year }}
+          {% if item.course.block %}&nbsp;·&nbsp;Block {{ item.course.block }}{% endif %}
+        </div>
+      </div>
+
+      {% if item.record %}
+      <!-- Component grid -->
+      <div class="c-components">
+        <div class="c-comp">
+          <div class="c-comp-val" style="color:#4f46e5;">{{ item.record.class_standing|default:"—" }}</div>
+          <div class="c-comp-lbl">CS Avg<br><span style="color:#c7d2fe;">({{ item.course.cs_weight }}%)</span></div>
+        </div>
+        <div class="c-comp">
+          <div class="c-comp-val" style="color:#059669;">
+            {% if item.record.requirement_score %}{{ item.record.requirement_score }}{% else %}—{% endif %}
+          </div>
+          <div class="c-comp-lbl">Req.<br><span style="color:#a7f3d0;">({{ item.course.req_weight }}%)</span></div>
+        </div>
+        <div class="c-comp">
+          <div class="c-comp-val" style="color:#7c3aed;">{{ item.record.midterm_score|default:"—" }}</div>
+          <div class="c-comp-lbl">Midterm</div>
+        </div>
+        <div class="c-comp">
+          <div class="c-comp-val" style="color:#7c3aed;">{{ item.record.final_score|default:"—" }}</div>
+          <div class="c-comp-lbl">Final Exam<br><span style="color:#ddd6fe;">({{ item.course.exam_weight }}%)</span></div>
+        </div>
+      </div>
+
+      <!-- Final grade box -->
+      {% if item.record.final_grade %}
+      <div class="c-final"
+           style="background:{% if item.record.passed %}#f0fdf4{% else %}#fef2f2{% endif %};
+                  border-color:{% if item.record.passed %}#bbf7d0{% else %}#fecaca{% endif %};">
+        <div class="c-final-num"
+             style="color:{% if item.record.passed %}#15803d{% else %}#b91c1c{% endif %};">
+          {{ item.record.final_grade }}
+        </div>
+        <div class="c-final-eq">Equiv. {{ item.record.equivalent_grade }}</div>
+      </div>
+      {% else %}
+      <div style="text-align:center;padding:.6rem;border-radius:8px;border:1.5px dashed #e2e8f0;background:#f8fafc;">
+        <span style="font-size:.78rem;color:#94a3b8;"><i class="bi bi-hourglass-split me-1"></i>Grades not yet finalized</span>
+      </div>
+      {% endif %}
+
+      {% if item.record.remarks %}
+      <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:6px;padding:.5rem .75rem;font-size:.78rem;color:#92400e;">
+        <i class="bi bi-info-circle me-1"></i><strong>Remarks:</strong> {{ item.record.remarks }}
+      </div>
+      {% endif %}
+      {% else %}
+      <div style="flex:1;text-align:center;padding:1.5rem 0;color:#94a3b8;font-size:.82rem;">
+        No grade record yet.
+      </div>
+      {% endif %}
+
+      <!-- Attendance mini bar -->
+      {% if item.att_total %}
+      <div class="att-mini">
+        <i class="bi bi-calendar-check" style="color:{% if item.att_pct >= 75 %}#059669{% else %}#dc2626{% endif %};flex-shrink:0;"></i>
+        <div class="att-bar-bg">
+          <div class="att-bar-fill" style="width:{{ item.att_pct }}%;background:{% if item.att_pct >= 75 %}#10b981{% else %}#ef4444{% endif %};"></div>
+        </div>
+        <span style="font-weight:700;font-size:.78rem;
+                     color:{% if item.att_pct >= 75 %}#059669{% else %}#dc2626{% endif %};">
+          {{ item.att_pct }}%
+        </span>
+      </div>
+      {% endif %}
+
+      <!-- Action buttons -->
+      <div class="c-actions">
+        <a href="{% url 'grading:student_course_grades' item.course.pk %}"
+           class="btn btn-sm btn-primary">
+          <i class="bi bi-bar-chart-line me-1"></i>Grades
+        </a>
+        <a href="{% url 'attendance:student_attendance' item.course.pk %}"
+           class="btn btn-sm btn-outline-secondary">
+          <i class="bi bi-calendar3 me-1"></i>Attendance
+        </a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% else %}
+<div class="page-card text-center" style="padding:4rem 2rem;">
+  <div style="width:64px;height:64px;border-radius:16px;background:#eef2ff;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.75rem;color:#4f46e5;">
+    <i class="bi bi-journal-x"></i>
+  </div>
+  <h6 style="font-weight:700;color:#0f172a;margin-bottom:.35rem;">No subjects yet</h6>
+  <p style="font-size:.85rem;color:#64748b;margin:0;">
+    You're not enrolled in any subjects. Ask your instructor to add you.
+  </p>
+</div>
+{% endif %}
+
+{% endblock %}

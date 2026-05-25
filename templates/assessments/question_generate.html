@@ -1,0 +1,324 @@
+{% extends 'accounts/course_base.html' %}
+{% block course_content %}
+<div class="container-fluid" style="max-width:1100px;">
+
+  <div class="mb-4">
+    <h5 class="fw-bold mb-0">Generate Assessment</h5>
+    <p class="text-muted small mb-0">{{ course.code }} · {{ course.title }}</p>
+  </div>
+
+  <div class="row g-4">
+  <div class="col-lg-7">
+  <form method="post" id="generateForm" novalidate>
+    {% csrf_token %}
+
+    <!-- Assessment Type -->
+    <div class="mb-4">
+      <label class="form-label fw-semibold mb-2">Assessment Type</label>
+      <select name="assessment_type" class="form-select w-50">
+        <option value="quiz" {% if form.assessment_type.value == 'quiz' %}selected{% endif %}>Normal Quiz</option>
+        <option value="exam" {% if form.assessment_type.value == 'exam' %}selected{% endif %}>Major Exam</option>
+      </select>
+      <div class="form-text mt-1">Exams tend to have slightly more comprehensive or integrative questions.</div>
+    </div>
+
+    <!-- Weeks -->
+    <div class="mb-4">
+      <label class="form-label fw-semibold mb-2">Select Weeks</label>
+      {% if has_syllabus %}
+      <div class="d-flex flex-wrap gap-2">
+        {% for week in syllabus_weeks %}
+        <input type="checkbox" class="btn-check" name="weeks"
+               value="Week {{ week.week_number }}|{{ week.topic }}"
+               id="week_{{ week.week_number }}" autocomplete="off">
+        <label class="btn btn-sm btn-outline-primary rounded-pill" for="week_{{ week.week_number }}">
+          Week {{ week.week_number }} · {{ week.topic|truncatechars:25 }}
+        </label>
+        {% endfor %}
+      </div>
+      <div class="form-text mt-1">Based on extracted syllabus content.</div>
+      {% else %}
+      <div class="alert alert-warning py-2 small mb-0">
+        No syllabus content found.
+        <a href="{% url 'accounts:course_syllabus_upload' course.pk %}" class="alert-link">Upload syllabus first</a>.
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Question Types -->
+    <div class="mb-4">
+      <label class="form-label fw-semibold mb-2">Question Types</label>
+      <div class="form-text mb-2">Set Bloom's level and difficulty per type.</div>
+
+      <!-- Header row -->
+      <div class="d-none d-md-flex align-items-center gap-2 px-3 mb-1 small text-muted fw-semibold">
+        <div style="width:18px;"></div>
+        <div class="flex-grow-1">Type</div>
+        <div style="width:90px;text-align:center;">Items</div>
+        <div style="width:140px;">Bloom's Level</div>
+        <div style="width:120px;">Difficulty</div>
+      </div>
+
+      <div class="d-flex flex-column gap-2">
+        {% for type_value, type_label in qtype_choices %}
+        <div class="d-flex align-items-center gap-2 border rounded-3 px-3 py-2 bg-white qtype-row flex-wrap">
+          <input type="checkbox" class="form-check-input m-0 qtype-check" name="question_types"
+                 value="{{ type_value }}" id="qt_{{ type_value }}">
+          <label class="form-check-label flex-grow-1 mb-0" for="qt_{{ type_value }}" style="cursor:pointer;">
+            {{ type_label }}
+          </label>
+          <input type="number" class="form-control form-control-sm text-center qtype-count"
+                 name="{{ type_value }}_count" value="10" min="1" max="50"
+                 style="width:90px;" disabled>
+          <select class="form-select form-select-sm qtype-bloom"
+                  name="{{ type_value }}_bloom" style="width:140px;" disabled>
+            {% for val, label in bloom_choices %}
+            <option value="{{ val }}" {% if val == 'remember' %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          <select class="form-select form-select-sm qtype-difficulty"
+                  name="{{ type_value }}_difficulty" style="width:120px;" disabled>
+            {% for val, label in difficulty_choices %}
+            <option value="{{ val }}" {% if val == 'average' %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-primary px-4" id="generateBtn">
+        <i class="bi bi-magic me-1"></i>Generate
+      </button>
+      <a href="{% url 'assessments:questionset_list' course.pk %}" class="btn btn-outline-secondary">
+        Cancel
+      </a>
+    </div>
+  </form>
+
+  </div><!-- /col-lg-7 -->
+
+  <!-- ── Sidebar: workflow + requirements ─────────────────────────────── -->
+  <div class="col-lg-5">
+
+    <!-- Workflow context -->
+    <div class="page-card mb-3" style="background:#eff6ff;border:1px solid #bfdbfe;">
+      <h6 class="fw-bold mb-2 text-primary">
+        <i class="bi bi-diagram-3"></i> How Assessment Connects
+      </h6>
+      <p class="small mb-2" style="color:#475569;">
+        The assessment generator writes actual quiz/exam questions using content
+        extracted directly from your course syllabus.
+      </p>
+      <ol class="small mb-0" style="color:#475569;padding-left:1.1rem;">
+        <li class="mb-1">
+          <strong>Syllabus</strong> — AI extracted the weekly plan (topics, CILOs, resources) from your syllabus document.
+        </li>
+        <li class="mb-1">
+          <strong>TOS</strong> — defines how many items each topic gets and the
+          Bloom's spread (Remember → Create).
+        </li>
+        <li class="mb-1">
+          <strong>Assessment (this page)</strong> — pulls syllabus content for the
+          weeks you select and writes questions that follow the chosen Bloom's
+          level and difficulty.
+        </li>
+      </ol>
+    </div>
+
+    <!-- Step-by-step guide -->
+    <div class="page-card mb-3">
+      <h6 class="fw-bold mb-3"><i class="bi bi-list-check text-primary"></i> How to Generate</h6>
+      <ol class="small mb-0" style="color:#475569;padding-left:1.1rem;">
+        <li class="mb-2">
+          <strong>Select weeks.</strong> The AI will use the extracted syllabus data for these weeks as source material.
+        </li>
+        <li class="mb-2">
+          <strong>Pick question types.</strong> Tick the types you want
+          (Multiple Choice, True/False, Identification, Essay, etc.) and set
+          the item count per type.
+        </li>
+        <li class="mb-2">
+          <strong>Set Bloom's level + difficulty.</strong> Match these to your
+          TOS distribution if you've already built one for the same topics.
+        </li>
+        <li class="mb-2">
+          <strong>Click Generate.</strong> Each week takes 10–20 seconds. The
+          questions are saved to a Question Set you can preview, edit, or
+          export.
+        </li>
+      </ol>
+    </div>
+
+    <!-- Requirements -->
+    <div class="page-card mb-3">
+      <h6 class="fw-bold mb-3"><i class="bi bi-clipboard-check text-success"></i> Requirements</h6>
+      <ul class="small mb-0" style="color:#475569;padding-left:1.1rem;">
+        <li class="mb-1">
+          <strong>Extracted Syllabus</strong> with weekly plan data.
+          {% if not has_syllabus %}
+            <a href="{% url 'accounts:course_syllabus_upload' course.pk %}" class="alert-link">Upload one →</a>
+          {% endif %}
+        </li>
+        <li class="mb-1"><strong>At least one question type</strong> selected with an item count.</li>
+        <li class="mb-1"><strong>At least one week</strong> selected.</li>
+        <li class="mb-1"><strong>A Bloom's level</strong> (or "Mixed") and a <strong>difficulty</strong>.</li>
+        <li class="mb-1">A configured AI provider key (Groq, OpenAI, Anthropic, or Google).</li>
+        <li class="mb-1">
+          <strong>Recommended:</strong> build a <a href="{% url 'tos:tos_list' course.pk %}" class="alert-link">TOS</a> first
+          so item counts and Bloom's distribution are aligned with your exam plan.
+        </li>
+      </ul>
+    </div>
+
+    <!-- Tips -->
+    <div class="page-card">
+      <h6 class="fw-bold mb-3"><i class="bi bi-lightbulb text-warning"></i> Tips</h6>
+      <ul class="small mb-0" style="color:#475569;padding-left:1.1rem;">
+        <li class="mb-1">Use the <strong>same topic names</strong> across presentations and TOS so the AI can match them cleanly.</li>
+        <li class="mb-1">Mix types — MCQ for Remember/Understand, Essay for Analyze/Evaluate/Create.</li>
+        <li class="mb-1">For long exams, generate by section (e.g. weeks 1–4, then 5–8) to keep AI grounding tight.</li>
+        <li class="mb-1">Edit any generated question afterwards — nothing is locked in.</li>
+      </ul>
+    </div>
+
+  </div><!-- /col-lg-5 -->
+  </div><!-- /row -->
+
+  {% if debug_info %}
+  <div class="card border-danger mt-4">
+    <div class="card-header bg-white text-danger small fw-semibold py-2" data-bs-toggle="collapse" data-bs-target="#debugCollapse" style="cursor:pointer;">
+      <i class="bi bi-bug me-1"></i>Debug Info
+    </div>
+    <div id="debugCollapse" class="collapse">
+      <div class="card-body p-3 small">
+        {% if debug_info.system_prompt %}
+        <strong>System:</strong>
+        <pre class="bg-light p-2 rounded small overflow-auto" style="max-height:120px;">{{ debug_info.system_prompt }}</pre>
+        {% endif %}
+        {% if debug_info.user_prompt %}
+        <strong>User:</strong>
+        <pre class="bg-light p-2 rounded small overflow-auto" style="max-height:120px;">{{ debug_info.user_prompt }}</pre>
+        {% endif %}
+        {% if debug_info.raw_ai_response %}
+        <strong>AI Response:</strong>
+        <pre class="bg-light p-2 rounded small overflow-auto" style="max-height:150px;">{{ debug_info.raw_ai_response }}</pre>
+        {% endif %}
+        <strong>Error:</strong> {{ debug_info.error_message }}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Error Modal -->
+<div class="modal fade" id="assessErrorModal" tabindex="-1" aria-labelledby="assessErrorModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:20px;">
+      <div class="modal-body text-center py-4 px-4">
+        <div class="mb-3">
+          <div class="rounded-circle bg-danger bg-opacity-10 d-inline-flex p-3">
+            <i class="bi bi-exclamation-triangle-fill text-danger" style="font-size:1.75rem;"></i>
+          </div>
+        </div>
+        <h5 class="fw-bold mb-2" id="assessErrorModalLabel">Missing Selection</h5>
+        <p class="text-muted small mb-0" id="assessErrorMsg">Please fill in all required fields before generating.</p>
+      </div>
+      <div class="modal-footer justify-content-center border-0 pt-0 pb-4">
+        <button type="button" class="btn btn-primary px-4" data-bs-dismiss="modal">Got it</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:20px;">
+      <div class="modal-body text-center py-4">
+        <div class="mb-3">
+          <div class="spinner-border text-primary" role="status" style="width:3rem;height:3rem;">
+            <span class="visually-hidden">Loading…</span>
+          </div>
+        </div>
+        <h5 class="fw-bold mb-2">Generating Assessment</h5>
+        <p class="text-muted small mb-3" id="assessStatusMsg">Analyzing your syllabus content…</p>
+        <div class="progress mb-3" style="height:8px;">
+          <div id="assessProgressBar" class="progress-bar progress-bar-striped progress-bar-animated"
+               role="progressbar" style="width:0%"></div>
+        </div>
+        <div class="d-flex justify-content-between small text-muted px-2">
+          <span>Each week takes 10–20 seconds.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .qtype-row:has(.qtype-check:checked) { border-color: #0d6efd !important; background-color: #f0f6ff !important; }
+  .week-toggle-group .btn-check:checked + .btn { background-color: #0d6efd; color: #fff; }
+  #assessProgressBar { transition: width 0.5s ease; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.getElementById('generateForm');
+  const modal = new bootstrap.Modal(document.getElementById('loadingModal'));
+
+  // Toggle count input + bloom + difficulty selects when question type is checked
+  document.querySelectorAll('.qtype-check').forEach(function (cb) {
+    cb.addEventListener('change', function () {
+      const row = this.closest('.qtype-row');
+      const inputs = row.querySelectorAll('.qtype-count, .qtype-bloom, .qtype-difficulty');
+      inputs.forEach(function (el) { el.disabled = !cb.checked; });
+    });
+  });
+
+  // Click anywhere on row to toggle (but ignore clicks on form controls + label)
+  document.querySelectorAll('.qtype-row').forEach(function (row) {
+    row.addEventListener('click', function (e) {
+      const tag = e.target.tagName;
+      if (tag === 'INPUT' || tag === 'SELECT' || tag === 'OPTION' || tag === 'LABEL') return;
+      const cb = this.querySelector('.qtype-check');
+      if (cb) { cb.checked = !cb.checked; cb.dispatchEvent(new Event('change', { bubbles: true })); }
+    });
+  });
+
+  const errorModal = new bootstrap.Modal(document.getElementById('assessErrorModal'));
+  const errorMsg   = document.getElementById('assessErrorMsg');
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!document.querySelector('.qtype-check:checked')) {
+      errorMsg.textContent = 'Please select at least one question type.';
+      errorModal.show(); return;
+    }
+    if (!document.querySelector('input[name="weeks"]:checked')) {
+      errorMsg.textContent = 'Please select at least one week.';
+      errorModal.show(); return;
+    }
+    modal.show();
+
+    const bar = document.getElementById('assessProgressBar');
+    const msg = document.getElementById('assessStatusMsg');
+    const steps = [
+      [300,  15, 'Analyzing syllabus content…'],
+      [2500, 40, 'Writing questions…'],
+      [6000, 65, 'Formatting your assessment…'],
+      [11000, 85, 'Almost done…'],
+    ];
+    steps.forEach(function ([delay, pct, text]) {
+      setTimeout(function () {
+        bar.style.width = pct + '%';
+        msg.textContent = text;
+      }, delay);
+    });
+
+    setTimeout(function () { form.submit(); }, 100);
+  });
+});
+</script>
+{% endblock %}

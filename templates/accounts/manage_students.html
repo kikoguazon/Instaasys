@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block title %}Student Accounts — INSTAASYS{% endblock %}
+{% block page_title %}Student Accounts{% endblock %}
+{% block content %}
+<style>
+.stu-table { width:100%;border-collapse:collapse;font-size:.83rem; }
+.stu-table th {
+  background:#f8fafc;border-bottom:2px solid #e2e8f0;
+  padding:.65rem 1rem;font-size:.7rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:.06em;color:#64748b;text-align:left;
+}
+.stu-table td { padding:.75rem 1rem;border-bottom:1px solid #f1f5f9;vertical-align:middle; }
+.stu-table tr:last-child td { border-bottom:none; }
+.stu-table tr:hover td { background:#f8fafc; }
+.avatar-xs {
+  width:30px;height:30px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.7rem;font-weight:800;color:#fff;
+  background:linear-gradient(135deg,#4f46e5,#6366f1);
+}
+</style>
+
+<div class="d-flex gap-2 mb-3" style="flex-wrap:wrap;">
+  <a href="{% url 'accounts:create_student' %}" class="btn btn-primary btn-sm">
+    <i class="bi bi-person-plus me-1"></i> Add Student
+  </a>
+  <a href="{% url 'accounts:upload_students_csv' %}" class="btn btn-sm btn-outline-primary">
+    <i class="bi bi-file-earmark-spreadsheet me-1"></i> Bulk Upload CSV
+  </a>
+  <a href="{% url 'accounts:instructor_dashboard' %}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i> Dashboard
+  </a>
+</div>
+
+<!-- Search bar (debounced — no submit button needed) -->
+<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;
+            padding:.875rem 1.25rem;margin-bottom:1.25rem;
+            display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;">
+  <div class="search-wrap" style="flex:1;min-width:180px;position:relative;">
+    <i class="bi bi-search" style="position:absolute;left:.75rem;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:.85rem;pointer-events:none;z-index:1;"></i>
+    <input id="studentSearch" type="text" value="{{ search }}" placeholder="Search name, ID, email…"
+           class="form-control form-control-sm" style="padding-left:2.2rem;padding-right:2rem;">
+    <div class="search-spinner"></div>
+  </div>
+  <span style="margin-left:auto;font-size:.75rem;color:#94a3b8;white-space:nowrap;">
+    <span id="studentCount">{{ total_count }}</span> student{{ total_count|pluralize }}
+  </span>
+</div>
+
+<!-- Info banner -->
+<div style="background:#eef2ff;border:1px solid #c7d2fe;border-radius:10px;
+            padding:.875rem 1.25rem;margin-bottom:1.25rem;
+            font-size:.83rem;color:#3730a3;display:flex;gap:.6rem;align-items:flex-start;">
+  <i class="bi bi-info-circle-fill" style="flex-shrink:0;margin-top:1px;"></i>
+  <div>
+    <strong>Student accounts</strong> are created by you and can be enrolled into your courses.
+    Their default password is their Student ID (or username if no ID was set).
+    Enroll students from the <a href="{% url 'accounts:course_list' %}" style="color:#4f46e5;font-weight:700;">Subjects</a> page.
+  </div>
+</div>
+
+<div class="page-card" style="padding:0;overflow:hidden;">
+  <div style="overflow-x:auto;">
+    <table class="stu-table">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Student ID</th>
+          <th>Department</th>
+          <th>Email</th>
+          <th>Joined</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="studentTbody">
+        <!-- Populated by InfiniteScroll + DebouncedSearch -->
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const baseUrl = '{% url "accounts:manage_students" %}';
+
+  // ── Infinite Scroll ────────────────────────────────────
+  const scroller = new InstaUI.InfiniteScroll({
+    container:     document.getElementById('studentTbody'),
+    url:           baseUrl,
+    skeletonType:  'table',
+    skeletonCount: 8,
+    params: { q: '{{ search|escapejs }}' },
+  });
+
+  // ── Debounced Search ───────────────────────────────────
+  new InstaUI.DebouncedSearch({
+    input:        '#studentSearch',
+    url:          baseUrl,
+    container:    '#studentTbody',
+    countEl:      '#studentCount',
+    highlight:    true,
+    skeletonType: 'table',
+    onResults: function (data, q) {
+      document.getElementById('studentTbody').innerHTML = data.html || '';
+      if (data.total !== undefined) {
+        document.getElementById('studentCount').textContent = data.total;
+      }
+      // Propagate new q to infinite scroller so "load more" uses the same filter
+      scroller.reset({ q: q });
+    },
+  });
+});
+</script>
+{% endblock %}
+{% endblock %}

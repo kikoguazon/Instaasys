@@ -1,0 +1,255 @@
+{% extends 'accounts/course_base.html' %}
+
+{% block course_content %}
+<style>
+[data-theme="dark"] .input-group-text { background: var(--bg) !important; border-color: var(--border); color: var(--text-muted); }
+[data-theme="dark"] .lesson-card .card-title { color: var(--text); }
+[data-theme="dark"] .lesson-card .card-text  { color: var(--text-muted) !important; }
+[data-theme="dark"] .form-select.border-0.bg-light { background: var(--bg) !important; color: var(--text); border-color: var(--border) !important; }
+[data-theme="dark"] .form-control.border-0.bg-light { background: var(--bg) !important; color: var(--text); }
+</style>
+<div class="container-fluid">
+  <!-- Page Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4 lesson-header">
+    <h5 class="h3 fw-bold mb-0">Lessons</h5>
+    <div class="d-flex gap-2 align-items-center flex-wrap">
+      <a href="{% url 'lessons:lesson_generate_from_plan' course.pk %}" class="btn btn-primary btn-sm">
+        <i class="bi bi-lightning-charge me-1"></i> Generate from AI
+      </a>
+      <a href="{% url 'lessons:lesson_builder' course.pk %}" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-pencil-square me-1"></i> Build Manually
+      </a>
+    </div>
+  </div>
+
+  <!-- Search & Filter Bar -->
+  <div class="card border-0 shadow-sm mb-4 lesson-search-card">
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-7">
+          <div class="input-group">
+            <span class="input-group-text bg-light border-0">
+              <i class="bi bi-search text-muted"></i>
+            </span>
+            <input type="text" id="lessonSearch" class="form-control border-0 bg-light" 
+                   placeholder="Search by topic, week, or title...">
+          </div>
+        </div>
+        <div class="col-md-5">
+          <select id="statusFilter" class="form-select bg-light border-0">
+            <option value="">All Statuses</option>
+            <option value="ready">✓ Ready</option>
+            <option value="pending">⏳ Generating</option>
+            <option value="blueprint_pending">📋 Review Blueprint</option>
+            <option value="failed">✗ Failed</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lessons Grid -->
+  <div id="lessonGrid" class="row g-4"></div>
+
+  <!-- Loading State -->
+  <div id="gridLoader" class="text-center py-5 d-none">
+    <div class="spinner-border text-primary" role="status"></div>
+    <p class="text-muted mt-2">Loading lessons...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div class="card border-0 shadow-sm text-center py-5" id="lessonEmpty" style="display:none;">
+    <div class="card-body">
+      <div class="display-1 mb-3">📂</div>
+      <h5 class="card-title fw-bold">No Lessons Yet</h5>
+      <p class="card-text text-muted mb-4">
+        Get started by generating a lesson from AI or building one manually.
+      </p>
+      <div class="d-flex gap-2 justify-content-center">
+        <a href="{% url 'lessons:lesson_generate_from_plan' course.pk %}" class="btn btn-primary">
+          <i class="bi bi-lightning-charge me-1"></i> Generate from AI
+        </a>
+        <a href="{% url 'lessons:lesson_builder' course.pk %}" class="btn btn-outline-primary">
+          <i class="bi bi-pencil-square me-1"></i> Build Manually
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteLessonModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0">
+      <div class="modal-header bg-danger text-white border-0 py-3">
+        <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i>Delete Lesson</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <p class="mb-2">Are you sure you want to delete <strong id="deleteLessonTopic"></strong>?</p>
+        <p class="text-danger small mb-0">This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer border-0 gap-2">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+          <i class="bi bi-trash me-1"></i> Delete
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Lesson Card Template -->
+<template id="lessonCardTemplate">
+  <div class="col-md-6 col-lg-4">
+    <div class="card border-0 shadow-sm h-100 lesson-card" data-lesson-id="{id}">
+      <div class="card-body d-flex flex-column">
+        <!-- Status Badge -->
+        <div class="mb-3">
+          <span class="badge bg-{status_class} text-dark px-3 py-2">
+            {status_icon} {status_text}
+          </span>
+        </div>
+        
+        <!-- Title & Info -->
+        <h5 class="card-title fw-bold text-truncate">{topic}</h5>
+        <p class="text-muted small mb-2">Week {week_number}</p>
+        
+        <!-- Content Preview -->
+        <p class="card-text text-muted small flex-grow-1" style="max-height: 60px; overflow: hidden;">
+          {objectives}
+        </p>
+        
+        <!-- Meta Info -->
+        <div class="d-flex justify-content-between align-items-center text-muted small mb-3">
+          <span><i class="bi bi-calendar me-1"></i> {created_at}</span>
+        </div>
+        
+        <!-- Actions -->
+        <div class="d-flex gap-2 w-100">
+          <a href="LESSON_DETAIL_HREF" class="btn btn-sm btn-outline-primary flex-grow-1">
+            <i class="bi bi-eye me-1"></i> View
+          </a>
+          <button class="btn btn-sm btn-outline-danger" onclick="confirmDelete({id}, '{topic_safe}')">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const grid = document.getElementById('lessonGrid');
+  const emptyState = document.getElementById('lessonEmpty');
+  const searchInput = document.getElementById('lessonSearch');
+  const statusFilter = document.getElementById('statusFilter');
+
+  const detailUrlTpl = "{% url 'lessons:lesson_detail' course.pk 9999 %}";
+
+  // Status mapping
+  const statusMap = {
+    'ready': { icon: '✓', text: 'Ready', class: 'success' },
+    'pending': { icon: '⏳', text: 'Generating', class: 'warning' },
+    'blueprint_pending': { icon: '📋', text: 'Review Blueprint', class: 'info' },
+    'blueprint_approved': { icon: '⚙️', text: 'Processing', class: 'info' },
+    'failed': { icon: '✗', text: 'Failed', class: 'danger' },
+  };
+
+  // Render lessons from AJAX response
+  function renderLessons(lessons) {
+    grid.innerHTML = '';
+    
+    if (!lessons || lessons.length === 0) {
+      emptyState.style.display = '';
+      return;
+    }
+    
+    emptyState.style.display = 'none';
+    
+    lessons.forEach(lesson => {
+      const template = document.getElementById('lessonCardTemplate').innerHTML;
+      const status = statusMap[lesson.status] || statusMap['pending'];
+      
+      const html = template
+        .replace(/\{id\}/g, lesson.id)
+        .replace('{topic}', lesson.topic)
+        .replace('{topic_safe}', lesson.topic.replace(/'/g, "\\'"))
+        .replace('{week_number}', lesson.week_number)
+        .replace('{objectives}', lesson.objectives.substring(0, 80) + '...')
+        .replace('{created_at}', new Date(lesson.created_at).toLocaleDateString())
+        .replace('{status_icon}', status.icon)
+        .replace('{status_text}', status.text)
+        .replace('{status_class}', status.class)
+        .replace('LESSON_DETAIL_HREF', detailUrlTpl.replace('9999', lesson.id));
+      
+      grid.insertAdjacentHTML('beforeend', html);
+    });
+  }
+
+  // Event listeners
+  searchInput.addEventListener('input', debounce(function() {
+    // Fetch filtered results
+    const query = this.value;
+    const status = statusFilter.value;
+    fetchLessons(query, status);
+  }, 300));
+
+  statusFilter.addEventListener('change', function() {
+    const query = searchInput.value;
+    fetchLessons(query, this.value);
+  });
+
+  // Fetch function
+  function fetchLessons(query, status) {
+    const params = new URLSearchParams();
+    if (query) params.append('q', query);
+    if (status) params.append('status', status);
+    
+    fetch(`{% url 'lessons:lesson_list' course.pk %}?${params}`, {
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => renderLessons(data.lessons))
+    .catch(e => console.error('Error fetching lessons:', e));
+  }
+
+  // Delete modal
+  let _pendingDeleteId = null;
+  const deleteModal = new bootstrap.Modal(document.getElementById('deleteLessonModal'));
+
+  window.confirmDelete = function(id, topic) {
+    _pendingDeleteId = id;
+    document.getElementById('deleteLessonTopic').textContent = topic;
+    deleteModal.show();
+  };
+
+  document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+    if (!_pendingDeleteId) return;
+    const id = _pendingDeleteId;
+    _pendingDeleteId = null;
+    deleteModal.hide();
+    fetch(`{% url 'lessons:lesson_delete' course.pk 9999 %}`.replace('/9999', '/' + id), {
+      method: 'POST',
+      headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+    })
+    .then(() => fetchLessons(searchInput.value, statusFilter.value));
+  });
+
+  // Debounce helper
+  function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+  }
+
+  // Load initial lessons
+  fetchLessons('', '');
+});
+</script>
+{% endblock %}
+{% endblock %}

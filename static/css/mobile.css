@@ -1,0 +1,365 @@
+/*
+ * ══════════════════════════════════════════════════════════
+ *  INSTAASYS  ·  Mobile Optimizations
+ *  Additional mobile-specific utilities and fixes
+ *  Depends on: tokens.css, layout.css, components.css
+ * ══════════════════════════════════════════════════════════
+ */
+
+/* ─── Touch-Friendly Tap Targets ────────────────────────── */
+@media (hover: none) and (pointer: coarse) {
+  /* Ensure all interactive elements are at least 44x44px */
+  button,
+  .btn,
+  a.btn,
+  .nav-link,
+  .icon-btn,
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Form inputs */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="search"],
+  select,
+  textarea {
+    min-height: 44px;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  /* Checkboxes and radios */
+  input[type="checkbox"],
+  input[type="radio"] {
+    min-width: 24px;
+    min-height: 24px;
+  }
+}
+
+/* ─── Prevent Horizontal Scroll ─────────────────────────── */
+@media (max-width: 768px) {
+  body {
+    overflow-x: hidden;
+  }
+  
+  .container-fluid,
+  .row {
+    margin-left: 0;
+    margin-right: 0;
+    max-width: 100%;
+  }
+  
+  /* Ensure tables don't overflow */
+  .table-responsive {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* ─── Mobile Typography Adjustments ─────────────────────── */
+@media (max-width: 768px) {
+  h1 { font-size: 1.75rem; }
+  h2 { font-size: 1.5rem; }
+  h3 { font-size: 1.25rem; }
+  h4 { font-size: 1.1rem; }
+  h5 { font-size: 1rem; }
+  h6 { font-size: .9rem; }
+  
+  p, li, td, th {
+    font-size: .875rem;
+    line-height: 1.5;
+  }
+}
+
+@media (max-width: 576px) {
+  h1 { font-size: 1.5rem; }
+  h2 { font-size: 1.35rem; }
+  h3 { font-size: 1.15rem; }
+  h4 { font-size: 1rem; }
+  h5 { font-size: .95rem; }
+  h6 { font-size: .85rem; }
+}
+
+/* ─── Mobile Grid Adjustments ───────────────────────────── */
+@media (max-width: 768px) {
+  .row.g-3 {
+    --bs-gutter-x: .75rem;
+    --bs-gutter-y: .75rem;
+  }
+  
+  .row.g-4 {
+    --bs-gutter-x: 1rem;
+    --bs-gutter-y: 1rem;
+  }
+  
+  /* Stack columns on mobile */
+  .col-md-6,
+  .col-md-4,
+  .col-md-3,
+  .col-lg-6,
+  .col-lg-4,
+  .col-lg-3 {
+    width: 100%;
+    margin-bottom: .75rem;
+  }
+}
+
+/* ─── Mobile Modal Adjustments ──────────────────────────── */
+@media (max-width: 768px) {
+  .modal-dialog {
+    margin: .5rem;
+    max-width: calc(100% - 1rem);
+  }
+  
+  .modal-content {
+    border-radius: var(--radius-xl);
+  }
+  
+  .modal-header {
+    padding: 1rem;
+  }
+  
+  .modal-body {
+    padding: 1rem;
+  }
+  
+  .modal-footer {
+    padding: .875rem 1rem;
+    gap: .5rem;
+  }
+  
+  .modal-footer .btn {
+    flex: 1;
+  }
+}
+
+/* ─── Mobile Spacing Utilities ──────────────────────────── */
+@media (max-width: 768px) {
+  .mb-4 { margin-bottom: 1rem !important; }
+  .mb-5 { margin-bottom: 1.5rem !important; }
+  .mt-4 { margin-top: 1rem !important; }
+  .mt-5 { margin-top: 1.5rem !important; }
+  .py-4 { padding-top: 1rem !important; padding-bottom: 1rem !important; }
+  .py-5 { padding-top: 1.5rem !important; padding-bottom: 1.5rem !important; }
+  .px-4 { padding-left: 1rem !important; padding-right: 1rem !important; }
+  .px-5 { padding-left: 1.5rem !important; padding-right: 1.5rem !important; }
+}
+
+/* ─── Mobile Button Groups ──────────────────────────────── */
+@media (max-width: 576px) {
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .btn-group .btn {
+    width: 100%;
+    border-radius: var(--radius-md) !important;
+    margin-bottom: .5rem;
+  }
+  
+  .btn-group .btn:last-child {
+    margin-bottom: 0;
+  }
+}
+
+/* ─── Mobile Dropdown Adjustments ───────────────────────── */
+@media (max-width: 768px) {
+  .dropdown-menu {
+    max-width: calc(100vw - 2rem);
+    font-size: .875rem;
+  }
+  
+  .dropdown-item {
+    padding: .65rem 1rem;
+  }
+}
+
+/* ─── Mobile Alert Adjustments ──────────────────────────── */
+@media (max-width: 768px) {
+  .alert {
+    padding: .75rem 1rem;
+    font-size: .85rem;
+    border-radius: var(--radius-md);
+  }
+  
+  .alert-dismissible .btn-close {
+    padding: .5rem;
+  }
+}
+
+/* ─── Mobile Badge Adjustments ──────────────────────────── */
+@media (max-width: 768px) {
+  .badge {
+    font-size: .7rem;
+    padding: .25em .5em;
+  }
+}
+
+/* ─── Mobile Breadcrumb Adjustments ─────────────────────── */
+@media (max-width: 768px) {
+  .breadcrumb {
+    font-size: .8rem;
+    padding: .5rem 0;
+  }
+  
+  .breadcrumb-item + .breadcrumb-item::before {
+    padding-right: .35rem;
+    padding-left: .35rem;
+  }
+}
+
+/* ─── Mobile Pagination Adjustments ─────────────────────── */
+@media (max-width: 768px) {
+  .pagination {
+    font-size: .85rem;
+  }
+  
+  .page-link {
+    padding: .4rem .65rem;
+  }
+  
+  /* Hide page numbers on very small screens, keep prev/next */
+  @media (max-width: 480px) {
+    .pagination .page-item:not(.active):not(:first-child):not(:last-child) {
+      display: none;
+    }
+  }
+}
+
+/* ─── Mobile Card Adjustments ───────────────────────────── */
+@media (max-width: 768px) {
+  .card {
+    border-radius: var(--radius-xl);
+  }
+  
+  .card-header {
+    padding: .875rem 1rem;
+    font-size: .9rem;
+  }
+  
+  .card-body {
+    padding: 1rem;
+  }
+  
+  .card-footer {
+    padding: .875rem 1rem;
+  }
+}
+
+/* ─── Mobile List Group Adjustments ─────────────────────── */
+@media (max-width: 768px) {
+  .list-group-item {
+    padding: .75rem 1rem;
+    font-size: .875rem;
+  }
+}
+
+/* ─── Mobile Progress Bar Adjustments ───────────────────── */
+@media (max-width: 768px) {
+  .progress {
+    height: .75rem;
+  }
+}
+
+/* ─── Landscape Mobile Optimizations ────────────────────── */
+@media (max-width: 768px) and (orientation: landscape) {
+  /* Reduce vertical padding in landscape */
+  .main-content {
+    padding: var(--sp-3) var(--sp-4);
+  }
+  
+  .page-card {
+    padding: var(--sp-3);
+  }
+  
+  .modal-dialog {
+    max-height: calc(100vh - 1rem);
+    overflow-y: auto;
+  }
+}
+
+/* ─── Safe Area Insets (for notched devices) ────────────── */
+@supports (padding: max(0px)) {
+  @media (max-width: 768px) {
+    body {
+      padding-left: max(0px, env(safe-area-inset-left));
+      padding-right: max(0px, env(safe-area-inset-right));
+    }
+    
+    .sidebar {
+      padding-left: max(0px, env(safe-area-inset-left));
+    }
+    
+    .topbar {
+      padding-left: max(var(--sp-4), env(safe-area-inset-left));
+      padding-right: max(var(--sp-4), env(safe-area-inset-right));
+    }
+    
+    .main-content {
+      padding-left: max(var(--sp-4), env(safe-area-inset-left));
+      padding-right: max(var(--sp-4), env(safe-area-inset-right));
+      padding-bottom: max(var(--sp-8), env(safe-area-inset-bottom));
+    }
+    
+    .chatbot-toggle {
+      bottom: max(var(--sp-6), calc(env(safe-area-inset-bottom) + var(--sp-4)));
+      right: max(var(--sp-6), calc(env(safe-area-inset-right) + var(--sp-4)));
+    }
+  }
+}
+
+/* ─── Accessibility: Reduce Motion ──────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ─── Dark Mode Mobile Adjustments ──────────────────────── */
+@media (max-width: 768px) {
+  [data-theme="dark"] .sidebar {
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
+  }
+  
+  [data-theme="dark"] .sidebar.open {
+    box-shadow: 4px 0 32px rgba(0, 0, 0, 0.6);
+  }
+}
+
+/* ─── Print Styles ──────────────────────────────────────── */
+@media print {
+  .sidebar,
+  .topbar,
+  .chatbot-toggle,
+  .chatbot-window,
+  .sidebar-overlay,
+  .mobile-menu-toggle,
+  .btn,
+  .alert {
+    display: none !important;
+  }
+  
+  .main-content {
+    margin-left: 0 !important;
+    padding: 0 !important;
+  }
+  
+  .page-card {
+    border: 1px solid #ddd;
+    box-shadow: none;
+    page-break-inside: avoid;
+  }
+}

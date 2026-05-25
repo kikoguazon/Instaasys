@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+{% block title %}Add User — Admin Portal{% endblock %}
+{% block page_title %}Add User Account{% endblock %}
+{% block content %}
+<style>
+.form-section {
+  background:#fff;border:1px solid #e2e8f0;border-radius:14px;
+  padding:1.5rem;margin-bottom:1rem;
+}
+.form-section-title {
+  font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  color:#64748b;margin-bottom:1.25rem;display:flex;align-items:center;gap:.5rem;
+}
+.role-card {
+  border:2px solid #e2e8f0;border-radius:12px;padding:1rem 1.25rem;
+  cursor:pointer;transition:all .15s;display:flex;align-items:flex-start;gap:.875rem;
+}
+.role-card:hover { border-color:#6366f1;background:#fafafe; }
+.role-card.selected { border-color:#4f46e5;background:#eef2ff; }
+.role-icon {
+  width:42px;height:42px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;
+}
+</style>
+
+<div class="d-flex gap-2 mb-4">
+  <a href="{% url 'accounts:portal_users' %}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i> Back to Users
+  </a>
+</div>
+
+<!-- Page header -->
+<div style="background:linear-gradient(135deg,#0f172a,#1e293b);border-radius:14px;
+            padding:1.5rem 2rem;color:#fff;margin-bottom:1.5rem;">
+  <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+              color:#64748b;margin-bottom:.35rem;">Admin Portal</div>
+  <h4 style="font-size:1.1rem;font-weight:800;margin:0 0 .3rem;">Create User Account</h4>
+  <p style="font-size:.83rem;opacity:.6;margin:0;">
+    Create student, instructor, or admin accounts. Password defaults to Student ID → username if left blank.
+  </p>
+</div>
+
+<form method="post" novalidate>
+  {% csrf_token %}
+
+  <!-- Role selection -->
+  <div class="form-section">
+    <div class="form-section-title"><i class="bi bi-person-badge"></i> Select Role</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;" id="role-cards">
+
+      <label class="role-card" id="card-student">
+        <input type="radio" name="role_choice" value="student" checked style="display:none;">
+        <div class="role-icon" style="background:#eef2ff;color:#4f46e5;">
+          <i class="bi bi-mortarboard-fill"></i>
+        </div>
+        <div>
+          <div style="font-weight:700;color:#0f172a;font-size:.875rem;">Student</div>
+          <div style="font-size:.75rem;color:#64748b;margin-top:2px;">Can view grades, attendance, and course materials.</div>
+        </div>
+      </label>
+
+      <label class="role-card" id="card-instructor">
+        <input type="radio" name="role_choice" value="instructor" style="display:none;">
+        <div class="role-icon" style="background:#fdf4ff;color:#7c3aed;">
+          <i class="bi bi-person-workspace"></i>
+        </div>
+        <div>
+          <div style="font-weight:700;color:#0f172a;font-size:.875rem;">Instructor</div>
+          <div style="font-size:.75rem;color:#64748b;margin-top:2px;">Can create courses, manage grades and attendance.</div>
+        </div>
+      </label>
+
+      <label class="role-card" id="card-admin">
+        <input type="radio" name="role_choice" value="admin" style="display:none;">
+        <div class="role-icon" style="background:#fef3c7;color:#d97706;">
+          <i class="bi bi-shield-lock-fill"></i>
+        </div>
+        <div>
+          <div style="font-weight:700;color:#0f172a;font-size:.875rem;">Administrator</div>
+          <div style="font-size:.75rem;color:#64748b;margin-top:2px;">Full system access. Superuser privileges.</div>
+        </div>
+      </label>
+
+    </div>
+    {% if form.role_choice.errors %}
+    <div style="color:#dc2626;font-size:.76rem;margin-top:.5rem;">{{ form.role_choice.errors.0 }}</div>
+    {% endif %}
+  </div>
+
+  <!-- Personal info -->
+  <div class="form-section">
+    <div class="form-section-title"><i class="bi bi-person"></i> Personal Information</div>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">First Name <span style="color:#ef4444;">*</span></label>
+        <input type="text" name="first_name" class="form-control"
+               value="{{ form.first_name.value|default:'' }}" required>
+        {% if form.first_name.errors %}<div style="color:#dc2626;font-size:.76rem;margin-top:.25rem;">{{ form.first_name.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Last Name <span style="color:#ef4444;">*</span></label>
+        <input type="text" name="last_name" class="form-control"
+               value="{{ form.last_name.value|default:'' }}" required>
+        {% if form.last_name.errors %}<div style="color:#dc2626;font-size:.76rem;margin-top:.25rem;">{{ form.last_name.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Email</label>
+        <input type="email" name="email" class="form-control"
+               value="{{ form.email.value|default:'' }}" placeholder="user@school.edu">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Department / Section</label>
+        <input type="text" name="department" class="form-control"
+               value="{{ form.department.value|default:'' }}" placeholder="e.g. BSIT — 3B">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Employee ID <span style="font-size:.7rem;color:#94a3b8;">(Instructors)</span></label>
+        <input type="text" name="employee_id" class="form-control"
+               value="{{ form.employee_id.value|default:'' }}" placeholder="e.g. EMP-0012">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Student ID <span style="font-size:.7rem;color:#94a3b8;">(Students)</span></label>
+        <input type="text" name="student_id" class="form-control"
+               value="{{ form.student_id.value|default:'' }}" placeholder="e.g. 2021-10001">
+      </div>
+    </div>
+  </div>
+
+  <!-- Login credentials -->
+  <div class="form-section">
+    <div class="form-section-title"><i class="bi bi-key"></i> Login Credentials</div>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">Username <span style="color:#ef4444;">*</span></label>
+        <input type="text" name="username" class="form-control"
+               value="{{ form.username.value|default:'' }}" required>
+        {% if form.username.errors %}<div style="color:#dc2626;font-size:.76rem;margin-top:.25rem;">{{ form.username.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Password</label>
+        <input type="password" name="password" class="form-control"
+               placeholder="Leave blank → Student ID or username">
+        <div style="font-size:.72rem;color:#94a3b8;margin-top:.3rem;">
+          Fallback: Student ID → username
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:.75rem;justify-content:flex-end;">
+    <a href="{% url 'accounts:portal_users' %}" class="btn btn-outline-secondary">Cancel</a>
+    <button type="submit" class="btn btn-primary">
+      <i class="bi bi-person-check me-1"></i> Create Account
+    </button>
+  </div>
+</form>
+
+<script>
+// Role card visual selection
+document.querySelectorAll('input[name="role_choice"]').forEach(function(radio){
+  radio.addEventListener('change', function(){
+    document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
+    this.closest('.role-card').classList.add('selected');
+  });
+});
+// Set initial selected state
+document.querySelector('input[name="role_choice"]:checked')
+        ?.closest('.role-card')?.classList.add('selected');
+</script>
+{% endblock %}

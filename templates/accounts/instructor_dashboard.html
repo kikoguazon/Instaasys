@@ -1,0 +1,354 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — INSTAASYS{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block extra_css %}
+<style>
+/* Mobile optimizations for instructor dashboard */
+@media (max-width: 768px) {
+  /* Welcome banner */
+  .welcome-banner {
+    padding: 1.5rem 1.25rem !important;
+    border-radius: 12px !important;
+    margin-bottom: 1.25rem !important;
+  }
+  
+  .welcome-banner h2 {
+    font-size: 1.25rem !important;
+  }
+  
+  .welcome-banner p {
+    font-size: .8rem !important;
+  }
+  
+  .welcome-banner .badge {
+    font-size: .65rem !important;
+    padding: .15rem .5rem !important;
+  }
+  
+  /* Stats grid */
+  .row.g-3 {
+    gap: .75rem !important;
+  }
+  
+  .stat-card {
+    padding: 1rem !important;
+  }
+  
+  .stat-card .stat-value {
+    font-size: 2rem !important;
+  }
+  
+  .stat-card .stat-label {
+    font-size: .65rem !important;
+  }
+  
+  .stat-card > div:first-child {
+    margin-bottom: .5rem !important;
+  }
+  
+  .stat-card > div:first-child > div:first-child {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 1rem !important;
+  }
+  
+  .stat-card > div:first-child > span {
+    font-size: .6rem !important;
+    padding: .15rem .5rem !important;
+  }
+  
+  /* Quick actions */
+  .quick-actions-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: .75rem !important;
+  }
+  
+  .quick-action-card {
+    padding: 1rem !important;
+    border-radius: 10px !important;
+  }
+  
+  .quick-action-card > div:first-child {
+    width: 38px !important;
+    height: 38px !important;
+    font-size: 1.1rem !important;
+    margin-bottom: .65rem !important;
+  }
+  
+  .quick-action-card > div:nth-child(2) {
+    font-size: .8rem !important;
+  }
+  
+  .quick-action-card > div:last-child {
+    font-size: .7rem !important;
+  }
+  
+  /* Page card */
+  .page-card {
+    padding: 1rem !important;
+    border-radius: 12px !important;
+  }
+  
+  .page-card h6 {
+    font-size: .8rem !important;
+    margin-bottom: 1rem !important;
+  }
+  
+  /* Table responsive */
+  .table-responsive {
+    margin: 0 -1rem;
+    padding: 0 1rem;
+  }
+  
+  .table {
+    font-size: .75rem !important;
+  }
+  
+  .table thead th {
+    font-size: .65rem !important;
+    padding: .6rem .5rem !important;
+  }
+  
+  .table tbody td {
+    padding: .65rem .5rem !important;
+  }
+  
+  .table tbody td > div:first-child {
+    font-size: .8rem !important;
+  }
+  
+  .table tbody td > div:last-child {
+    font-size: .7rem !important;
+  }
+  
+  .table tbody td span {
+    font-size: .7rem !important;
+    padding: .2rem .5rem !important;
+  }
+  
+  .table .btn-sm {
+    font-size: .7rem !important;
+    padding: .3rem .6rem !important;
+  }
+  
+  /* Empty state */
+  .empty-state {
+    padding: 2rem 1rem !important;
+  }
+  
+  .empty-state > div:first-child {
+    width: 52px !important;
+    height: 52px !important;
+    font-size: 1.5rem !important;
+    margin-bottom: .75rem !important;
+  }
+  
+  .empty-state h6 {
+    font-size: .9rem !important;
+  }
+  
+  .empty-state p {
+    font-size: .8rem !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .welcome-banner {
+    padding: 1.25rem 1rem !important;
+  }
+  
+  .welcome-banner h2 {
+    font-size: 1.15rem !important;
+  }
+  
+  .stat-card .stat-value {
+    font-size: 1.75rem !important;
+  }
+  
+  .quick-actions-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .table thead th:nth-child(2),
+  .table tbody td:nth-child(2) {
+    display: none;
+  }
+}
+</style>
+{% endblock %}
+{% block content %}
+
+<!-- Welcome banner -->
+<div class="welcome-banner" style="background:linear-gradient(135deg,#312e81,#4f46e5,#6d28d9);border-radius:16px;padding:2rem 2.25rem;color:#fff;margin-bottom:1.75rem;position:relative;overflow:hidden;">
+  <div style="position:absolute;width:300px;height:300px;border-radius:50%;background:rgba(255,255,255,.05);top:-120px;right:-60px;"></div>
+  <div style="position:absolute;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.04);bottom:-60px;left:30%;"></div>
+  <div style="position:relative;z-index:1;">
+    <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#c7d2fe;margin-bottom:.5rem;">
+      <i class="bi bi-stars me-1"></i> Instructor Portal
+    </div>
+    <h2 style="font-size:1.5rem;font-weight:800;margin:0 0 .35rem;letter-spacing:-.02em;">
+      Good day, {{ user.first_name }}!
+    </h2>
+    <p style="opacity:.8;font-size:.875rem;margin:0;">
+      Manage your subjects, generate AI content, and track student grades.
+    </p>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-4">
+    <div class="stat-card" style="border-top:3px solid #4f46e5;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;">
+        <div style="width:42px;height:42px;border-radius:10px;background:#eef2ff;display:flex;align-items:center;justify-content:center;font-size:1.15rem;color:#4f46e5;">
+          <i class="bi bi-book-fill"></i>
+        </div>
+        <span style="font-size:.68rem;font-weight:600;color:#4f46e5;background:#eef2ff;padding:.2rem .6rem;border-radius:5px;">Active</span>
+      </div>
+      <div class="stat-value">{{ total_courses }}</div>
+      <div class="stat-label">Subjects</div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="stat-card" style="border-top:3px solid #7c3aed;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;">
+        <div style="width:42px;height:42px;border-radius:10px;background:#fdf4ff;display:flex;align-items:center;justify-content:center;font-size:1.15rem;color:#7c3aed;">
+          <i class="bi bi-people-fill"></i>
+        </div>
+        <span style="font-size:.68rem;font-weight:600;color:#7c3aed;background:#fdf4ff;padding:.2rem .6rem;border-radius:5px;">Enrolled</span>
+      </div>
+      <div class="stat-value">{{ total_students }}</div>
+      <div class="stat-label">Students</div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="stat-card" style="border-top:3px solid #0891b2;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;">
+        <div style="width:42px;height:42px;border-radius:10px;background:#ecfeff;display:flex;align-items:center;justify-content:center;font-size:1.15rem;color:#0891b2;">
+          <i class="bi bi-robot"></i>
+        </div>
+        <span style="font-size:.68rem;font-weight:600;color:#0891b2;background:#ecfeff;padding:.2rem .6rem;border-radius:5px;">AI</span>
+      </div>
+      <div class="stat-value" style="font-size:1.5rem;color:#94a3b8;">—</div>
+      <div class="stat-label">AI Generations</div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="page-card mb-4">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+    <h6 style="font-size:.875rem;font-weight:700;margin:0;color:#0f172a;">Quick Actions</h6>
+  </div>
+  <div class="row g-3 quick-actions-grid">
+    <div class="col-md-3 col-sm-6">
+      <a href="{% url 'accounts:syllabus_upload' %}" class="d-block text-decoration-none quick-action-card"
+         style="border:1.5px solid #e2e8f0;border-radius:12px;padding:1.25rem;transition:all .2s;background:#fff;"
+         onmouseover="this.style.borderColor='#4f46e5';this.style.boxShadow='0 4px 15px rgba(79,70,229,.1)';this.style.transform='translateY(-2px)';"
+         onmouseout="this.style.borderColor='#e2e8f0';this.style.boxShadow='none';this.style.transform='none';">
+        <div style="width:44px;height:44px;border-radius:10px;background:#eef2ff;display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:#4f46e5;margin-bottom:.875rem;">
+          <i class="bi bi-file-earmark-plus-fill"></i>
+        </div>
+        <div style="font-size:.875rem;font-weight:700;color:#0f172a;margin-bottom:.25rem;">New Subject</div>
+        <div style="font-size:.75rem;color:#64748b;">Upload syllabus to create</div>
+      </a>
+    </div>
+    <div class="col-md-3 col-sm-6">
+      <a href="{% url 'accounts:course_list' %}" class="d-block text-decoration-none quick-action-card"
+         style="border:1.5px solid #e2e8f0;border-radius:12px;padding:1.25rem;transition:all .2s;background:#fff;"
+         onmouseover="this.style.borderColor='#7c3aed';this.style.boxShadow='0 4px 15px rgba(124,58,237,.1)';this.style.transform='translateY(-2px)';"
+         onmouseout="this.style.borderColor='#e2e8f0';this.style.boxShadow='none';this.style.transform='none';">
+        <div style="width:44px;height:44px;border-radius:10px;background:#fdf4ff;display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:#7c3aed;margin-bottom:.875rem;">
+          <i class="bi bi-list-ul"></i>
+        </div>
+        <div style="font-size:.875rem;font-weight:700;color:#0f172a;margin-bottom:.25rem;">My Subjects</div>
+        <div style="font-size:.75rem;color:#64748b;">View and manage all</div>
+      </a>
+    </div>
+    <div class="col-md-3 col-sm-6">
+      <a href="{% url 'accounts:course_list' %}" class="d-block text-decoration-none quick-action-card"
+         style="border:1.5px solid #e2e8f0;border-radius:12px;padding:1.25rem;transition:all .2s;background:#fff;"
+         onmouseover="this.style.borderColor='#059669';this.style.boxShadow='0 4px 15px rgba(5,150,105,.1)';this.style.transform='translateY(-2px)';"
+         onmouseout="this.style.borderColor='#e2e8f0';this.style.boxShadow='none';this.style.transform='none';">
+        <div style="width:44px;height:44px;border-radius:10px;background:#ecfdf5;display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:#059669;margin-bottom:.875rem;">
+          <i class="bi bi-file-earmark-slides-fill"></i>
+        </div>
+        <div style="font-size:.875rem;font-weight:700;color:#0f172a;margin-bottom:.25rem;">AI Lessons</div>
+        <div style="font-size:.75rem;color:#64748b;">Select a subject first</div>
+      </a>
+    </div>
+    <div class="col-md-3 col-sm-6">
+      <a href="{% url 'accounts:course_list' %}" class="d-block text-decoration-none quick-action-card"
+         style="border:1.5px solid #e2e8f0;border-radius:12px;padding:1.25rem;transition:all .2s;background:#fff;"
+         onmouseover="this.style.borderColor='#d97706';this.style.boxShadow='0 4px 15px rgba(217,119,6,.1)';this.style.transform='translateY(-2px)';"
+         onmouseout="this.style.borderColor='#e2e8f0';this.style.boxShadow='none';this.style.transform='none';">
+        <div style="width:44px;height:44px;border-radius:10px;background:#fffbeb;display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:#d97706;margin-bottom:.875rem;">
+          <i class="bi bi-clipboard-check-fill"></i>
+        </div>
+        <div style="font-size:.875rem;font-weight:700;color:#0f172a;margin-bottom:.25rem;">Assessments</div>
+        <div style="font-size:.75rem;color:#64748b;">Generate questions</div>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Courses -->
+{% if active_courses %}
+<div class="page-card">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+    <h6 style="font-size:.875rem;font-weight:700;margin:0;color:#0f172a;">Recent Subjects</h6>
+    <a href="{% url 'accounts:course_list' %}" style="font-size:.78rem;font-weight:600;color:#4f46e5;text-decoration:none;">
+      View all <i class="bi bi-arrow-right"></i>
+    </a>
+  </div>
+  <div class="table-responsive">
+    <table class="table mb-0">
+      <thead>
+        <tr>
+          <th>Subject</th>
+          <th>Code</th>
+          <th class="text-center">Students</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in active_courses %}
+        <tr>
+          <td>
+            <div style="font-weight:600;font-size:.85rem;color:#0f172a;">{{ c.title|truncatechars:40 }}</div>
+            <div style="font-size:.75rem;color:#94a3b8;">{{ c.get_semester_display }} {{ c.school_year }}</div>
+          </td>
+          <td>
+            <span style="font-size:.75rem;font-weight:700;background:#eef2ff;color:#4f46e5;padding:.25rem .6rem;border-radius:5px;">
+              {{ c.code }}
+            </span>
+          </td>
+          <td class="text-center">
+            <span style="font-size:.82rem;font-weight:600;color:#475569;">
+              {{ c.enrollments.count }}
+            </span>
+          </td>
+          <td class="text-end">
+            <a href="{% url 'accounts:course_detail' c.pk %}"
+               class="btn btn-sm btn-outline-secondary">Open</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="page-card text-center empty-state" style="padding:3rem;">
+  <div style="width:64px;height:64px;border-radius:16px;background:#eef2ff;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.75rem;color:#4f46e5;">
+    <i class="bi bi-book"></i>
+  </div>
+  <h6 style="font-weight:700;color:#0f172a;margin-bottom:.35rem;">No subjects yet</h6>
+  <p style="font-size:.85rem;color:#64748b;margin-bottom:1.25rem;">Create your first subject by uploading a syllabus.</p>
+  <a href="{% url 'accounts:syllabus_upload' %}" class="btn btn-primary btn-sm">
+    <i class="bi bi-plus-circle me-1"></i> Create Subject
+  </a>
+</div>
+{% endif %}
+
+{% endblock %}

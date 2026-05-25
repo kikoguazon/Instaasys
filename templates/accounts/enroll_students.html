@@ -1,0 +1,928 @@
+{% extends 'accounts/course_base.html' %}
+{% block course_content %}
+
+<!-- Student Management Navigation -->
+<div class="student-nav-container mb-4">
+  <ul class="nav nav-pills student-nav" id="studentTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="enroll-tab" data-bs-toggle="pill" 
+              data-bs-target="#enroll-panel" type="button" role="tab">
+        <i class="bi bi-people me-2"></i>Enroll Students
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="upload-tab" data-bs-toggle="pill" 
+              data-bs-target="#upload-panel" type="button" role="tab">
+        <i class="bi bi-upload me-2"></i>Upload CSV
+      </button>
+    </li>
+  </ul>
+</div>
+
+<!-- Tab Content -->
+<div class="tab-content" id="studentTabContent">
+  
+  <!-- Enroll Students Panel -->
+  <div class="tab-pane fade show active" id="enroll-panel" role="tabpanel">
+    <div class="row">
+      <div class="col-lg-8">
+        <div class="student-enrollment-card">
+          <div class="card-header">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+              <div>
+                <h5 class="card-title">
+                  <i class="bi bi-people-fill me-2"></i>Student Enrollment
+                </h5>
+                <p class="card-subtitle">
+                  Enrolled students for this course. Uncheck to remove a student from enrollment.
+                </p>
+              </div>
+              <button type="button" class="btn btn-sm btn-outline-primary flex-shrink-0"
+                      data-bs-toggle="modal" data-bs-target="#addStudentModal">
+                <i class="bi bi-person-plus me-1"></i> Add Student
+              </button>
+            </div>
+          </div>
+          <div class="card-body">
+            <form method="post" id="enrollmentForm">{% csrf_token %}
+              <div class="student-list-container">
+                <table class="student-table">
+                  <thead>
+                    <tr>
+                      <th class="th-checkbox">
+                        <input type="checkbox" id="selectAllCheckbox" onclick="toggleSelectAll()" style="width:18px;height:18px;cursor:pointer;">
+                      </th>
+                      <th class="th-num">#</th>
+                      <th>Student Name</th>
+                      <th>Username</th>
+                      <th>Student ID</th>
+                      <th>Email</th>
+                      <th class="th-status">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for student in students %}
+                    <tr onclick="toggleCheckbox(this)" data-search="{{ student.get_full_name|lower }} {{ student.username|lower }} {{ student.student_id|lower }} {{ student.email|lower }}">
+                      <td class="td-checkbox" onclick="event.stopPropagation()">
+                        <input type="checkbox" 
+                               name="students" 
+                               value="{{ student.pk }}"
+                               {% if student.pk in enrolled_ids %}checked{% endif %}
+                               class="student-checkbox"
+                               onchange="updateCount()">
+                      </td>
+                      <td class="td-num">{{ forloop.counter }}</td>
+                      <td class="td-name">{{ student.get_full_name }}</td>
+                      <td class="td-meta">{{ student.username }}</td>
+                      <td class="td-meta">{{ student.student_id|default:"—" }}</td>
+                      <td class="td-meta">{{ student.email|default:"—" }}</td>
+                      <td class="td-status">
+                        <span class="status-badge {% if student.pk in enrolled_ids %}enrolled{% else %}not-enrolled{% endif %}">
+                          {% if student.pk in enrolled_ids %}Enrolled{% else %}Not Enrolled{% endif %}
+                        </span>
+                      </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                      <td colspan="7" style="padding:2.5rem;text-align:center;">
+                        <div class="empty-state">
+                          <div class="empty-icon">
+                            <i class="bi bi-people"></i>
+                          </div>
+                          <h6>No Students Enrolled Yet</h6>
+                          <p>Use <strong>Add Student</strong> to enroll a student manually, or <strong>Upload CSV</strong> to bulk-enroll students.</p>
+                          <div style="display:flex;gap:8px;justify-content:center;margin-top:1rem;">
+                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                    data-bs-toggle="modal" data-bs-target="#addStudentModal">
+                              <i class="bi bi-person-plus me-1"></i> Add Student
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                    id="switchToUploadBtn">
+                              <i class="bi bi-upload me-1"></i> Upload CSV
+                            </button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              <div class="form-actions">
+                <a href="{% url 'accounts:course_detail' course.pk %}" class="btn btn-outline-secondary">
+                  <i class="bi bi-arrow-left me-1"></i>Back to Course
+                </a>
+                <button type="submit" class="btn btn-primary">
+                  <i class="bi bi-check-circle me-1"></i>Save Enrollment
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Enrollment Summary Sidebar -->
+      <div class="col-lg-4">
+        <div class="enrollment-summary-card">
+          <div class="summary-header">
+            <h6><i class="bi bi-graph-up me-2"></i>Enrollment Summary</h6>
+          </div>
+          <div class="summary-stats">
+            <div class="stat-item">
+              <div class="stat-number" id="enrolledCount">{{ students|length }}</div>
+              <div class="stat-label">Currently Enrolled</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upload CSV Panel -->
+  <div class="tab-pane fade" id="upload-panel" role="tabpanel">
+    <div class="row">
+      <div class="col-lg-8">
+        <div class="upload-card">
+          <div class="card-header">
+            <h5 class="card-title">
+              <i class="bi bi-upload me-2"></i>Bulk Upload Students
+            </h5>
+            <p class="card-subtitle">
+              Upload a CSV file to create multiple student accounts at once. New accounts will be available for enrollment.
+            </p>
+          </div>
+          <div class="card-body">
+            <form method="post" enctype="multipart/form-data" action="{% url 'accounts:upload_students_csv' %}" id="uploadForm">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{% url 'accounts:enroll_students' course.pk %}?tab=upload">
+              <input type="hidden" name="course_pk" value="{{ course.pk }}">
+              <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">
+                  <i class="bi bi-filetype-csv"></i>
+                </div>
+                <div class="upload-content">
+                  <h6>Choose a CSV file</h6>
+                  <p>Only .csv files are accepted</p>
+                  <input type="file" name="csv_file" id="csvFile" accept=".csv" required>
+                  <label for="csvFile" class="btn btn-outline-primary">
+                    <i class="bi bi-folder2-open me-1"></i>Browse Files
+                  </label>
+                  <div class="file-name" id="fileName"></div>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-success">
+                  <i class="bi bi-people-fill me-1"></i>Upload & Create Accounts
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      
+      <!-- CSV Format Guide -->
+      <div class="col-lg-4">
+        <div class="format-guide-card">
+          <div class="guide-header">
+            <h6><i class="bi bi-info-circle me-2"></i>CSV Format Guide</h6>
+          </div>
+          <div class="guide-content">
+            <p style="font-size:.8rem;color:#64748b;margin-bottom:.75rem;">
+              Use the standard NEMSU student list export. The system auto-generates
+              login credentials from the Student ID.
+            </p>
+            <div class="format-table">
+              <div class="format-row header">
+                <div class="format-col">Column</div>
+                <div class="format-col">Required</div>
+              </div>
+              <div class="format-row">
+                <div class="format-col"><code>student_id</code></div>
+                <div class="format-col"><span class="required">Yes</span></div>
+              </div>
+              <div class="format-row">
+                <div class="format-col"><code>last_name</code></div>
+                <div class="format-col"><span class="required">Yes</span></div>
+              </div>
+              <div class="format-row">
+                <div class="format-col"><code>first_name</code></div>
+                <div class="format-col"><span class="required">Yes</span></div>
+              </div>
+              <div class="format-row">
+                <div class="format-col"><code>Middle_Initial</code></div>
+                <div class="format-col"><span class="optional">No</span></div>
+              </div>
+              <div class="format-row">
+                <div class="format-col"><code>Course_Section</code></div>
+                <div class="format-col"><span class="optional">No</span></div>
+              </div>
+            </div>
+            <div class="sample-format">
+              <h6>Sample Format:</h6>
+              <code class="sample-csv">
+                student_id,last_name,first_name,Middle_Initial,Course_Section<br>
+                2023-0145,Dela Cruz,Juan,P,BSIT-2A<br>
+                2023-0211,Rizal,Jose,M,BSIT-2A
+              </code>
+            </div>
+            <div class="mt-2 p-2 rounded" style="background:#eff6ff;border:1px solid #bfdbfe;font-size:.75rem;color:#1e40af;">
+              <i class="bi bi-key me-1"></i>
+              <strong>Auto-login credentials:</strong><br>
+              Username &amp; Password = Student ID (e.g. <code>2023-0145</code>)
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* Student Management Styles */
+.student-nav-container {
+  background: white;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.student-nav {
+  border-bottom: none;
+}
+
+.student-nav .nav-link {
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  font-weight: 500;
+  padding: 0.75rem 1.5rem;
+  margin-right: 0.5rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.student-nav .nav-link:hover {
+  background: #f8fafc;
+  color: #374151;
+  border-color: #cbd5e1;
+}
+
+.student-nav .nav-link.active {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+/* Card Styles */
+.student-enrollment-card, .upload-card, .enrollment-summary-card, .format-guide-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.card-header {
+  background: #f8fafc;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.card-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.card-subtitle {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.card-body {
+  padding: 1.5rem;
+}
+
+/* Student List — simple table */
+.student-list-container {
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+.student-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.83rem;
+}
+
+.student-table thead th {
+  background: #fff;
+  color: #212529;
+  font-weight: 600;
+  font-size: 0.8rem;
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 2px solid #dee2e6;
+  border-right: 1px solid #dee2e6;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.student-table thead th.th-checkbox { width: 44px; text-align: center; }
+.student-table thead th.th-num      { width: 44px; text-align: center; }
+.student-table thead th.th-status   { width: 110px; text-align: center; }
+
+.student-table tbody tr {
+  border-bottom: 1px solid #dee2e6;
+}
+
+.student-table tbody tr:hover {
+  background: #f8f9fa;
+  cursor: pointer;
+}
+
+.student-table tbody td {
+  padding: 7px 12px;
+  border-right: 1px solid #dee2e6;
+  vertical-align: middle;
+}
+
+.student-table tbody td.td-checkbox { text-align: center; }
+.student-table tbody td.td-num      { text-align: center; color: #6c757d; font-size: 0.75rem; }
+.student-table tbody td.td-name     { font-weight: 500; }
+.student-table tbody td.td-meta     { color: #6c757d; font-size: 0.78rem; }
+.student-table tbody td.td-status   { text-align: center; }
+
+.student-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.status-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 3px;
+  border: 1px solid #dee2e6;
+  color: #495057;
+  display: inline-block;
+}
+
+.status-badge.enrolled     { color: #198754; border-color: #a3cfbb; }
+.status-badge.not-enrolled { color: #6c757d; border-color: #dee2e6; }
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: #64748b;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  color: #cbd5e1;
+  margin-bottom: 1rem;
+}
+
+.empty-state h6 {
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+/* Summary Card */
+.summary-header, .guide-header {
+  background: #f8fafc;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.summary-header h6, .guide-header h6 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+.summary-stats {
+  padding: 1.25rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #3b82f6;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.25rem;
+}
+
+/* Upload Area */
+.upload-area {
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+  background: #f8fafc;
+  margin-bottom: 1.5rem;
+  transition: all 0.2s ease;
+}
+
+.upload-area:hover {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.upload-icon {
+  font-size: 3rem;
+  color: #3b82f6;
+  margin-bottom: 1rem;
+}
+
+.upload-content h6 {
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.upload-content p {
+  color: #64748b;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+#csvFile {
+  display: none;
+}
+
+.file-name {
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
+  color: #3b82f6;
+  font-weight: 500;
+}
+
+/* Format Guide */
+.guide-content {
+  padding: 1.25rem;
+}
+
+.format-table {
+  margin-bottom: 1.5rem;
+}
+
+.format-row {
+  display: flex;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.format-row.header {
+  font-weight: 600;
+  color: #374151;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.format-col {
+  flex: 1;
+  font-size: 0.8125rem;
+}
+
+.format-col code {
+  background: #f1f5f9;
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
+.required {
+  color: #dc2626;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+.optional {
+  color: #64748b;
+  font-size: 0.75rem;
+}
+
+.sample-format h6 {
+  font-size: 0.8125rem;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.sample-csv {
+  display: block;
+  background: #1e293b;
+  color: #e2e8f0;
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  overflow-x: auto;
+}
+
+/* Form Actions */
+.form-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+/* Responsive Design */
+@media (max-width: 991.98px) {
+  .student-nav .nav-link {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+  }
+  
+  .card-header {
+    padding: 1.25rem;
+  }
+  
+  .card-body {
+    padding: 1.25rem;
+  }
+  
+  .student-item {
+    padding: 0.875rem 1rem;
+  }
+  
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+  
+  .form-actions .btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .student-nav { flex-direction: column; }
+  .student-nav .nav-link { margin-right: 0; margin-bottom: 0.5rem; text-align: center; }
+  .student-avatar { width: 35px; height: 35px; font-size: 0.8125rem; }
+  .upload-area { padding: 1.5rem 1rem; }
+  .upload-icon { font-size: 2.5rem; }
+}
+
+/* ── Dark mode overrides ──────────────────────────────────── */
+[data-theme="dark"] .student-nav-container { background: var(--card-bg); }
+[data-theme="dark"] .student-nav .nav-link { border-color: var(--border); color: var(--text-muted); }
+[data-theme="dark"] .student-nav .nav-link:hover { background: var(--bg); color: var(--text); border-color: var(--border); }
+[data-theme="dark"] .student-enrollment-card,
+[data-theme="dark"] .upload-card,
+[data-theme="dark"] .enrollment-summary-card,
+[data-theme="dark"] .format-guide-card { background: var(--card-bg); border-color: var(--border); }
+[data-theme="dark"] .card-title { color: var(--text); }
+[data-theme="dark"] .card-subtitle { color: var(--text-muted); }
+[data-theme="dark"] .student-list-container { border-color: var(--border); }
+[data-theme="dark"] .student-table thead th { background: var(--bg); color: var(--text); border-color: var(--border); }
+[data-theme="dark"] .student-table tbody tr { border-color: var(--border); }
+[data-theme="dark"] .student-table tbody tr:hover { background: var(--surface-tertiary); }
+[data-theme="dark"] .student-table tbody td { border-color: var(--border); color: var(--text); }
+[data-theme="dark"] .student-table tbody td.td-num,
+[data-theme="dark"] .student-table tbody td.td-meta { color: var(--text-muted); }
+[data-theme="dark"] .status-badge { border-color: var(--border); color: var(--text-muted); }
+[data-theme="dark"] .status-badge.enrolled { color: #6ee7b7; border-color: rgba(16,185,129,.3); }
+[data-theme="dark"] .summary-header,
+[data-theme="dark"] .guide-header { background: var(--bg); border-color: var(--border); }
+[data-theme="dark"] .summary-header h6,
+[data-theme="dark"] .guide-header h6 { color: var(--text); }
+[data-theme="dark"] .stat-item { background: var(--bg); }
+[data-theme="dark"] .stat-label { color: var(--text-muted); }
+[data-theme="dark"] .upload-area { border-color: var(--border); background: var(--bg); }
+[data-theme="dark"] .upload-content h6 { color: var(--text); }
+[data-theme="dark"] .upload-content p { color: var(--text-muted); }
+[data-theme="dark"] .format-row { border-color: var(--border); }
+[data-theme="dark"] .format-row.header { color: var(--text); border-color: var(--border); }
+[data-theme="dark"] .format-col { color: var(--text); }
+[data-theme="dark"] .format-col code { background: var(--surface-tertiary); color: var(--text); }
+[data-theme="dark"] .sample-format h6 { color: var(--text); }
+[data-theme="dark"] .empty-state { color: var(--text-muted); }
+[data-theme="dark"] .empty-state h6 { color: var(--text); }
+[data-theme="dark"] .empty-icon { color: var(--border); }
+</style>
+
+<!-- ── Add Student Modal ───────────────────────────────────────────────── -->
+<div class="modal fade" id="addStudentModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:440px;">
+    <div class="modal-content" style="border:none;border-radius:10px;overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,.2);">
+
+      <div class="modal-header py-2 px-4" style="background:#1565c0;border:none;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <i class="bi bi-person-plus" style="font-size:1.1rem;color:#fff;"></i>
+          <div>
+            <div style="font-weight:800;font-size:.92rem;color:#fff;">Add Student</div>
+            <div style="font-size:.7rem;color:rgba(255,255,255,.65);">
+              Creates account if not found — auto-enrolls in this course
+            </div>
+          </div>
+        </div>
+        <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body px-4 py-3" style="background:#f8faff;">
+        <div id="addStudentError" class="alert alert-danger py-2 mb-3 d-none" style="font-size:.82rem;">
+          <i class="bi bi-exclamation-triangle-fill me-1"></i>
+          <span id="addStudentErrorMsg"></span>
+        </div>
+        <div id="addStudentSuccess" class="alert alert-success py-2 mb-3 d-none" style="font-size:.82rem;">
+          <i class="bi bi-check-circle-fill me-1"></i>
+          <span id="addStudentSuccessMsg"></span>
+        </div>
+
+        <div class="row g-2 mb-2">
+          <div class="col-6">
+            <label class="form-label fw-semibold mb-1" style="font-size:.8rem;">First Name *</label>
+            <input type="text" id="asFirstName" class="form-control form-control-sm" placeholder="Juan">
+          </div>
+          <div class="col-6">
+            <label class="form-label fw-semibold mb-1" style="font-size:.8rem;">Last Name *</label>
+            <input type="text" id="asLastName" class="form-control form-control-sm" placeholder="Dela Cruz">
+          </div>
+        </div>
+        <div class="mb-2">
+          <label class="form-label fw-semibold mb-1" style="font-size:.8rem;">Student ID *</label>
+          <input type="text" id="asStudentId" class="form-control form-control-sm" placeholder="e.g. 2023-0145">
+          <div class="form-text" style="font-size:.72rem;">
+            <i class="bi bi-key me-1"></i>Username &amp; password will be set to the Student ID.
+          </div>
+        </div>
+        <div class="mb-1">
+          <label class="form-label fw-semibold mb-1" style="font-size:.8rem;">Section / Department <span class="text-muted fw-normal">(optional)</span></label>
+          <input type="text" id="asDepartment" class="form-control form-control-sm" placeholder="e.g. BSIT-2A">
+        </div>
+      </div>
+
+      <div class="modal-footer px-4 py-2" style="background:#fff;border-top:1px solid #e2e8f0;gap:8px;">
+        <button type="button" class="btn btn-sm btn-outline-secondary px-3"
+                data-bs-dismiss="modal" id="addStudentCancelBtn">Cancel</button>
+        <button type="button" class="btn btn-sm btn-primary px-4"
+                id="addStudentBtn" onclick="submitAddStudent()">
+          <i class="bi bi-person-plus me-1"></i>Add &amp; Enroll
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Toggle checkbox when clicking on row
+function toggleCheckbox(row) {
+  const checkbox = row.querySelector('.student-checkbox');
+  if (checkbox) {
+    checkbox.checked = !checkbox.checked;
+    updateCount();
+    updateSelectAllCheckbox();
+  }
+}
+
+// Select all functionality
+function toggleSelectAll() {
+  const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+  const checkboxes = document.querySelectorAll('.student-checkbox');
+  
+  checkboxes.forEach(cb => {
+    cb.checked = selectAllCheckbox.checked;
+  });
+  
+  updateCount();
+}
+
+// Update enrolled count
+function updateCount() {
+  const checked = document.querySelectorAll('.student-checkbox:checked').length;
+  document.getElementById('enrolledCount').textContent = checked;
+  updateSelectAllCheckbox();
+}
+
+// Update select all checkbox state
+function updateSelectAllCheckbox() {
+  const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+  const checkboxes = document.querySelectorAll('.student-checkbox');
+  const checkedBoxes = document.querySelectorAll('.student-checkbox:checked');
+  
+  if (checkboxes.length === 0) {
+    selectAllCheckbox.checked = false;
+    selectAllCheckbox.indeterminate = false;
+  } else if (checkedBoxes.length === checkboxes.length) {
+    selectAllCheckbox.checked = true;
+    selectAllCheckbox.indeterminate = false;
+  } else if (checkedBoxes.length > 0) {
+    selectAllCheckbox.checked = false;
+    selectAllCheckbox.indeterminate = true;
+  } else {
+    selectAllCheckbox.checked = false;
+    selectAllCheckbox.indeterminate = false;
+  }
+}
+
+// File upload handling — show selected file name
+const csvFileInput = document.getElementById('csvFile');
+if (csvFileInput) {
+  csvFileInput.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    const nameEl = document.getElementById('fileName');
+    if (file) {
+      nameEl.textContent = file.name;
+      nameEl.style.color = '#16a34a';
+    } else {
+      nameEl.textContent = '';
+    }
+  });
+}
+
+// Drag-and-drop support on the upload area
+(function () {
+  const area = document.getElementById('uploadArea');
+  const fileInput = document.getElementById('csvFile');
+  if (!area) return;
+  ['dragenter','dragover'].forEach(ev => area.addEventListener(ev, e => {
+    e.preventDefault(); area.style.borderColor = '#3b82f6'; area.style.background = '#eff6ff';
+  }));
+  ['dragleave','drop'].forEach(ev => area.addEventListener(ev, e => {
+    e.preventDefault(); area.style.borderColor = ''; area.style.background = '';
+  }));
+  area.addEventListener('drop', e => {
+    const files = e.dataTransfer.files;
+    if (files.length && files[0].name.endsWith('.csv')) {
+      fileInput.files = files;
+      document.getElementById('fileName').textContent = files[0].name;
+      document.getElementById('fileName').style.color = '#16a34a';
+    }
+  });
+})();
+
+// Auto-switch to Upload tab when page was redirected from CSV upload
+document.addEventListener('DOMContentLoaded', function () {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('tab') === 'upload') {
+    const uploadTab = document.getElementById('upload-tab');
+    if (uploadTab) uploadTab.click();
+  }
+
+  // Initialize select all checkbox state
+  updateSelectAllCheckbox();
+
+  // Add change listeners to all checkboxes
+  const checkboxes = document.querySelectorAll('.student-checkbox');
+  checkboxes.forEach(cb => cb.addEventListener('change', updateCount));
+
+  // "Upload CSV" shortcut from empty-state
+  document.getElementById('switchToUploadBtn')?.addEventListener('click', () => {
+    document.getElementById('upload-tab')?.click();
+  });
+
+  // Reset add-student modal when closed
+  document.getElementById('addStudentModal')?.addEventListener('hidden.bs.modal', () => {
+    ['asFirstName','asLastName','asStudentId','asDepartment'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    document.getElementById('addStudentError').classList.add('d-none');
+    document.getElementById('addStudentSuccess').classList.add('d-none');
+    const btn = document.getElementById('addStudentBtn');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-person-plus me-1"></i>Add &amp; Enroll';
+  });
+});
+
+// ── Add Student (AJAX) ────────────────────────────────────────────────────────
+const ADD_STUDENT_URL = '{% url "accounts:ajax_add_student" course.pk %}';
+const CSRF = document.querySelector('[name=csrfmiddlewaretoken]')?.value
+             || document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+
+async function submitAddStudent() {
+  const firstName  = document.getElementById('asFirstName').value.trim();
+  const lastName   = document.getElementById('asLastName').value.trim();
+  const studentId  = document.getElementById('asStudentId').value.trim();
+  const department = document.getElementById('asDepartment').value.trim();
+
+  document.getElementById('addStudentError').classList.add('d-none');
+  document.getElementById('addStudentSuccess').classList.add('d-none');
+
+  if (!firstName || !lastName || !studentId) {
+    showAddError('First name, last name and student ID are required.');
+    return;
+  }
+
+  const btn = document.getElementById('addStudentBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Adding…';
+
+  try {
+    const body = new URLSearchParams({
+      first_name: firstName, last_name: lastName,
+      student_id: studentId, department,
+    });
+    const resp = await fetch(ADD_STUDENT_URL, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': CSRF, 'X-Requested-With': 'XMLHttpRequest' },
+      body,
+    });
+    const data = await resp.json();
+
+    if (!data.success) {
+      showAddError(data.error || 'Could not add student.');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-person-plus me-1"></i>Add &amp; Enroll';
+      return;
+    }
+
+    const s = data.student;
+    const action = data.enrolled_now
+      ? (data.created_account ? 'Account created and enrolled.' : 'Existing account enrolled.')
+      : 'Student is already enrolled in this course.';
+
+    document.getElementById('addStudentSuccessMsg').textContent =
+      `${s.name} (${s.student_id}) — ${action}`;
+    document.getElementById('addStudentSuccess').classList.remove('d-none');
+
+    // Inject the new row into the table if student wasn't already listed
+    if (!document.querySelector(`input[value="${s.pk}"]`)) {
+      injectStudentRow(s);
+    }
+
+    // Re-enable button with "Add Another" label
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-person-plus me-1"></i>Add Another';
+
+    // Clear inputs for next entry
+    ['asFirstName','asLastName','asStudentId','asDepartment'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+
+  } catch (e) {
+    showAddError('Network error — please try again.');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-person-plus me-1"></i>Add &amp; Enroll';
+  }
+}
+
+function showAddError(msg) {
+  document.getElementById('addStudentErrorMsg').textContent = msg;
+  document.getElementById('addStudentError').classList.remove('d-none');
+}
+
+function injectStudentRow(s) {
+  const tbody = document.querySelector('.student-table tbody');
+  // Remove "no students" empty row if present
+  const emptyRow = tbody.querySelector('td[colspan]')?.closest('tr');
+  if (emptyRow) emptyRow.remove();
+
+  const rowCount = tbody.querySelectorAll('tr').length + 1;
+  const tr = document.createElement('tr');
+  tr.setAttribute('onclick', 'toggleCheckbox(this)');
+  tr.setAttribute('data-search',
+    `${s.name.toLowerCase()} ${s.username.toLowerCase()} ${s.student_id.toLowerCase()}`);
+  tr.innerHTML = `
+    <td class="td-checkbox" onclick="event.stopPropagation()">
+      <input type="checkbox" name="students" value="${s.pk}"
+             class="student-checkbox" checked onchange="updateCount()">
+    </td>
+    <td class="td-num">${rowCount}</td>
+    <td class="td-name">${s.name}</td>
+    <td class="td-meta">${s.username}</td>
+    <td class="td-meta">${s.student_id}</td>
+    <td class="td-meta">${s.email || '—'}</td>
+    <td class="td-status">
+      <span class="status-badge enrolled">Enrolled</span>
+    </td>`;
+  tbody.appendChild(tr);
+  tr.querySelector('.student-checkbox').addEventListener('change', updateCount);
+  updateCount();
+}
+</script>
+
+{% endblock %}

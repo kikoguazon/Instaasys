@@ -1,0 +1,23 @@
+{% extends 'accounts/course_base.html' %}
+{% load crispy_forms_tags %}
+{% block course_content %}
+
+<div class="d-flex gap-2 mb-4">
+  <a href="{% url 'assessments:question_detail' course.pk question.pk %}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> Back to Question
+  </a>
+</div>
+
+<div style="max-width:720px;">
+  <div class="page-card">
+    <h6 class="fw-bold mb-1">Edit Question</h6>
+    <p class="text-muted mb-4" style="font-size:.825rem;">
+      {{ question.week_ref }} — {{ question.topic|truncatechars:60 }}
+    </p>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% crispy form %}
+    </form>
+  </div>
+</div>
+{% endblock %}

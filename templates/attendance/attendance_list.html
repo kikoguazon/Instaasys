@@ -1,0 +1,297 @@
+{% extends 'accounts/course_base.html' %}
+{% block course_content %}
+
+<style>
+.time-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: .72rem; font-weight: 600;
+  background: #eff6ff; color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px; padding: 2px 7px;
+  white-space: nowrap;
+}
+.time-badge i { font-size: .7rem; }
+[data-theme="dark"] .time-badge {
+  background: rgba(59,130,246,.15);
+  color: #93c5fd;
+  border-color: rgba(59,130,246,.3);
+}
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h5 class="fw-bold mb-1">Attendance</h5>
+    <p class="text-muted mb-0" style="font-size:.85rem;">
+      {{ total_sessions }} session{{ total_sessions|pluralize }} recorded
+      · {{ total_students }} student{{ total_students|pluralize }}
+    </p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'attendance:attendance_summary' course.pk %}"
+       class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-bar-chart me-1"></i> Summary
+    </a>
+    <a href="{% url 'attendance:attendance_export' course.pk %}"
+       class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-download me-1"></i> Export
+    </a>
+    <button type="button" class="btn btn-sm btn-primary"
+            data-bs-toggle="modal" data-bs-target="#newSessionModal">
+      <i class="bi bi-plus-lg me-1"></i> New Session
+    </button>
+  </div>
+</div>
+
+<div class="page-card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0" style="font-size:.875rem;">
+      <thead>
+        <tr>
+          <th style="width:40px;">#</th>
+          <th>Date &amp; Time</th>
+          <th>Notes</th>
+          <th class="text-center">Present</th>
+          <th class="text-center">Absent</th>
+          <th class="text-center">Late</th>
+          <th class="text-center">Excused</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="sessionTbody">
+        <!-- Populated by InfiniteScroll -->
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── Delete Session Modal ──────────────────────────────────────────────── -->
+<div class="modal fade" id="deleteSessionModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0">
+      <div class="modal-header bg-danger text-white border-0 py-3">
+        <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i>Delete Attendance Session</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <p class="mb-2">Are you sure you want to delete the session for <strong id="deleteSessionDate"></strong>?</p>
+        <p class="text-danger small mb-0">
+          This will remove all attendance records for this session.
+        </p>
+      </div>
+      <div class="modal-footer border-0 gap-2">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form id="deleteSessionForm" method="post" style="display: inline;">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Yes, Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── New Session Modal ──────────────────────────────────────────────── -->
+<div class="modal fade" id="newSessionModal" tabindex="-1" aria-labelledby="newSessionLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:460px;">
+    <div class="modal-content" style="border:none;border-radius:10px;overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,.22);">
+
+      <!-- Header -->
+      <div class="modal-header py-2 px-4" style="background:#1565c0;border:none;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <i class="bi bi-calendar-plus" style="font-size:1.1rem;color:#fff;"></i>
+          <div>
+            <div style="font-weight:800;font-size:.92rem;color:#fff;letter-spacing:.02em;">New Attendance Session</div>
+            <div style="font-size:.7rem;color:rgba(255,255,255,.65);">All students will be marked Present by default</div>
+          </div>
+        </div>
+        <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
+      </div>
+
+      <!-- Body -->
+      <div class="modal-body px-4 py-3" style="background:#f8faff;">
+
+        <!-- Error alert (hidden by default) -->
+        <div id="sessionError" class="alert alert-danger py-2 mb-3 d-none" style="font-size:.82rem;">
+          <i class="bi bi-exclamation-triangle-fill me-1"></i>
+          <span id="sessionErrorMsg"></span>
+        </div>
+
+        <form id="newSessionForm" novalidate>
+          {% csrf_token %}
+
+          <!-- Date -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold" style="font-size:.83rem;">
+              <i class="bi bi-calendar3 me-1 text-primary"></i>Date
+            </label>
+            {{ form.date }}
+          </div>
+
+          <!-- Time schedule -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold" style="font-size:.83rem;">
+              <i class="bi bi-clock me-1 text-primary"></i>Time Schedule
+              <span class="text-muted fw-normal">(optional)</span>
+            </label>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <div style="flex:1;">
+                <div style="font-size:.72rem;color:#64748b;font-weight:600;margin-bottom:3px;">START</div>
+                {{ form.time_start }}
+              </div>
+              <div style="padding-top:18px;color:#94a3b8;font-size:.82rem;font-weight:700;">—</div>
+              <div style="flex:1;">
+                <div style="font-size:.72rem;color:#64748b;font-weight:600;margin-bottom:3px;">END</div>
+                {{ form.time_end }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div class="mb-1">
+            <label class="form-label fw-semibold" style="font-size:.83rem;">
+              <i class="bi bi-pencil me-1 text-primary"></i>Notes
+              <span class="text-muted fw-normal">(optional)</span>
+            </label>
+            {{ form.notes }}
+          </div>
+
+        </form>
+      </div>
+
+      <!-- Footer -->
+      <div class="modal-footer px-4 py-3" style="background:#fff;border-top:1px solid #e2e8f0;gap:8px;">
+        <button type="button" class="btn btn-sm btn-outline-secondary px-3"
+                data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-sm btn-primary px-4" id="createSessionBtn"
+                onclick="submitNewSession()">
+          <i class="bi bi-check-lg me-1"></i>Create &amp; Mark Attendance
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const CREATE_URL = '{% url "attendance:attendance_create" course.pk %}';
+const CSRF_TOKEN = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+async function submitNewSession() {
+  const btn     = document.getElementById('createSessionBtn');
+  const errBox  = document.getElementById('sessionError');
+  const errMsg  = document.getElementById('sessionErrorMsg');
+  const form    = document.getElementById('newSessionForm');
+
+  // Clear previous errors
+  errBox.classList.add('d-none');
+  form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+
+  // Basic client-side validation — date is required
+  const dateInput = form.querySelector('[name=date]');
+  if (!dateInput.value) {
+    dateInput.classList.add('is-invalid');
+    showError('Please select a date for the session.');
+    return;
+  }
+
+  // Time validation — if both set, start must be before end
+  const timeStart = form.querySelector('[name=time_start]').value;
+  const timeEnd   = form.querySelector('[name=time_end]').value;
+  if (timeStart && timeEnd && timeStart >= timeEnd) {
+    showError('End time must be after start time.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Creating…';
+
+  const data = new FormData(form);
+
+  try {
+    const resp = await fetch(CREATE_URL, {
+      method: 'POST',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRFToken': CSRF_TOKEN,
+      },
+      body: data,
+    });
+    const json = await resp.json();
+
+    if (json.success) {
+      // Navigate to the mark-attendance page
+      window.location.href = json.redirect;
+    } else {
+      const msg = json.error || 'Could not create session. Please check the fields.';
+      showError(msg);
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Create &amp; Mark Attendance';
+    }
+  } catch (e) {
+    showError('Network error — please try again.');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Create &amp; Mark Attendance';
+  }
+}
+
+function showError(msg) {
+  const errBox = document.getElementById('sessionError');
+  document.getElementById('sessionErrorMsg').textContent = msg;
+  errBox.classList.remove('d-none');
+}
+
+// ── Infinite Scroll for session table ────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+  new InstaUI.InfiniteScroll({
+    container:     document.getElementById('sessionTbody'),
+    url:           '{% url "attendance:attendance_list" course.pk %}',
+    skeletonType:  'table',
+    skeletonCount: 5,
+    onEmpty: function () {
+      document.getElementById('sessionTbody').innerHTML =
+        '<tr><td colspan="8" class="text-center py-4 text-muted">' +
+        '<i class="bi bi-calendar-check" style="font-size:2rem;display:block;opacity:.3;"></i>' +
+        'No sessions yet. Create the first one above.</td></tr>';
+    },
+  });
+});
+
+// Allow Enter key in the form to submit
+document.getElementById('newSessionForm')?.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { e.preventDefault(); submitNewSession(); }
+});
+
+// Reset form and errors when modal closes
+document.getElementById('newSessionModal')?.addEventListener('hidden.bs.modal', function () {
+  document.getElementById('sessionError').classList.add('d-none');
+  const btn = document.getElementById('createSessionBtn');
+  btn.disabled = false;
+  btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Create &amp; Mark Attendance';
+  document.getElementById('newSessionForm')
+    .querySelectorAll('.is-invalid')
+    .forEach(el => el.classList.remove('is-invalid'));
+});
+
+// Delete session modal handler
+document.addEventListener('DOMContentLoaded', function () {
+  const deleteModal = new bootstrap.Modal(document.getElementById('deleteSessionModal'));
+  const deleteForm = document.getElementById('deleteSessionForm');
+  const courseId = '{{ course.pk }}';
+
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('.delete-session-btn')) {
+      const btn = e.target.closest('.delete-session-btn');
+      const sessionId = btn.dataset.sessionId;
+      const sessionDate = btn.dataset.sessionDate;
+
+      document.getElementById('deleteSessionDate').textContent = sessionDate;
+      deleteForm.action = `/attendance/course/${courseId}/session/${sessionId}/delete/`;
+
+      deleteModal.show();
+    }
+  });
+});
+</script>
+{% endblock %}

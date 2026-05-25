@@ -1,0 +1,69 @@
+{% extends 'accounts/course_base.html' %}
+{% block course_content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h5 class="fw-bold mb-1">Attendance Summary</h5>
+    <p class="text-muted mb-0" style="font-size:.85rem;">
+      {{ total_sessions }} session{{ total_sessions|pluralize }} · {{ summary|length }} student{{ summary|length|pluralize }}
+    </p>
+  </div>
+  <a href="{% url 'attendance:attendance_list' course.pk %}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i> Sessions
+  </a>
+</div>
+
+{% if summary %}
+<div class="page-card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0" style="font-size:.875rem;">
+      <thead>
+        <tr>
+          <th style="width:50px;">#</th>
+          <th>Student Name</th>
+          <th class="text-center">Present</th>
+          <th class="text-center">Absent</th>
+          <th class="text-center">Late</th>
+          <th class="text-center">Excused</th>
+          <th class="text-center">Attendance %</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in summary %}
+        <tr>
+          <td class="text-muted">{{ forloop.counter }}</td>
+          <td class="fw-semibold">{{ row.student.get_full_name }}</td>
+          <td class="text-center">
+            <span class="badge" style="background:#dcfce7;color:#166534;">{{ row.present }}</span>
+          </td>
+          <td class="text-center">
+            <span class="badge" style="background:#fee2e2;color:#991b1b;">{{ row.absent }}</span>
+          </td>
+          <td class="text-center">
+            <span class="badge" style="background:#fef3c7;color:#92400e;">{{ row.late }}</span>
+          </td>
+          <td class="text-center">
+            <span class="badge" style="background:#dbeafe;color:#1e40af;">{{ row.excused }}</span>
+          </td>
+          <td class="text-center">
+            <div class="d-flex align-items-center justify-content-center gap-2">
+              <div class="progress" style="width:80px;height:6px;">
+                <div class="progress-bar {% if row.percentage >= 80 %}bg-success{% elif row.percentage >= 60 %}bg-warning{% else %}bg-danger{% endif %}"
+                     style="width:{{ row.percentage }}%"></div>
+              </div>
+              <span class="fw-semibold" style="min-width:45px;">{{ row.percentage }}%</span>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="page-card text-center py-5">
+  <p class="text-muted mb-0">No students enrolled yet.</p>
+</div>
+{% endif %}
+
+{% endblock %}

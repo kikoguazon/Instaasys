@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% block title %}Courses — Admin Portal{% endblock %}
+{% block page_title %}Course Overview{% endblock %}
+{% block content %}
+<style>
+.prog-badge {
+  display:inline-block;padding:.2rem .55rem;border-radius:6px;
+  font-size:.68rem;font-weight:700;
+}
+.status-badge {
+  display:inline-block;padding:.2rem .55rem;border-radius:6px;
+  font-size:.68rem;font-weight:700;
+}
+.courses-table { width:100%;border-collapse:collapse;font-size:.83rem; }
+.courses-table th {
+  background:#f8fafc;border-bottom:2px solid #e2e8f0;
+  padding:.65rem 1rem;font-size:.7rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:.06em;color:#64748b;text-align:left;
+}
+.courses-table td { padding:.75rem 1rem;border-bottom:1px solid #f1f5f9;vertical-align:middle; }
+.courses-table tr:last-child td { border-bottom:none; }
+.courses-table tr:hover td { background:#f8fafc; }
+</style>
+
+<div class="d-flex gap-2 mb-4">
+  <a href="{% url 'accounts:portal_dashboard' %}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i> Dashboard
+  </a>
+</div>
+
+<!-- Summary strip -->
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-bottom:1.25rem;">
+  {% for prog, label, color, bg in course_summary %}
+  {% endfor %}
+  <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:.875rem 1.1rem;">
+    <div style="font-size:1.4rem;font-weight:900;color:#0f172a;">{{ courses|length }}</div>
+    <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;font-weight:600;">Total Courses</div>
+  </div>
+  <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:.875rem 1.1rem;">
+    <div style="font-size:1.4rem;font-weight:900;color:#4f46e5;">
+      {{ courses|length }}
+    </div>
+    <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;font-weight:600;">Active</div>
+  </div>
+</div>
+
+<div class="page-card" style="padding:0;overflow:hidden;">
+  <div style="overflow-x:auto;">
+    <table class="courses-table">
+      <thead>
+        <tr>
+          <th>Course</th>
+          <th>Program</th>
+          <th>Instructor</th>
+          <th>Block</th>
+          <th>Semester</th>
+          <th>Students</th>
+          <th>Status</th>
+          <th>Created</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in courses %}
+        <tr>
+          <td>
+            <div style="font-weight:700;color:#0f172a;">{{ c.code|default:"—" }}</div>
+            <div style="font-size:.75rem;color:#94a3b8;">{{ c.title|truncatechars:36 }}</div>
+          </td>
+          <td>
+            {% if c.program %}
+            <span class="prog-badge"
+                  style="{% if c.program == 'IT' %}background:#e0f2fe;color:#0369a1;
+                         {% elif c.program == 'CS' %}background:#ede9fe;color:#5b21b6;
+                         {% else %}background:#fef3c7;color:#92400e;{% endif %}">
+              {{ c.program }}
+            </span>
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            <div style="font-size:.8rem;font-weight:600;color:#0f172a;">
+              {{ c.instructor.get_full_name|default:c.instructor.username }}
+            </div>
+            <div style="font-size:.72rem;color:#94a3b8;">@{{ c.instructor.username }}</div>
+          </td>
+          <td>
+            {% if c.block %}
+            <span style="background:#f1f5f9;color:#475569;font-size:.75rem;font-weight:700;
+                         padding:.2rem .55rem;border-radius:6px;">{{ c.block }}</span>
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            <span style="font-size:.78rem;color:#64748b;">
+              {{ c.get_semester_display }} {{ c.school_year }}
+            </span>
+          </td>
+          <td>
+            <div style="display:flex;align-items:center;gap:.5rem;">
+              <span style="font-size:1rem;font-weight:800;color:#4f46e5;">{{ c.enroll_count }}</span>
+              <div style="flex:1;height:5px;background:#eef2ff;border-radius:3px;overflow:hidden;min-width:40px;">
+                {% if c.enroll_count %}
+                <div style="height:100%;background:#6366f1;border-radius:3px;
+                            width:{% widthratio c.enroll_count 50 100 %}%;max-width:100%;"></div>
+                {% endif %}
+              </div>
+            </div>
+          </td>
+          <td>
+            <span class="status-badge"
+                  style="{% if c.status == 'confirmed' or c.status == 'ready' %}background:#dcfce7;color:#166534;
+                         {% elif c.status == 'draft' %}background:#fef3c7;color:#92400e;
+                         {% elif c.status == 'failed' %}background:#fee2e2;color:#991b1b;
+                         {% else %}background:#e0f2fe;color:#0369a1;{% endif %}">
+              {{ c.get_status_display }}
+            </span>
+          </td>
+          <td style="font-size:.75rem;color:#94a3b8;">{{ c.created_at|date:"M d, Y" }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" style="text-align:center;padding:3rem;color:#94a3b8;font-size:.85rem;">
+            <i class="bi bi-book" style="font-size:2rem;display:block;margin-bottom:.5rem;opacity:.4;"></i>
+            No courses found.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

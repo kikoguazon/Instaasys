@@ -1,0 +1,42 @@
+{% for session in sessions %}
+<tr>
+  <td class="text-muted">{{ forloop.counter }}</td>
+  <td>
+    <div class="fw-semibold">{{ session.date|date:"M d, Y (D)" }}</div>
+    {% if session.time_start or session.time_end %}
+    <div class="mt-1">
+      <span class="time-badge">
+        <i class="bi bi-clock"></i>
+        {% if session.time_start %}{{ session.time_start|time:"g:i A" }}{% endif %}
+        {% if session.time_start and session.time_end %} – {% endif %}
+        {% if session.time_end %}{{ session.time_end|time:"g:i A" }}{% endif %}
+      </span>
+    </div>
+    {% endif %}
+  </td>
+  <td class="text-muted">{{ session.notes|default:"—" }}</td>
+  <td class="text-center">
+    <span class="badge att-badge-present">{{ session.present_count }}</span>
+  </td>
+  <td class="text-center">
+    <span class="badge att-badge-absent">{{ session.absent_count }}</span>
+  </td>
+  <td class="text-center">
+    <span class="badge att-badge-late">{{ session.late_count }}</span>
+  </td>
+  <td class="text-center">
+    <span class="badge att-badge-excused">{{ session.excused_count }}</span>
+  </td>
+  <td class="text-end">
+    <a href="{% url 'attendance:attendance_mark' course.pk session.pk %}"
+       class="btn btn-sm btn-outline-primary" title="Edit Attendance">
+      <i class="bi bi-pencil"></i>
+    </a>
+    <button type="button" class="btn btn-sm btn-outline-danger delete-session-btn"
+            data-session-id="{{ session.pk }}" data-session-date="{{ session.date|date:'M d, Y' }}"
+            title="Delete">
+      <i class="bi bi-trash"></i>
+    </button>
+  </td>
+</tr>
+{% endfor %}

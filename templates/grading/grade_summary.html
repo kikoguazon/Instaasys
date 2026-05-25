@@ -1,0 +1,742 @@
+{% extends 'accounts/course_base.html' %}
+{% block course_content %}
+<style>
+/* ── Column editor modal ─────────────────────────────────────────────── */
+.col-editor-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; background: #f8faff;
+  border: 1px solid #e3e8f0; border-radius: 7px;
+  margin-bottom: 6px; transition: background .12s;
+}
+.col-editor-row:hover { background: #eef3ff; }
+.col-editor-row.deleted { opacity: .45; pointer-events: none; }
+.col-num-badge {
+  width: 34px; height: 34px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: .72rem; flex-shrink: 0;
+}
+.col-num-badge.cs  { background: #eef2ff; color: #4338ca; }
+.col-num-badge.pt  { background: #ecfdf5; color: #059669; }
+.col-num-badge.fcs { background: #ede9fe; color: #7c3aed; }
+.col-num-badge.fpt { background: #d1fae5; color: #065f46; }
+.col-num-badge.ex  { background: #fff7ed; color: #ea580c; }
+.col-editor-row input[type=text]   { flex: 1; font-size: .85rem; }
+.col-editor-row input[type=number] { width: 68px; font-size: .85rem; text-align: center; }
+.col-add-btn {
+  width: 100%; border: 2px dashed #cbd5e1; background: transparent;
+  color: #64748b; border-radius: 7px; padding: 7px;
+  font-size: .8rem; font-weight: 600; cursor: pointer;
+  transition: all .15s; margin-top: 4px;
+}
+.col-add-btn:hover      { border-color: #4f46e5; color: #4f46e5; background: #eef2ff; }
+.col-add-btn.pt:hover   { border-color: #059669; color: #059669; background: #ecfdf5; }
+.col-add-btn.fcs:hover  { border-color: #7c3aed; color: #7c3aed; background: #ede9fe; }
+.col-add-btn.fpt:hover  { border-color: #065f46; color: #065f46; background: #d1fae5; }
+.col-section-label {
+  display: flex; align-items: center; gap: 8px;
+  font-size: .72rem; font-weight: 800; letter-spacing: .06em;
+  text-transform: uppercase; padding: 6px 4px 4px;
+  margin-top: 12px; border-top: 1px solid #e2e8f0; color: #475569;
+}
+.col-section-label:first-child { margin-top: 0; border-top: none; }
+.col-section-label .col-section-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.col-list-header {
+  display: flex; gap: 8px; padding: 3px 10px 5px;
+  font-size: .67rem; font-weight: 700; color: #94a3b8;
+  text-transform: uppercase; letter-spacing: .05em;
+}
+.term-divider {
+  background: #334155; color: #e2e8f0;
+  font-size: .72rem; font-weight: 800; letter-spacing: .08em;
+  text-transform: uppercase; padding: 6px 16px;
+  display: flex; align-items: center; gap: 8px;
+}
+</style>
+
+<style>
+/* Use same styles as midterm/final sheets */
+.ec-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 10px;
+  border-bottom: 2px solid #1565c0;
+}
+.ec-tab {
+  padding: 5px 18px;
+  font-size: .78rem;
+  font-weight: 700;
+  border: 1px solid #ccc;
+  border-bottom: none;
+  background: #f5f5f5;
+  color: #555;
+  cursor: pointer;
+  text-decoration: none;
+  border-radius: 4px 4px 0 0;
+  margin-right: 2px;
+}
+.ec-tab.active {
+  background: #1565c0;
+  color: #fff;
+  border-color: #1565c0;
+}
+.ec-tab:hover:not(.active) { background: #e3f2fd; color: #1565c0; }
+
+.ec-table {
+  border-collapse: collapse;
+  font-size: .72rem;
+  font-family: 'Calibri', 'Segoe UI', sans-serif;
+  white-space: nowrap;
+  background: #fff;
+  width: 100%;
+}
+.ec-table th, .ec-table td {
+  border: 1px solid #9e9e9e;
+  padding: 6px 8px;
+  text-align: center;
+  vertical-align: middle;
+}
+.ec-table thead th {
+  background: #1565c0;
+  color: #fff;
+  font-weight: 700;
+  font-size: .73rem;
+  letter-spacing: .02em;
+  padding: 6px 8px;
+}
+.ec-table thead th.th-name {
+  background: #0d47a1;
+  text-align: left;
+  min-width: 180px;
+}
+.ec-table tbody tr:nth-child(even) td { background: #f5f5f5; }
+.ec-table tbody tr:hover td { background: #e3f2fd !important; }
+.ec-table tbody td.td-name {
+  text-align: left;
+  font-weight: 600;
+  background: #fafafa !important;
+  border-right: 2px solid #9e9e9e;
+  padding-left: 8px;
+}
+.ec-table tbody td.td-num {
+  background: #f0f0f0 !important;
+  color: #888;
+  font-size: .68rem;
+  width: 30px;
+  border-right: 1px solid #bbb;
+}
+.ec-table td.grade-pass {
+  background: #c8e6c9 !important;
+  color: #1b5e20;
+  font-weight: 800;
+  font-size: .85rem;
+}
+.ec-table td.grade-fail {
+  background: #ffcdd2 !important;
+  color: #b71c1c;
+  font-weight: 800;
+  font-size: .85rem;
+}
+.ec-table td.grade-blank {
+  background: #f5f5f5 !important;
+  color: #aaa;
+  font-size: .82rem;
+}
+.ec-table td.equiv-cell {
+  font-size: .75rem;
+  color: #555;
+  font-weight: 600;
+}
+
+.ec-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+</style>
+
+{% if summary_rows %}
+<!-- Term tabs -->
+<div class="ec-tabs">
+  <a href="{% url 'grading:eclass_record' course.pk %}" class="ec-tab">Midterm</a>
+  <a href="{% url 'grading:midterm_sheet' course.pk %}" class="ec-tab">Final</a>
+  <a href="{% url 'grading:grade_summary' course.pk %}" class="ec-tab active">Final Semestral Grade</a>
+</div>
+
+<!-- Toolbar -->
+<div class="ec-toolbar">
+
+  <a href="{% url 'grading:export_grades' course.pk %}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-download me-1"></i> Export
+  </a>
+</div>
+
+<!-- Stats row -->
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;">
+  <div style="background:#fff;border:1px solid #9e9e9e;padding:8px 12px;display:flex;align-items:center;gap:10px;">
+    <div style="width:36px;height:36px;border-radius:8px;background:#eef2ff;display:flex;align-items:center;justify-content:center;color:#4f46e5;">
+      <i class="bi bi-people-fill"></i>
+    </div>
+    <div>
+      <div style="font-size:1.4rem;font-weight:800;color:#0f172a;line-height:1;">{{ total }}</div>
+      <div style="font-size:.68rem;color:#64748b;text-transform:uppercase;letter-spacing:.05em;font-weight:600;">Total Students</div>
+    </div>
+  </div>
+  <div style="background:#fff;border:1px solid #9e9e9e;padding:8px 12px;display:flex;align-items:center;gap:10px;">
+    <div style="width:36px;height:36px;border-radius:8px;background:#ecfdf5;display:flex;align-items:center;justify-content:center;color:#059669;">
+      <i class="bi bi-check-circle-fill"></i>
+    </div>
+    <div>
+      <div style="font-size:1.4rem;font-weight:800;color:#059669;line-height:1;">{{ passed }}</div>
+      <div style="font-size:.68rem;color:#64748b;text-transform:uppercase;letter-spacing:.05em;font-weight:600;">Passed</div>
+    </div>
+  </div>
+  <div style="background:#fff;border:1px solid #9e9e9e;padding:8px 12px;display:flex;align-items:center;gap:10px;">
+    <div style="width:36px;height:36px;border-radius:8px;background:#fef2f2;display:flex;align-items:center;justify-content:center;color:#dc2626;">
+      <i class="bi bi-x-circle-fill"></i>
+    </div>
+    <div>
+      <div style="font-size:1.4rem;font-weight:800;color:#dc2626;line-height:1;">{{ failed }}</div>
+      <div style="font-size:.68rem;color:#64748b;text-transform:uppercase;letter-spacing:.05em;font-weight:600;">Failed</div>
+    </div>
+  </div>
+</div>
+
+<!-- Grade Breakdown Table with Full Computation -->
+<div style="margin-bottom:16px;padding:12px;background:#f0f9ff;border:1px solid #bfdbfe;border-radius:6px;font-size:.8rem;color:#1e40af;">
+  <i class="bi bi-info-circle me-2"></i>
+  <strong>Grade Formula:</strong> CS (20%) = Attendance (1/3) + CS Scores (2/3) | PT (20%) | AO (20%) | Exam (40%)
+  <br>
+  <strong>Term Grade:</strong> 60 + (Initial Grade × 0.4) | <strong>Final Semestral Grade:</strong> (Midterm + Final) ÷ 2
+</div>
+
+<div style="overflow-x:auto;">
+  <table class="ec-table" style="font-size:.75rem;">
+    <thead>
+      <tr>
+        <th style="width:30px;">#</th>
+        <th class="th-name">Student Name</th>
+        <th style="background:#e0e7ff;text-align:center;" colspan="5">MIDTERM TERM</th>
+        <th style="background:#fef3c7;text-align:center;" colspan="5">FINAL TERM</th>
+        <th style="background:#d1fae5;text-align:center;" colspan="2">FINAL SEMESTRAL</th>
+      </tr>
+      <tr>
+        <th colspan="2" style="background:#fff;"></th>
+        <th style="background:#e0e7ff;">CS%</th>
+        <th style="background:#e0e7ff;">PT%</th>
+        <th style="background:#e0e7ff;">AO%</th>
+        <th style="background:#e0e7ff;">Ex%</th>
+        <th style="background:#e0e7ff;">Grade</th>
+        <th style="background:#fef3c7;">CS%</th>
+        <th style="background:#fef3c7;">PT%</th>
+        <th style="background:#fef3c7;">AO%</th>
+        <th style="background:#fef3c7;">Ex%</th>
+        <th style="background:#fef3c7;">Grade</th>
+        <th style="background:#d1fae5;">FSG</th>
+        <th style="background:#d1fae5;">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in summary_rows %}
+      <tr>
+        <td class="td-num">{{ forloop.counter }}</td>
+        <td class="td-name">
+          {{ row.enrollment.student.get_full_name }}
+          {% if row.enrollment.student.student_id %}
+          <span style="font-size:.62rem;color:#999;font-weight:400;"> · {{ row.enrollment.student.student_id }}</span>
+          {% endif %}
+        </td>
+        <!-- Midterm Components -->
+        <td style="background:#f3f4f6;text-align:center;">{{ row.cs_mid|default:"—" }}</td>
+        <td style="background:#f3f4f6;text-align:center;">{{ row.pt_mid|default:"—" }}</td>
+        <td style="background:#f3f4f6;text-align:center;">{{ row.ao_mid|default:"—" }}</td>
+        <td style="background:#f3f4f6;text-align:center;">{{ row.exam_mid|default:"—" }}</td>
+        <td style="background:#e0e7ff;text-align:center;font-weight:700;">{{ row.tg_mid|default:"—" }}</td>
+        <!-- Final Components -->
+        <td style="background:#fef9e7;text-align:center;">{{ row.cs_fin|default:"—" }}</td>
+        <td style="background:#fef9e7;text-align:center;">{{ row.pt_fin|default:"—" }}</td>
+        <td style="background:#fef9e7;text-align:center;">{{ row.ao_fin|default:"—" }}</td>
+        <td style="background:#fef9e7;text-align:center;">{{ row.exam_fin|default:"—" }}</td>
+        <td style="background:#fef3c7;text-align:center;font-weight:700;">{{ row.tg_fin|default:"—" }}</td>
+        <!-- Final Semestral Grade -->
+        <td style="background:#f0fdf4;text-align:center;font-weight:800;{% if row.fsg %}{% if row.fsg >= 75 %}color:#15803d;{% else %}color:#dc2626;{% endif %}{% endif %}">
+          {{ row.fsg|default:"—" }}
+        </td>
+        <td style="text-align:center;">
+          {% if row.fsg %}
+            {% if row.passed %}
+              <span style="font-size:.65rem;font-weight:700;background:#c8e6c9;color:#1b5e20;padding:.15rem .4rem;border-radius:10px;white-space:nowrap;">PASSED</span>
+            {% else %}
+              <span style="font-size:.65rem;font-weight:700;background:#ffcdd2;color:#b71c1c;padding:.15rem .4rem;border-radius:10px;white-space:nowrap;">FAILED</span>
+            {% endif %}
+          {% else %}
+            <span style="font-size:.65rem;background:#f5f5f5;color:#aaa;padding:.15rem .4rem;border-radius:10px;">—</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr style="background:#e8eaf6;font-weight:700;">
+        <td colspan="2" style="padding:8px 6px;">CLASS STATISTICS</td>
+        <td colspan="12" style="padding:8px 6px;">
+          Total: {{ total }} | Passed: {{ passed }} | Failed: {{ failed }}
+          {% if class_avg %} | Average: {{ class_avg }}{% endif %}
+          {% if total_sessions %} | Sessions: {{ total_sessions }}{% endif %}
+        </td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+
+{% else %}
+<div class="page-card text-center py-5">
+  <i class="bi bi-people" style="font-size:2.5rem;color:#cbd5e1;"></i>
+  <p class="mt-3 text-muted">No students enrolled yet.</p>
+  <a href="{% url 'accounts:enroll_students' course.pk %}" class="btn btn-primary btn-sm">Enroll Students</a>
+</div>
+{% endif %}
+
+<!-- Hidden CSRF token for AJAX calls -->
+<form style="display:none;">{% csrf_token %}</form>
+
+<!-- ── Column Editor Modal (All Terms) ──────────────────────────────── -->
+<div class="modal fade" id="columnEditorModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content" style="border:none;border-radius:10px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.25);">
+      <div class="modal-header py-2 px-4" style="background:#1565c0;border:none;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <i class="bi bi-table" style="font-size:1.1rem;color:#fff;"></i>
+          <div>
+            <div style="font-weight:800;font-size:.92rem;color:#fff;letter-spacing:.02em;">Manage All Columns</div>
+            <div style="font-size:.7rem;color:rgba(255,255,255,.65);">Rename, add or delete columns for Midterm &amp; Final</div>
+          </div>
+        </div>
+        <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body p-0" style="background:#f1f5f9;">
+
+        <!-- ══ MIDTERM TERM DIVIDER ══ -->
+        <div class="term-divider">
+          <i class="bi bi-1-circle-fill"></i> MIDTERM TERM
+        </div>
+
+        <!-- Midterm CS -->
+        <div style="padding:14px 16px 10px;">
+          <div class="col-section-label" style="border-top:none;margin-top:0;">
+            <div class="col-section-dot" style="background:#4f46e5;"></div>
+            CLASS STANDING (CS) — 20%
+          </div>
+          <div class="col-list-header">
+            <div style="width:44px;">#</div>
+            <div style="flex:1;">Column Name</div>
+            <div style="width:80px;text-align:center;">HPS (Max)</div>
+            <div style="width:34px;"></div>
+          </div>
+          <div id="mcsColumnsList">
+            {% for col in ww_col_data %}
+            <div class="col-editor-row" id="mcs-row-{{ col.n }}" data-type="mcs" data-col="{{ col.n }}">
+              <div class="col-num-badge cs" style="font-size:.68rem;">CS{{ col.n }}</div>
+              <input type="text" class="form-control form-control-sm"
+                     value="{{ col.name }}" data-original="{{ col.name }}"
+                     placeholder="Column name"
+                     oninput="markColumnChanged(this,'mcs',{{ col.n }})">
+              <input type="number" class="form-control form-control-sm"
+                     value="{{ col.max }}" min="1" data-original="{{ col.max }}"
+                     style="width:80px;text-align:center;"
+                     oninput="markHpsChanged(this,'ww',{{ col.n }})">
+              <button type="button" class="btn btn-sm btn-outline-danger px-2"
+                      onclick="markDelete('mcs',{{ col.n }})" title="Delete"
+                      style="width:34px;flex-shrink:0;">
+                <i class="bi bi-trash3-fill" style="font-size:.7rem;"></i>
+              </button>
+            </div>
+            {% endfor %}
+          </div>
+          <button type="button" class="col-add-btn" onclick="queueAdd('mcs')">
+            <i class="bi bi-plus-circle me-1"></i>Add Midterm CS Column
+          </button>
+        </div>
+
+        <hr style="margin:0;border-color:#dde3f0;">
+
+        <!-- Midterm PT -->
+        <div style="padding:14px 16px 10px;">
+          <div class="col-section-label" style="border-top:none;margin-top:0;">
+            <div class="col-section-dot" style="background:#059669;"></div>
+            PERFORMANCE TASK (PT) — 40%
+          </div>
+          <div class="col-list-header">
+            <div style="width:44px;">#</div>
+            <div style="flex:1;">Column Name</div>
+            <div style="width:80px;text-align:center;">HPS (Max)</div>
+            <div style="width:34px;"></div>
+          </div>
+          <div id="mptColumnsList">
+            {% for col in pt_col_data %}
+            <div class="col-editor-row" id="mpt-row-{{ col.n }}" data-type="mpt" data-col="{{ col.n }}">
+              <div class="col-num-badge pt" style="font-size:.68rem;">PT{{ col.n }}</div>
+              <input type="text" class="form-control form-control-sm"
+                     value="{{ col.name }}" data-original="{{ col.name }}"
+                     placeholder="Column name"
+                     oninput="markColumnChanged(this,'mpt',{{ col.n }})">
+              <input type="number" class="form-control form-control-sm"
+                     value="{{ col.max }}" min="1" data-original="{{ col.max }}"
+                     style="width:80px;text-align:center;"
+                     oninput="markHpsChanged(this,'pt',{{ col.n }})">
+              <button type="button" class="btn btn-sm btn-outline-danger px-2"
+                      onclick="markDelete('mpt',{{ col.n }})" title="Delete"
+                      style="width:34px;flex-shrink:0;">
+                <i class="bi bi-trash3-fill" style="font-size:.7rem;"></i>
+              </button>
+            </div>
+            {% endfor %}
+          </div>
+          <button type="button" class="col-add-btn pt" onclick="queueAdd('mpt')">
+            <i class="bi bi-plus-circle me-1"></i>Add Midterm PT Column
+          </button>
+        </div>
+
+        <hr style="margin:0;border-color:#dde3f0;">
+
+        <!-- Midterm Major Exam -->
+        <div style="padding:14px 16px 14px;">
+          <div class="col-section-label" style="border-top:none;margin-top:0;">
+            <div class="col-section-dot" style="background:#ea580c;"></div>
+            MAJOR EXAMS — 40%
+          </div>
+          <div class="col-editor-row" style="background:#fff7ed;border-color:#fed7aa;">
+            <div class="col-num-badge ex"><i class="bi bi-journal-text" style="font-size:.8rem;"></i></div>
+            <div style="flex:1;font-size:.84rem;font-weight:600;color:#9a3412;">
+              Midterm Major Examination
+              <div style="font-size:.71rem;color:#b45309;font-weight:400;margin-top:1px;">Single score per student</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+              <span style="font-size:.73rem;color:#78716c;white-space:nowrap;">HPS (Max):</span>
+              <input type="number" class="form-control form-control-sm"
+                     value="{{ course.requirement_max }}" min="1"
+                     style="width:80px;text-align:center;"
+                     oninput="markHpsChanged(this,'qa',0)">
+            </div>
+            <div style="width:34px;"></div>
+          </div>
+        </div>
+
+        <!-- ══ FINAL TERM DIVIDER ══ -->
+        <div class="term-divider">
+          <i class="bi bi-2-circle-fill"></i> FINAL TERM
+        </div>
+
+        <!-- Final CS -->
+        <div style="padding:14px 16px 10px;">
+          <div class="col-section-label" style="border-top:none;margin-top:0;">
+            <div class="col-section-dot" style="background:#7c3aed;"></div>
+            CLASS STANDING (CS) — 20%
+          </div>
+          <div class="col-list-header">
+            <div style="width:44px;">#</div>
+            <div style="flex:1;">Column Name</div>
+            <div style="width:80px;text-align:center;">HPS (Max)</div>
+            <div style="width:34px;"></div>
+          </div>
+          <div id="fcsColumnsList">
+            {% for col in fcs_col_data %}
+            <div class="col-editor-row" id="fcs-row-{{ col.n }}" data-type="fcs" data-col="{{ col.n }}">
+              <div class="col-num-badge fcs" style="font-size:.68rem;">CS{{ col.n }}</div>
+              <input type="text" class="form-control form-control-sm"
+                     value="{{ col.name }}" data-original="{{ col.name }}"
+                     placeholder="Column name"
+                     oninput="markColumnChanged(this,'fcs',{{ col.n }})">
+              <input type="number" class="form-control form-control-sm"
+                     value="{{ col.max }}" min="1" data-original="{{ col.max }}"
+                     style="width:80px;text-align:center;"
+                     oninput="markHpsChanged(this,'fcs',{{ col.n }})">
+              <button type="button" class="btn btn-sm btn-outline-danger px-2"
+                      onclick="markDelete('fcs',{{ col.n }})" title="Delete"
+                      style="width:34px;flex-shrink:0;">
+                <i class="bi bi-trash3-fill" style="font-size:.7rem;"></i>
+              </button>
+            </div>
+            {% endfor %}
+          </div>
+          <button type="button" class="col-add-btn fcs" onclick="queueAdd('fcs')">
+            <i class="bi bi-plus-circle me-1"></i>Add Final CS Column
+          </button>
+        </div>
+
+        <hr style="margin:0;border-color:#dde3f0;">
+
+        <!-- Final PT -->
+        <div style="padding:14px 16px 10px;">
+          <div class="col-section-label" style="border-top:none;margin-top:0;">
+            <div class="col-section-dot" style="background:#065f46;"></div>
+            PERFORMANCE TASK (PT) — 40%
+          </div>
+          <div class="col-list-header">
+            <div style="width:44px;">#</div>
+            <div style="flex:1;">Column Name</div>
+            <div style="width:80px;text-align:center;">HPS (Max)</div>
+            <div style="width:34px;"></div>
+          </div>
+          <div id="fptColumnsList">
+            {% for col in fpt_col_data %}
+            <div class="col-editor-row" id="fpt-row-{{ col.n }}" data-type="fpt" data-col="{{ col.n }}">
+              <div class="col-num-badge fpt" style="font-size:.68rem;">PT{{ col.n }}</div>
+              <input type="text" class="form-control form-control-sm"
+                     value="{{ col.name }}" data-original="{{ col.name }}"
+                     placeholder="Column name"
+                     oninput="markColumnChanged(this,'fpt',{{ col.n }})">
+              <input type="number" class="form-control form-control-sm"
+                     value="{{ col.max }}" min="1" data-original="{{ col.max }}"
+                     style="width:80px;text-align:center;"
+                     oninput="markHpsChanged(this,'fpt',{{ col.n }})">
+              <button type="button" class="btn btn-sm btn-outline-danger px-2"
+                      onclick="markDelete('fpt',{{ col.n }})" title="Delete"
+                      style="width:34px;flex-shrink:0;">
+                <i class="bi bi-trash3-fill" style="font-size:.7rem;"></i>
+              </button>
+            </div>
+            {% endfor %}
+          </div>
+          <button type="button" class="col-add-btn fpt" onclick="queueAdd('fpt')">
+            <i class="bi bi-plus-circle me-1"></i>Add Final PT Column
+          </button>
+        </div>
+
+        <hr style="margin:0;border-color:#dde3f0;">
+
+        <!-- Final Major Exam -->
+        <div style="padding:14px 16px 14px;">
+          <div class="col-section-label" style="border-top:none;margin-top:0;">
+            <div class="col-section-dot" style="background:#ea580c;"></div>
+            MAJOR EXAMS — 40%
+          </div>
+          <div class="col-editor-row" style="background:#fff7ed;border-color:#fed7aa;">
+            <div class="col-num-badge ex"><i class="bi bi-journal-text" style="font-size:.8rem;"></i></div>
+            <div style="flex:1;font-size:.84rem;font-weight:600;color:#9a3412;">
+              Final Major Examination
+              <div style="font-size:.71rem;color:#b45309;font-weight:400;margin-top:1px;">Single score per student</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+              <span style="font-size:.73rem;color:#78716c;white-space:nowrap;">HPS (Max):</span>
+              <input type="number" class="form-control form-control-sm"
+                     value="{{ course.final_exam_max }}" min="1"
+                     style="width:80px;text-align:center;"
+                     oninput="markHpsChanged(this,'fexam',0)">
+            </div>
+            <div style="width:34px;"></div>
+          </div>
+        </div>
+
+      </div><!-- /modal-body -->
+
+      <div class="modal-footer py-2 px-4" style="background:#fff;border-top:1px solid #e2e8f0;gap:10px;">
+        <span id="col-editor-status" style="font-size:.75rem;color:#64748b;flex:1;min-width:0;"></span>
+        <button type="button" class="btn btn-sm btn-outline-secondary px-3" data-bs-dismiss="modal"
+                onclick="resetPending()">Cancel</button>
+        <button type="button" class="btn btn-sm btn-primary px-4" id="colEditorSaveBtn"
+                onclick="saveColumnChanges()">
+          <i class="bi bi-check2-circle me-1"></i>Apply Changes
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block extra_js %}
+<script>
+// Column editor — tracks pending changes across both Midterm and Final
+let pending = { renames: {}, hpsChanges: {}, deletes: new Set(), adds: [] };
+
+// Maps for list IDs and add button labels per type
+const TYPE_META = {
+  mcs:  { list: 'mcsColumnsList',  badge: 'cs',  addLabel: 'Add Midterm CS Column',  addClass: '' },
+  mpt:  { list: 'mptColumnsList',  badge: 'pt',  addLabel: 'Add Midterm PT Column',  addClass: 'pt' },
+  fcs:  { list: 'fcsColumnsList',  badge: 'fcs', addLabel: 'Add Final CS Column',     addClass: 'fcs' },
+  fpt:  { list: 'fptColumnsList',  badge: 'fpt', addLabel: 'Add Final PT Column',     addClass: 'fpt' },
+};
+
+function openColumnEditor() {
+  resetPending();
+  new bootstrap.Modal(document.getElementById('columnEditorModal')).show();
+}
+
+function resetPending() {
+  pending = { renames: {}, hpsChanges: {}, deletes: new Set(), adds: [] };
+  document.querySelectorAll('.col-editor-row').forEach(row => {
+    row.style.opacity = ''; row.style.pointerEvents = '';
+    row.querySelector('.undo-badge')?.remove();
+    row.querySelectorAll('input').forEach(i => { i.style.background = ''; i.style.borderColor = ''; });
+  });
+  document.querySelectorAll('.col-add-btn').forEach(btn => {
+    const oc = btn.getAttribute('onclick') || '';
+    let label = 'Add Column';
+    if (oc.includes("'mcs'"))      label = 'Add Midterm CS Column';
+    else if (oc.includes("'mpt'")) label = 'Add Midterm PT Column';
+    else if (oc.includes("'fcs'")) label = 'Add Final CS Column';
+    else if (oc.includes("'fpt'")) label = 'Add Final PT Column';
+    btn.innerHTML = `<i class="bi bi-plus-circle me-1"></i>${label}`;
+  });
+  document.querySelectorAll('.col-editor-row.preview').forEach(r => r.remove());
+  updateEditorStatus();
+}
+
+function updateEditorStatus() {
+  const total = Object.keys(pending.renames).length +
+                Object.keys(pending.hpsChanges).length +
+                pending.deletes.size + pending.adds.length;
+  const el = document.getElementById('col-editor-status');
+  if (!el) return;
+  el.innerHTML = total > 0
+    ? `<i class="bi bi-pencil-square me-1" style="color:#f59e0b;"></i><span style="color:#b45309;">${total} unsaved change(s)</span>`
+    : '<span style="color:#94a3b8;">No pending changes</span>';
+}
+
+function markColumnChanged(input, type, colNum) {
+  const key = `${type}_${colNum}`;
+  const val = input.value.trim();
+  if (val !== input.dataset.original) {
+    pending.renames[key] = { type, col: colNum, name: val };
+    input.style.background = '#fefce8'; input.style.borderColor = '#fbbf24';
+  } else {
+    delete pending.renames[key];
+    input.style.background = ''; input.style.borderColor = '';
+  }
+  updateEditorStatus();
+}
+
+function markHpsChanged(input, prefix, colNum) {
+  const val = parseInt(input.value);
+  if (!isNaN(val) && val > 0) {
+    pending.hpsChanges[`${prefix}_${colNum}`] = { prefix, col: colNum, max: val };
+    input.style.background = '#fefce8'; input.style.borderColor = '#fbbf24';
+  }
+  updateEditorStatus();
+}
+
+function markDelete(type, colNum) {
+  const key = `${type}_${colNum}`;
+  const row = document.getElementById(`${type}-row-${colNum}`);
+  if (!row) return;
+  if (pending.deletes.has(key)) {
+    pending.deletes.delete(key);
+    row.style.opacity = ''; row.style.pointerEvents = '';
+    row.querySelector('.undo-badge')?.remove();
+  } else {
+    pending.deletes.add(key);
+    row.style.opacity = '.4'; row.style.pointerEvents = 'none';
+    const badge = document.createElement('span');
+    badge.className = 'badge bg-danger undo-badge';
+    badge.style.cssText = 'pointer-events:auto;cursor:pointer;font-size:.68rem;margin-left:4px;';
+    badge.innerHTML = '🗑 Undo';
+    badge.onclick = e => { e.stopPropagation(); markDelete(type, colNum); };
+    row.appendChild(badge);
+  }
+  updateEditorStatus();
+}
+
+function queueAdd(type) {
+  pending.adds.push({ type });
+  const btn = event.currentTarget;
+  const n = pending.adds.filter(a => a.type === type).length;
+  const meta = TYPE_META[type];
+  const list = document.getElementById(meta.list);
+  const preview = document.createElement('div');
+  preview.className = 'col-editor-row preview';
+  preview.style.cssText = 'border-style:dashed;background:#f8faff;opacity:.75;';
+  preview.innerHTML = `
+    <div class="col-num-badge ${meta.badge}" style="opacity:.6;font-size:.68rem;">+</div>
+    <input class="form-control form-control-sm" placeholder="New column (auto-named)" disabled>
+    <input type="number" class="form-control form-control-sm" value="10" disabled style="width:80px;text-align:center;">
+    <span class="badge bg-success" style="font-size:.68rem;white-space:nowrap;width:34px;flex-shrink:0;">+Add</span>`;
+  list.appendChild(preview);
+  btn.innerHTML = `<i class="bi bi-check-circle-fill me-1" style="color:#16a34a;"></i>${n} column(s) queued`;
+  updateEditorStatus();
+}
+
+async function saveColumnChanges() {
+  const csrf    = document.querySelector('[name=csrfmiddlewaretoken]')?.value
+                  || document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+  const saveBtn = document.getElementById('colEditorSaveBtn');
+  const status  = document.getElementById('col-editor-status');
+
+  const hasChanges = Object.keys(pending.renames).length ||
+                     Object.keys(pending.hpsChanges).length ||
+                     pending.deletes.size || pending.adds.length;
+  if (!hasChanges) {
+    bootstrap.Modal.getInstance(document.getElementById('columnEditorModal'))?.hide();
+    return;
+  }
+
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving…';
+  status.innerHTML  = '<span style="color:#64748b;">Applying changes…</span>';
+
+  const midtermUrl = '{% url "grading:autosave_score" course.pk %}';
+  const finalUrl   = '{% url "grading:final_autosave_score" course.pk %}';
+
+  const post = (url, body) => fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrf },
+    body: new URLSearchParams(body)
+  });
+
+  try {
+    // 1. Renames
+    for (const { type, col, name } of Object.values(pending.renames)) {
+      if (type === 'mcs')      await post(midtermUrl, { field_name: `ww_name_${col}`, value: name });
+      else if (type === 'mpt') await post(midtermUrl, { field_name: `pt_name_${col}`, value: name });
+      else if (type === 'fcs') await post(finalUrl,   { field_name: `fcs_name_${col}`, value: name });
+      else if (type === 'fpt') await post(finalUrl,   { field_name: `fpt_name_${col}`, value: name });
+    }
+
+    // 2. HPS changes
+    for (const { prefix, col, max } of Object.values(pending.hpsChanges)) {
+      if (prefix === 'ww')        await post(midtermUrl, { field_name: `ww_max_${col}`, value: max });
+      else if (prefix === 'pt')   await post(midtermUrl, { field_name: `pt_max_${col}`, value: max });
+      else if (prefix === 'qa')   await post(midtermUrl, { field_name: 'qa_max', value: max });
+      else if (prefix === 'fcs')  await post(finalUrl,   { field_name: `fcs_max_${col}`, value: max });
+      else if (prefix === 'fpt')  await post(finalUrl,   { field_name: `fpt_max_${col}`, value: max });
+      else if (prefix === 'fexam') await post(finalUrl,  { field_name: 'fexam_max', value: max });
+    }
+
+    // 3. Deletes — highest column number first
+    const sortedDeletes = [...pending.deletes].sort((a, b) => {
+      const [, ca] = a.split('_'); const [, cb] = b.split('_');
+      return parseInt(cb) - parseInt(ca);
+    });
+    for (const key of sortedDeletes) {
+      const [type, col] = key.split('_');
+      let url;
+      if (type === 'mcs')      url = '{% url "grading:delete_ww_column" course.pk 0 %}'.replace('/0/', `/${col}/`);
+      else if (type === 'mpt') url = '{% url "grading:delete_pt_column" course.pk 0 %}'.replace('/0/', `/${col}/`);
+      else if (type === 'fcs') url = '{% url "grading:delete_final_cs_column" course.pk 0 %}'.replace('/0/', `/${col}/`);
+      else if (type === 'fpt') url = '{% url "grading:delete_final_pt_column" course.pk 0 %}'.replace('/0/', `/${col}/`);
+      if (url) await fetch(url, { method: 'GET' });
+    }
+
+    // 4. Adds
+    for (const { type } of pending.adds) {
+      let url;
+      if (type === 'mcs')      url = '{% url "grading:add_ww_column" course.pk %}';
+      else if (type === 'mpt') url = '{% url "grading:add_pt_column" course.pk %}';
+      else if (type === 'fcs') url = '{% url "grading:add_final_cs_column" course.pk %}';
+      else if (type === 'fpt') url = '{% url "grading:add_final_pt_column" course.pk %}';
+      if (url) await fetch(url, { method: 'GET' });
+    }
+
+    status.innerHTML = '<span style="color:#16a34a;"><i class="bi bi-check-circle-fill me-1"></i>Done! Reloading…</span>';
+    window.location.reload();
+  } catch (err) {
+    console.error(err);
+    status.innerHTML = '<span style="color:#dc2626;"><i class="bi bi-x-circle-fill me-1"></i>Error — please try again.</span>';
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = '<i class="bi bi-check2-circle me-1"></i>Apply Changes';
+  }
+}
+</script>
+{% endblock %}

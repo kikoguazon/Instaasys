@@ -1,0 +1,862 @@
+{% extends 'base.html' %}
+{% block title %}Edit Blueprint — {{ plan.topic }}{% endblock %}
+{% block page_title %}Edit Lesson Blueprint{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Blueprint Editor Styles */
+.blueprint-header {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,.04);
+}
+
+.blueprint-meta-item {
+  margin-bottom: 0.75rem;
+}
+
+.blueprint-meta-label {
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: .25rem;
+}
+
+.blueprint-meta-value {
+  font-size: .875rem;
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* Blueprint Table */
+.blueprint-table-container {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,.04);
+  max-height: 70vh;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+.blueprint-table-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.blueprint-table-container::-webkit-scrollbar-track {
+  background: var(--surface-secondary);
+  border-radius: 4px;
+}
+
+.blueprint-table-container::-webkit-scrollbar-thumb {
+  background: var(--border-muted);
+  border-radius: 4px;
+}
+
+.blueprint-table-container::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+}
+
+.blueprint-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .85rem;
+}
+
+.blueprint-table thead {
+  background: var(--surface-secondary);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 1px 0 var(--border);
+}
+
+.blueprint-table thead th {
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  font-weight: 700;
+  color: var(--text-muted);
+  padding: .875rem 1rem;
+  text-align: left;
+  border-bottom: 2px solid var(--border);
+}
+
+.blueprint-table tbody td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.blueprint-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.blueprint-table tbody tr:hover {
+  background: var(--surface-secondary);
+}
+
+/* Slide Number Column */
+.slide-number-cell {
+  width: 60px;
+  text-align: center;
+}
+
+.slide-number-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--primary);
+  color: white;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: .8rem;
+}
+
+/* Editable Fields */
+.editable-field {
+  width: 100%;
+  border: 1.5px solid transparent;
+  border-radius: 8px;
+  padding: .5rem .75rem;
+  font-size: .85rem;
+  color: var(--text);
+  background: transparent;
+  transition: all .2s ease;
+  font-family: 'Inter', system-ui, sans-serif;
+  resize: vertical;
+  min-height: 60px;
+  line-height: 1.5;
+}
+
+.editable-field:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: var(--card-bg);
+  box-shadow: 0 0 0 3px rgba(79,70,229,.1);
+}
+
+.editable-field.has-error {
+  border-color: var(--danger);
+  background: var(--feedback-error-bg);
+  transition: all .2s ease;
+}
+
+.editable-field:hover:not(:focus) {
+  border-color: var(--border);
+  background: var(--surface-secondary);
+  cursor: text;
+}
+
+/* Title field - single line */
+.title-field {
+  min-height: auto;
+  resize: none;
+  overflow: hidden;
+}
+
+/* Explanation field */
+.explanation-field {
+  min-height: 80px;
+}
+
+/* Character Counter */
+.char-counter {
+  font-size: .7rem;
+  font-weight: 600;
+  margin-top: .25rem;
+  padding: .2rem .5rem;
+  border-radius: 4px;
+  display: inline-block;
+  transition: all .2s ease;
+}
+
+.char-counter.good {
+  background: var(--feedback-success-bg);
+  color: var(--feedback-success-text);
+}
+
+.char-counter.warning {
+  background: var(--feedback-warning-bg);
+  color: var(--feedback-warning-text);
+}
+
+.char-counter.error {
+  background: var(--feedback-error-bg);
+  color: var(--feedback-error-text);
+}
+
+/* Validation Indicators */
+.validation-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: .7rem;
+  margin-left: .5rem;
+  transition: all .2s ease;
+  opacity: 0;
+}
+
+.validation-icon.valid {
+  background: var(--feedback-success-bg);
+  color: var(--feedback-success-text);
+  opacity: 1;
+}
+
+.validation-icon.invalid {
+  background: var(--feedback-error-bg);
+  color: var(--feedback-error-text);
+  opacity: 1;
+}
+
+/* Action Buttons */
+.blueprint-actions {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,.04);
+  flex-wrap: wrap;
+}
+
+.btn-save-draft {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+  transition: all .2s ease;
+}
+
+.btn-save-draft:hover {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(79,70,229,.2);
+}
+
+.btn-approve {
+  background: var(--success);
+  border-color: var(--success);
+  color: white;
+  transition: all .2s ease;
+}
+
+.btn-approve:hover {
+  background: #059669;
+  border-color: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(16,185,129,.2);
+}
+
+.btn-approve:disabled,
+.btn-save-draft:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Loading State */
+.saving-indicator {
+  display: none;
+  align-items: center;
+  gap: .5rem;
+  font-size: .8rem;
+  color: var(--text-muted);
+}
+
+.saving-indicator.show {
+  display: flex;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .blueprint-table {
+    font-size: .8rem;
+  }
+  
+  .blueprint-table thead th,
+  .blueprint-table tbody td {
+    padding: .75rem;
+  }
+  
+  .editable-field {
+    font-size: .8rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .blueprint-table-container {
+    overflow-x: auto;
+    border-radius: 10px;
+  }
+  
+  .blueprint-table {
+    min-width: 800px;
+  }
+  
+  .blueprint-header {
+    padding: 1rem;
+    border-radius: 10px;
+  }
+  
+  .blueprint-actions {
+    padding: 1rem;
+    border-radius: 10px;
+  }
+  
+  .slide-number-badge {
+    width: 28px;
+    height: 28px;
+    font-size: .75rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .blueprint-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .blueprint-actions .btn {
+    width: 100%;
+  }
+  
+  .saving-indicator {
+    margin-left: 0 !important;
+    justify-content: center;
+  }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex gap-2 mb-4">
+  <a href="{% url 'lessons:lesson_detail' course.pk plan.pk %}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> Cancel
+  </a>
+</div>
+
+<!-- Blueprint Header with Metadata -->
+<div class="blueprint-header">
+  <h5 class="fw-bold mb-3">Lesson Information</h5>
+  <div class="row">
+    <div class="col-md-6">
+      <div class="blueprint-meta-item">
+        <div class="blueprint-meta-label">Topic</div>
+        <div class="blueprint-meta-value">{{ plan.topic }}</div>
+      </div>
+      <div class="blueprint-meta-item">
+        <div class="blueprint-meta-label">Week</div>
+        <div class="blueprint-meta-value">Week {{ plan.week_number }}</div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="blueprint-meta-item">
+        <div class="blueprint-meta-label">Course</div>
+        <div class="blueprint-meta-value">{{ course.code }} — {{ course.title }}</div>
+      </div>
+      <div class="blueprint-meta-item">
+        <div class="blueprint-meta-label">Total Slides</div>
+        <div class="blueprint-meta-value">{{ blueprint.slides|length }}</div>
+      </div>
+    </div>
+  </div>
+  
+  {% if blueprint.objectives %}
+  <div class="mt-3">
+    <div class="blueprint-meta-label">Learning Objectives</div>
+    <ol style="font-size:.875rem;color:var(--text-body-muted);padding-left:1.2rem;margin-top:.5rem;margin-bottom:0;">
+      {% for obj in blueprint.objectives %}
+      <li class="mb-1">{{ obj }}</li>
+      {% endfor %}
+    </ol>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Blueprint Table -->
+<div class="blueprint-table-container">
+  <table class="blueprint-table" id="blueprintTable">
+    <thead>
+      <tr>
+        <th style="width:36px;" title="Drag to reorder"><i class="bi bi-grip-vertical text-muted"></i></th>
+        <th class="slide-number-cell">Slide #</th>
+        <th style="width: 20%;">Title</th>
+        <th style="width: 35%;">Explanation</th>
+        <th style="width: 33%;">Image Prompt</th>
+      </tr>
+    </thead>
+    <tbody id="blueprintTbody">
+      {% for slide in blueprint.slides %}
+      <tr data-slide-index="{{ forloop.counter0 }}" data-index="{{ forloop.counter0 }}">
+        <td style="padding:.5rem .4rem;vertical-align:middle;">
+          <span class="drag-handle" title="Drag to reorder"><i class="bi bi-grip-vertical"></i></span>
+        </td>
+        <td class="slide-number-cell">
+          <span class="slide-number-badge">{{ forloop.counter }}</span>
+        </td>
+        <td>
+          <textarea 
+            class="editable-field title-field" 
+            data-field="title"
+            data-slide="{{ forloop.counter0 }}"
+            placeholder="Enter slide title..."
+            rows="1">{{ slide.title }}</textarea>
+          <span class="validation-icon" data-validation="title-{{ forloop.counter0 }}"></span>
+        </td>
+        <td>
+          <textarea 
+            class="editable-field explanation-field" 
+            data-field="explanation"
+            data-slide="{{ forloop.counter0 }}"
+            placeholder="Enter 2-3 sentence explanation (40-60 words)..."
+            rows="3">{{ slide.explanation }}</textarea>
+          <div class="char-counter" data-counter="explanation-{{ forloop.counter0 }}">0 words</div>
+        </td>
+        <td>
+          <textarea 
+            class="editable-field" 
+            data-field="image_prompt"
+            data-slide="{{ forloop.counter0 }}"
+            placeholder="Enter detailed image search prompt..."
+            rows="3">{{ slide.image_prompt }}</textarea>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Action Buttons -->
+<div class="blueprint-actions">
+  <button type="button" class="btn btn-save-draft" id="btnSaveDraft">
+    <i class="bi bi-floppy"></i> Save Draft
+  </button>
+  <button type="button" class="btn btn-approve" id="btnApprove">
+    <i class="bi bi-check-circle"></i> Approve & Generate
+  </button>
+  <a href="{% url 'lessons:lesson_detail' course.pk plan.pk %}" class="btn btn-outline-secondary">
+    Cancel
+  </a>
+  <div class="saving-indicator ms-auto" id="savingIndicator">
+    <div class="spinner"></div>
+    <span>Saving...</span>
+  </div>
+</div>
+
+<!-- Approval Confirmation Modal -->
+<div class="modal fade" id="approvalModal" tabindex="-1" aria-labelledby="approvalModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:16px;border:none;box-shadow:0 8px 24px rgba(0,0,0,.15);">
+      <div class="modal-header" style="border-bottom:1px solid var(--border);padding:1.5rem;">
+        <h5 class="modal-title fw-bold" id="approvalModalLabel" style="color:var(--text-body);">
+          <i class="bi bi-check-circle text-success me-2"></i>Approve & Generate Presentation
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" style="padding:1.5rem;">
+        <p style="font-size:.875rem;color:var(--text-body);margin-bottom:1rem;">
+          You're about to approve this blueprint and start generating the PowerPoint presentation. This will:
+        </p>
+        <ul style="font-size:.875rem;color:var(--text-body-muted);padding-left:1.5rem;margin-bottom:1rem;">
+          <li class="mb-2">Lock the blueprint (no further edits allowed)</li>
+          <li class="mb-2">Generate slides based on your approved content</li>
+          <li class="mb-2">Create images for each slide using AI</li>
+          <li>Compile everything into a downloadable PowerPoint file</li>
+        </ul>
+        <div class="alert alert-info d-flex align-items-start gap-2 mb-0" style="font-size:.8rem;background:var(--feedback-info-bg);border:1px solid var(--feedback-info);color:var(--feedback-info-text);">
+          <i class="bi bi-info-circle-fill" style="font-size:1rem;margin-top:2px;"></i>
+          <div>
+            <strong>Generation time:</strong> This typically takes 2-5 minutes depending on the number of slides and image complexity. You'll be notified when it's ready.
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="border-top:1px solid var(--border);padding:1rem 1.5rem;">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle"></i> Cancel
+        </button>
+        <button type="button" class="btn btn-success" id="btnConfirmApprove">
+          <i class="bi bi-check-circle"></i> Yes, Approve & Generate
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast for notifications -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:9999;">
+  <div id="blueprintToast" class="toast align-items-center text-white border-0" role="alert">
+    <div class="d-flex">
+      <div class="toast-body fw-semibold" id="toastBody"></div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+  'use strict';
+  
+  // Store blueprint data
+  let blueprintData = {{ blueprint|safe }};
+  const csrfToken = '{{ csrf_token }}';
+  const updateUrl  = '{% url "lessons:lesson_blueprint_update" course.pk plan.pk %}';
+  const approveUrl = '{% url "lessons:lesson_blueprint_approve" course.pk plan.pk %}';
+  const reorderUrl = '{% url "lessons:lesson_blueprint_reorder" course.pk plan.pk %}';
+  
+  // Initialize
+  document.addEventListener('DOMContentLoaded', function() {
+    initializeFields();
+    attachEventListeners();
+
+    // ── Drag & Drop slide reordering ─────────────────────────
+    new InstaUI.DragDrop({
+      container:      document.getElementById('blueprintTbody'),
+      itemSelector:   'tr[data-slide-index]',
+      handleSelector: '.drag-handle',
+      keyAttr:        'data-slide-index',
+      saveUrl:        reorderUrl,
+      saveCsrf:       csrfToken,
+      savePayloadKey: 'order',
+      onReorder: function (newOrder) {
+        // Renumber slide badges in the DOM
+        const rows = document.querySelectorAll('#blueprintTbody tr[data-slide-index]');
+        rows.forEach((row, idx) => {
+          const badge = row.querySelector('.slide-number-badge');
+          if (badge) badge.textContent = idx + 1;
+        });
+        // Keep blueprintData in sync
+        const reordered = newOrder.map(i => blueprintData.slides[parseInt(i)]);
+        blueprintData.slides = reordered;
+      },
+    });
+  });
+  
+  // Initialize all fields
+  function initializeFields() {
+    // Auto-resize textareas
+    document.querySelectorAll('.editable-field').forEach(field => {
+      autoResize(field);
+      
+      // Initialize validation for title fields
+      if (field.dataset.field === 'title') {
+        validateTitle(field);
+      }
+      
+      // Initialize word count for explanation fields
+      if (field.dataset.field === 'explanation') {
+        updateWordCount(field);
+      }
+    });
+  }
+  
+  // Debounce timer for auto-save
+  let autoSaveTimer = null;
+  const AUTO_SAVE_DELAY = 2000; // 2 seconds debounce
+  
+  // Attach event listeners
+  function attachEventListeners() {
+    // Auto-resize on input
+    document.querySelectorAll('.editable-field').forEach(field => {
+      field.addEventListener('input', function() {
+        autoResize(this);
+        
+        if (this.dataset.field === 'title') {
+          validateTitle(this);
+        }
+        
+        if (this.dataset.field === 'explanation') {
+          updateWordCount(this);
+        }
+        
+        // Update blueprint data
+        updateBlueprintData(this);
+        
+        // Trigger debounced auto-save
+        debouncedAutoSave();
+      });
+      
+      // Auto-save on blur
+      field.addEventListener('blur', function() {
+        // Cancel any pending debounced save
+        if (autoSaveTimer) {
+          clearTimeout(autoSaveTimer);
+          autoSaveTimer = null;
+        }
+        // Save immediately on blur
+        autoSave();
+      });
+    });
+    
+    // Save draft button
+    document.getElementById('btnSaveDraft').addEventListener('click', saveDraft);
+    
+    // Approve button
+    document.getElementById('btnApprove').addEventListener('click', approveBlueprint);
+  }
+  
+  // Auto-resize textarea
+  function autoResize(textarea) {
+    textarea.style.height = 'auto';
+    textarea.style.height = textarea.scrollHeight + 'px';
+  }
+  
+  // Validate title field
+  function validateTitle(field) {
+    const slideIndex = field.dataset.slide;
+    const value = field.value.trim();
+    const icon = document.querySelector(`[data-validation="title-${slideIndex}"]`);
+    
+    if (!icon) return;
+    
+    if (value.length === 0) {
+      field.classList.add('has-error');
+      icon.className = 'validation-icon invalid';
+      icon.innerHTML = '<i class="bi bi-x"></i>';
+      icon.style.display = 'inline-flex';
+    } else {
+      field.classList.remove('has-error');
+      icon.className = 'validation-icon valid';
+      icon.innerHTML = '<i class="bi bi-check"></i>';
+      icon.style.display = 'inline-flex';
+    }
+  }
+  
+  // Update word count for explanation
+  function updateWordCount(field) {
+    const slideIndex = field.dataset.slide;
+    const text = field.value.trim();
+    const words = text.length > 0 ? text.split(/\s+/).length : 0;
+    const counter = document.querySelector(`[data-counter="explanation-${slideIndex}"]`);
+    
+    if (!counter) return;
+    
+    counter.textContent = `${words} words`;
+    
+    // Color coding: 20-60 good, 10-20 or 60-80 warning, <10 or >80 error
+    if (words >= 20 && words <= 60) {
+      counter.className = 'char-counter good';
+    } else if ((words >= 10 && words < 20) || (words > 60 && words <= 80)) {
+      counter.className = 'char-counter warning';
+    } else {
+      counter.className = 'char-counter error';
+    }
+  }
+  
+  // Update blueprint data object
+  function updateBlueprintData(field) {
+    const slideIndex = parseInt(field.dataset.slide);
+    const fieldName = field.dataset.field;
+    const value = field.value;
+    
+    if (blueprintData.slides && blueprintData.slides[slideIndex]) {
+      blueprintData.slides[slideIndex][fieldName] = value;
+    }
+  }
+  
+  // Debounced auto-save (triggered on input)
+  function debouncedAutoSave() {
+    // Clear existing timer
+    if (autoSaveTimer) {
+      clearTimeout(autoSaveTimer);
+    }
+    
+    // Set new timer
+    autoSaveTimer = setTimeout(() => {
+      autoSave();
+      autoSaveTimer = null;
+    }, AUTO_SAVE_DELAY);
+  }
+  
+  // Auto-save function (called on blur or after debounce delay)
+  function autoSave() {
+    // Don't show saving indicator for auto-save to avoid UI noise
+    fetch(updateUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken
+      },
+      body: JSON.stringify({ blueprint: blueprintData })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        // Silently saved - could add a subtle indicator if desired
+        console.log('Auto-saved successfully');
+      } else {
+        console.error('Auto-save failed:', data.error);
+      }
+    })
+    .catch(error => {
+      console.error('Auto-save network error:', error);
+    });
+  }
+  
+  // Validate all fields before approval
+  function validateAllFields() {
+    let isValid = true;
+    const errors = [];
+    
+    // Check all titles
+    document.querySelectorAll('[data-field="title"]').forEach(field => {
+      if (field.value.trim().length === 0) {
+        isValid = false;
+        const slideNum = parseInt(field.dataset.slide) + 1;
+        errors.push(`Slide ${slideNum}: Title is required`);
+      }
+    });
+    
+    // Check all explanations
+    document.querySelectorAll('[data-field="explanation"]').forEach(field => {
+      const text = field.value.trim();
+      const words = text.length > 0 ? text.split(/\s+/).length : 0;
+      if (words < 20 || words > 200) {
+        isValid = false;
+        const slideNum = parseInt(field.dataset.slide) + 1;
+        errors.push(`Slide ${slideNum}: Explanation should be 20-200 words (currently ${words})`);
+      }
+    });
+    
+    return { isValid, errors };
+  }
+  
+  // Save draft
+  function saveDraft() {
+    showSavingIndicator(true);
+    
+    fetch(updateUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken
+      },
+      body: JSON.stringify({ blueprint: blueprintData })
+    })
+    .then(response => response.json())
+    .then(data => {
+      showSavingIndicator(false);
+      if (data.success) {
+        showToast('Draft saved successfully!', 'success');
+      } else {
+        showToast('Error saving draft: ' + (data.error || 'Unknown error'), 'danger');
+      }
+    })
+    .catch(error => {
+      showSavingIndicator(false);
+      showToast('Network error: ' + error.message, 'danger');
+    });
+  }
+  
+  // Approve blueprint
+  function approveBlueprint() {
+    // Validate all fields first
+    const validation = validateAllFields();
+    
+    if (!validation.isValid) {
+      let errorMsg = 'Please fix the following errors:\n\n';
+      errorMsg += validation.errors.join('\n');
+      alert(errorMsg);
+      return;
+    }
+    
+    // Show modal instead of confirm dialog
+    const modal = new bootstrap.Modal(document.getElementById('approvalModal'));
+    modal.show();
+  }
+  
+  // Handle modal confirmation
+  document.getElementById('btnConfirmApprove').addEventListener('click', function() {
+    // Hide modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('approvalModal'));
+    modal.hide();
+    
+    showSavingIndicator(true);
+    
+    // First save the current state
+    fetch(updateUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken
+      },
+      body: JSON.stringify({ blueprint: blueprintData })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        // Now approve
+        window.location.href = approveUrl;
+      } else {
+        showSavingIndicator(false);
+        showToast('Error saving blueprint: ' + (data.error || 'Unknown error'), 'danger');
+      }
+    })
+    .catch(error => {
+      showSavingIndicator(false);
+      showToast('Network error: ' + error.message, 'danger');
+    });
+  });
+  
+  // Show/hide saving indicator
+  function showSavingIndicator(show) {
+    const indicator = document.getElementById('savingIndicator');
+    if (show) {
+      indicator.classList.add('show');
+    } else {
+      indicator.classList.remove('show');
+    }
+  }
+  
+  // Show toast notification
+  function showToast(message, type) {
+    const toast = document.getElementById('blueprintToast');
+    const toastBody = document.getElementById('toastBody');
+    
+    toastBody.textContent = message;
+    
+    // Set background color based on type
+    if (type === 'success') {
+      toast.style.background = '#10b981';
+    } else if (type === 'danger') {
+      toast.style.background = '#ef4444';
+    } else {
+      toast.style.background = '#6366f1';
+    }
+    
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+  }
+  
+})();
+</script>
+{% endblock %}

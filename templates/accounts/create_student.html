@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% block title %}Add Student — INSTAASYS{% endblock %}
+{% block page_title %}Add Student Account{% endblock %}
+{% block content %}
+<style>
+.form-section { background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:1.5rem;margin-bottom:1rem; }
+.form-section-title {
+  font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  color:#64748b;margin-bottom:1.25rem;display:flex;align-items:center;gap:.5rem;
+}
+</style>
+
+<div class="d-flex gap-2 mb-4">
+  <a href="{% url 'accounts:manage_students' %}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i> Back to Students
+  </a>
+  <a href="{% url 'accounts:upload_students_csv' %}" class="btn btn-sm btn-outline-primary">
+    <i class="bi bi-file-earmark-spreadsheet me-1"></i> Bulk Upload CSV
+  </a>
+</div>
+
+<!-- Info banner -->
+<div style="background:linear-gradient(135deg,#0f172a,#1e293b);border-radius:14px;
+            padding:1.5rem 2rem;color:#fff;margin-bottom:1.5rem;">
+  <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+              color:#94a3b8;margin-bottom:.35rem;">Instructor Portal</div>
+  <h4 style="font-size:1.1rem;font-weight:800;margin:0 0 .35rem;">Create Student Account</h4>
+  <p style="font-size:.83rem;opacity:.65;margin:0;">
+    The student will log in with the username and password you set below.
+    If no password is entered, it defaults to the Student ID (or username if no ID is provided).
+  </p>
+</div>
+
+<form method="post" novalidate>
+  {% csrf_token %}
+
+  <div class="form-section">
+    <div class="form-section-title"><i class="bi bi-person"></i> Personal Information</div>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">First Name <span style="color:#ef4444;">*</span></label>
+        <input type="text" name="first_name" class="form-control"
+               value="{{ form.first_name.value|default:'' }}" required>
+        {% if form.first_name.errors %}
+        <div style="color:#dc2626;font-size:.76rem;margin-top:.25rem;">{{ form.first_name.errors.0 }}</div>
+        {% endif %}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Last Name <span style="color:#ef4444;">*</span></label>
+        <input type="text" name="last_name" class="form-control"
+               value="{{ form.last_name.value|default:'' }}" required>
+        {% if form.last_name.errors %}
+        <div style="color:#dc2626;font-size:.76rem;margin-top:.25rem;">{{ form.last_name.errors.0 }}</div>
+        {% endif %}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Email</label>
+        <input type="email" name="email" class="form-control"
+               value="{{ form.email.value|default:'' }}"
+               placeholder="student@school.edu">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Department / Year & Section</label>
+        <input type="text" name="department" class="form-control"
+               value="{{ form.department.value|default:'' }}"
+               placeholder="e.g. BSIT — 3B">
+      </div>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="form-section-title"><i class="bi bi-key"></i> Login Credentials</div>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">Username <span style="color:#ef4444;">*</span></label>
+        <input type="text" name="username" class="form-control"
+               value="{{ form.username.value|default:'' }}"
+               placeholder="e.g. jdelacruz" required>
+        {% if form.username.errors %}
+        <div style="color:#dc2626;font-size:.76rem;margin-top:.25rem;">{{ form.username.errors.0 }}</div>
+        {% endif %}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Student ID</label>
+        <input type="text" name="student_id" class="form-control"
+               value="{{ form.student_id.value|default:'' }}"
+               placeholder="e.g. 2021-10001">
+        <div style="font-size:.72rem;color:#94a3b8;margin-top:.3rem;">
+          Used as default password if no password is set.
+        </div>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Password</label>
+        <input type="password" name="password" class="form-control"
+               placeholder="Leave blank to use Student ID or username">
+        <div style="font-size:.72rem;color:#94a3b8;margin-top:.3rem;">
+          Fallback order: custom password → Student ID → username
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:.75rem;justify-content:flex-end;">
+    <a href="{% url 'accounts:manage_students' %}" class="btn btn-outline-secondary">Cancel</a>
+    <button type="submit" class="btn btn-primary">
+      <i class="bi bi-person-check me-1"></i> Create Student Account
+    </button>
+  </div>
+</form>
+
+{% endblock %}

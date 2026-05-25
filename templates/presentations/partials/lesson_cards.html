@@ -1,0 +1,47 @@
+{% for plan in plans %}
+<div class="col-md-6 col-lg-4" data-lesson-id="{{ plan.pk }}">
+  <div class="lesson-card">
+    <div class="card-status">
+      {% if plan.status == 'ready' %}
+        <span class="badge bg-success bg-opacity-10 text-success">
+          <i class="bi bi-check-circle-fill me-1"></i> Ready
+        </span>
+      {% elif plan.status == 'blueprint_pending' %}
+        <span class="badge bg-info bg-opacity-10 text-info">
+          <i class="bi bi-eye-fill me-1"></i> Blueprint
+        </span>
+      {% elif plan.status == 'pending' or plan.status == 'blueprint_approved' %}
+        <div class="spinner-border text-warning spinner-border-sm" role="status"></div>
+      {% else %}
+        <span class="badge bg-danger bg-opacity-10 text-danger">
+          <i class="bi bi-x-circle-fill me-1"></i> Failed
+        </span>
+      {% endif %}
+    </div>
+
+    <div class="card-actions">
+      {% if plan.status == 'ready' %}
+      <a href="{% url 'lessons:lesson_slideshow' course.pk plan.pk %}" target="_blank"
+         class="btn btn-sm btn-primary btn-icon" title="Present">
+        <i class="bi bi-play-fill fs-5"></i>
+      </a>
+      <a href="{% url 'lessons:lesson_download' course.pk plan.pk %}"
+         class="btn btn-sm btn-outline-secondary btn-icon" title="Download PPTX">
+        <i class="bi bi-download"></i>
+      </a>
+      {% endif %}
+    </div>
+
+    <div class="week-pill">
+      <i class="bi bi-calendar-event"></i> Week {{ plan.week_number }}
+    </div>
+
+    <h6 class="lesson-title">{{ plan.topic }}</h6>
+
+    <div class="lesson-footer">
+      <a href="{% url 'lessons:lesson_detail' course.pk plan.pk %}"
+         class="btn btn-sm btn-outline-secondary w-100">View Details</a>
+    </div>
+  </div>
+</div>
+{% endfor %}

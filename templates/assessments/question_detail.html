@@ -1,0 +1,117 @@
+{% extends 'accounts/course_base.html' %}
+{% block course_content %}
+
+<div class="d-flex gap-2 mb-4 flex-wrap">
+  <a href="{% url 'assessments:question_list' course.pk %}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> Back to Questions
+  </a>
+  <a href="{% url 'assessments:question_edit' course.pk question.pk %}" class="btn btn-sm btn-outline-primary">
+    <i class="bi bi-pencil"></i> Edit
+  </a>
+  <a href="{% url 'assessments:question_delete' course.pk question.pk %}" class="btn btn-sm btn-outline-danger ms-auto">
+    <i class="bi bi-trash"></i> Delete
+  </a>
+</div>
+
+<div class="row g-4">
+  <!-- Metadata -->
+  <div class="col-lg-4">
+    <div class="page-card mb-3">
+      <h6 class="fw-bold mb-3">Question Info</h6>
+      <dl style="font-size:.875rem;" class="mb-0">
+        <dt class="text-muted">Type</dt>
+        <dd>
+          {% if question.question_type == 'multiple_choice' %}
+            <span class="badge" style="background:#dbeafe;color:#1e40af;">Multiple Choice</span>
+          {% elif question.question_type == 'true_false' %}
+            <span class="badge" style="background:#e0e7ff;color:#3730a3;">True or False</span>
+          {% elif question.question_type == 'identification' %}
+            <span class="badge" style="background:#fce7f3;color:#9d174d;">Identification</span>
+          {% elif question.question_type == 'essay' %}
+            <span class="badge" style="background:#dcfce7;color:#166534;">Essay / Short Answer</span>
+          {% else %}
+            <!-- <span class="badge" style="background:#fef3c7;color:#92400e;">Oral / Discussion</span> -->
+          {% endif %}
+        </dd>
+        <dt class="text-muted">Bloom's Level</dt>
+        <dd><span class="badge" style="background:#ede9fe;color:#6d28d9;">{{ question.get_bloom_level_display }}</span></dd>
+        <dt class="text-muted">Difficulty</dt>
+        <dd><span class="badge bg-light text-secondary border">{{ question.get_difficulty_display }}</span></dd>
+        {% if question.week_ref %}
+        <dt class="text-muted">Week</dt>
+        <dd>{{ question.week_ref }}</dd>
+        {% endif %}
+        {% if question.topic %}
+        <dt class="text-muted">Topic</dt>
+        <dd>{{ question.topic }}</dd>
+        {% endif %}
+        <dt class="text-muted">Created</dt>
+        <dd>{{ question.created_at|date:"M d, Y" }}</dd>
+      </dl>
+    </div>
+  </div>
+
+  <!-- Question content -->
+  <div class="col-lg-8">
+    <div class="page-card mb-3">
+      <h6 class="fw-bold mb-3">Question</h6>
+      <p class="fw-semibold" style="font-size:.9375rem;">{{ question.content }}</p>
+
+      {% if question.choices %}
+      <div class="row g-2 mt-2">
+        {% for letter, text in question.choices.items %}
+        <div class="col-12 col-sm-6">
+          <div class="d-flex gap-2 p-2 rounded
+            {% if letter == question.answer_key %}
+              border border-success
+            {% else %}
+              border
+            {% endif %}"
+            style="{% if letter == question.answer_key %}background:#f0fdf4;{% else %}background:#f8fafc;{% endif %}">
+            <strong>{{ letter }}.</strong>
+            <span>{{ text }}</span>
+            {% if letter == question.answer_key %}
+              <i class="bi bi-check-circle-fill text-success ms-auto"></i>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    {% if question.answer_key or question.explanation %}
+    <div class="page-card mb-3" style="border-left:3px solid #22c55e;">
+      <h6 class="fw-bold mb-2 text-success"><i class="bi bi-check-circle"></i> Answer</h6>
+      {% if question.answer_key %}
+        <p class="mb-1" style="font-size:.875rem;"><strong>Key:</strong> {{ question.answer_key }}</p>
+      {% endif %}
+      {% if question.explanation %}
+        <p class="mb-0 text-muted" style="font-size:.875rem;">{{ question.explanation }}</p>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if question.rubric %}
+    <div class="page-card mb-3" style="border-left:3px solid #eab308;">
+      <h6 class="fw-bold mb-2"><i class="bi bi-list-check"></i> Rubric</h6>
+      <p class="mb-0 text-muted" style="font-size:.875rem;">{{ question.rubric }}</p>
+    </div>
+    {% endif %}
+
+    {% if question.expected_answer %}
+    <div class="page-card mb-3" style="border-left:3px solid #3b82f6;">
+      <h6 class="fw-bold mb-2"><i class="bi bi-journal-text"></i> Expected Answer</h6>
+      <p class="mb-0 text-muted" style="font-size:.875rem;">{{ question.expected_answer }}</p>
+    </div>
+    {% endif %}
+
+    {% if question.follow_up %}
+    <div class="page-card mb-3" style="border-left:3px solid #a855f7;">
+      <h6 class="fw-bold mb-2"><i class="bi bi-chat-dots"></i> Follow-up Questions</h6>
+      <p class="mb-0 text-muted" style="font-size:.875rem;">{{ question.follow_up }}</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

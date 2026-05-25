@@ -1,0 +1,2 @@
+- The debug notifications have been properly extended from the generation view to the list view format so they will display instantly when a system failure happens during queue routing or sync generation!
+- The "Generate Assessment" navigation route is now populated under the AI Tools dropdown universally in the course navigation tabs.

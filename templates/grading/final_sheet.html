@@ -1,0 +1,179 @@
+{% extends 'accounts/course_base.html' %}
+{% block course_content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <h5 class="mb-0"><i class="bi bi-file-earmark-text"></i> Final Examination Sheet</h5>
+  <div class="d-flex gap-2">
+    <a href="{% url 'grading:eclass_record' course.pk %}"
+       class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Back to e-Class Record
+    </a>
+    <a href="{% url 'grading:midterm_sheet' course.pk %}"
+       class="btn btn-sm btn-outline-info">
+      <i class="bi bi-file-earmark-text"></i> Midterm Sheet
+    </a>
+  </div>
+</div>
+
+<div class="alert py-2 mb-3" style="background:#faf5ff;border:1px solid #e9d5ff;font-size:.825rem;">
+  <i class="bi bi-info-circle text-purple"></i>
+  <strong>Final Examination:</strong> Enter final exam scores (0-100). This contributes to the Examinations component (40% of final grade).
+  <span style="display:block;margin-top:4px;font-size:.78rem;color:#666;">Scores are automatically saved as you type.</span>
+</div>
+
+{% if enrollments %}
+<form method="post">{% csrf_token %}
+<div class="page-card" style="overflow-x:auto;">
+  <table class="table table-sm table-hover mb-0" style="font-size:.85rem;">
+    <thead style="background:#6b21a8;color:#fff;">
+      <tr>
+        <th style="min-width:50px;" class="text-center">No.</th>
+        <th style="min-width:200px;">Student Name</th>
+        <th style="min-width:120px;">Student ID</th>
+        <th style="min-width:120px;" class="text-center">Final Score</th>
+        <th style="min-width:150px;">Remarks</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for enrollment in enrollments %}
+      {% with rec=enrollment.grade_record %}
+      <tr>
+        <td class="text-center">{{ forloop.counter }}</td>
+        <td class="fw-semibold">{{ enrollment.student.get_full_name }}</td>
+        <td style="color:#64748b;">{{ enrollment.student.student_id|default:"—" }}</td>
+        <td class="p-1">
+          <input type="number" step="0.01" min="0" max="100"
+                 name="fin_{{ enrollment.pk }}"
+                 class="final-score-input"
+                 style="width:100px;margin:auto;border:1px solid #ddd;padding:4px;border-radius:3px;"
+                 value="{{ rec.final_score|default_if_none:'' }}"
+                 placeholder="0.00">
+        </td>
+        <td class="p-1">
+          <input type="text" name="remarks_{{ enrollment.pk }}"
+                 class="remarks-input"
+                 style="border:1px solid #ddd;padding:4px;border-radius:3px;width:100%;"
+                 value="{{ rec.remarks }}"
+                 placeholder="Optional">
+        </td>
+      </tr>
+      {% endwith %}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="d-flex justify-content-end mt-3">
+  <button type="submit" class="btn btn-primary px-4">
+    <i class="bi bi-floppy"></i> Save Final Grades
+  </button>
+</div>
+</form>
+
+{% else %}
+<div class="page-card text-center py-5">
+  <i class="bi bi-people" style="font-size:2.5rem;color:#cbd5e1;"></i>
+  <p class="mt-3 text-muted">No students enrolled yet.</p>
+  <a href="{% url 'accounts:enroll_students' course.pk %}"
+     class="btn btn-primary btn-sm">Enroll Students</a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── Auto-save functionality for Final Sheet ──────────────────────────────────
+let autoSaveTimeout = null;
+const AUTOSAVE_DELAY = 1500; // 1.5 seconds after user stops typing
+
+function autoSaveFinalScore(input) {
+  const name = input.name; // e.g., 'fin_123' or 'remarks_123'
+  const parts = name.split('_');
+
+  if (parts.length < 2) return; // Not a valid field
+
+  let enrollmentId = parts[1];
+  let fieldName;
+
+  if (name.startsWith('fin_')) {
+    fieldName = 'fin_score';
+  } else if (name.startsWith('remarks_')) {
+    fieldName = 'remarks';
+  } else {
+    return; // Unknown field
+  }
+
+  const value = input.value.trim();
+
+  // Show saving indicator
+  input.style.borderColor = '#f59e0b';
+  input.style.backgroundColor = '#fffbeb';
+
+  // Get CSRF token
+  const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+  // Prepare form data
+  const formData = new URLSearchParams({
+    'field_name': fieldName,
+    'enrollment_id': enrollmentId,
+    'value': value
+  });
+
+  // Send AJAX request to final_autosave_score endpoint
+  fetch('{% url "grading:final_autosave_score" course.pk %}', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-CSRFToken': csrfToken
+    },
+    body: formData
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      // Show success indicator briefly
+      input.style.borderColor = '#10b981';
+      input.style.backgroundColor = '#f0fdf4';
+      setTimeout(() => {
+        input.style.borderColor = '';
+        input.style.backgroundColor = '';
+      }, 800);
+    } else {
+      // Show error indicator
+      input.style.borderColor = '#ef4444';
+      input.style.backgroundColor = '#fef2f2';
+      console.error('Auto-save error:', data.error);
+    }
+  })
+  .catch(error => {
+    console.error('Auto-save failed:', error);
+    input.style.borderColor = '#ef4444';
+    input.style.backgroundColor = '#fef2f2';
+  });
+}
+
+// Attach auto-save to all final score and remarks inputs
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.final-score-input, .remarks-input').forEach(input => {
+    input.addEventListener('input', function() {
+      // Clear previous timeout
+      if (autoSaveTimeout) {
+        clearTimeout(autoSaveTimeout);
+      }
+
+      // Set new timeout
+      autoSaveTimeout = setTimeout(() => {
+        autoSaveFinalScore(this);
+      }, AUTOSAVE_DELAY);
+    });
+
+    // Also save on blur (when user leaves the field)
+    input.addEventListener('blur', function() {
+      if (autoSaveTimeout) {
+        clearTimeout(autoSaveTimeout);
+      }
+      autoSaveFinalScore(this);
+    });
+  });
+});
+</script>
+{% endblock %}

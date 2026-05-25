@@ -1,0 +1,270 @@
+{% extends 'accounts/course_base.html' %}
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteQsModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0">
+      <div class="modal-header bg-danger text-white border-0 py-3">
+        <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i>Delete Question Set</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <p class="mb-2">Are you sure you want to delete the question set <strong id="qsModalTitle"></strong>?</p>
+        <p class="text-danger small mb-0">
+          This will permanently delete all <strong id="qsModalCount"></strong> questions inside it.
+        </p>
+      </div>
+      <div class="modal-footer border-0 gap-2">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form id="deleteQsForm" method="post" style="display: inline;">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Yes, Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% block course_content %}
+
+<div class="mb-4">
+  <a href="{% url 'assessments:questionset_list' course.pk %}" class="btn btn-sm btn-link text-decoration-none p-0 mb-2">
+    <i class="bi bi-arrow-left"></i> Back to Sets
+  </a>
+  <div class="d-flex justify-content-between align-items-center">
+    <h4 class="fw-bold mb-0">{{ questionset.title }}</h4>
+    <div class="d-flex gap-2">
+      <a href="{% url 'assessments:questionset_preview' course.pk questionset.pk %}{% if filter_type %}?type={{ filter_type }}{% endif %}"
+         class="btn btn-outline-success btn-sm">
+        <i class="bi bi-file-earmark-text"></i> Preview
+      </a>
+      <!-- DOCX Export with dropdown -->
+      <div class="btn-group">
+        <a href="{% url 'assessments:questionset_export_docx' course.pk questionset.pk %}?answers=true{% if filter_type %}&type={{ filter_type }}{% endif %}"
+           class="btn btn-primary btn-sm">
+          <i class="bi bi-file-earmark-word"></i> Download DOCX
+        </a>
+        <button type="button" class="btn btn-primary btn-sm dropdown-toggle dropdown-toggle-split" 
+                data-bs-toggle="dropdown" aria-expanded="false">
+          <span class="visually-hidden">Toggle Dropdown</span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li>
+            <a class="dropdown-item" 
+               href="{% url 'assessments:questionset_export_docx' course.pk questionset.pk %}?answers=true{% if filter_type %}&type={{ filter_type }}{% endif %}">
+              <i class="bi bi-check-circle"></i> With Answer Key
+            </a>
+          </li>
+          <li>
+            <a class="dropdown-item" 
+               href="{% url 'assessments:questionset_export_docx' course.pk questionset.pk %}?answers=false{% if filter_type %}&type={{ filter_type }}{% endif %}">
+              <i class="bi bi-circle"></i> Without Answer Key
+            </a>
+          </li>
+        </ul>
+      </div>
+      <a href="{% url 'assessments:questionset_export' course.pk questionset.pk %}{% if filter_type %}?type={{ filter_type }}{% endif %}"
+         class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-download"></i> Export txt
+      </a>
+      <button type="button" class="btn btn-outline-danger btn-sm delete-qs-btn"
+              data-qs-id="{{ questionset.pk }}" data-qs-title="{{ questionset.title }}"
+              data-qs-count="{{ questionset.questions.count }}">
+        <i class="bi bi-trash"></i> Delete
+      </button>
+
+    </div>
+  </div>
+</div>
+
+<!-- Stats row -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-3">
+    <div class="stat-card">
+      <div class="stat-value">{{ questionset.questions.count }}</div>
+      <div class="stat-label">Total Questions</div>
+    </div>
+  </div>
+  <div class="col-sm-3">
+    <div class="stat-card">
+      <div class="stat-value">{{ questions|length }}</div>
+      <div class="stat-label">Showing</div>
+    </div>
+  </div>
+  <div class="col-sm-3">
+    <div class="stat-card">
+      <div class="stat-value">{{ topics_summary|length }}</div>
+      <div class="stat-label">Topics Covered</div>
+    </div>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="page-card mb-3">
+  <form method="get" class="row g-2 align-items-end">
+    <div class="col-md-3">
+      <label class="form-label" style="font-size:.8rem;">Type</label>
+      <select name="type" class="form-select form-select-sm" onchange="this.form.submit()">
+        <option value="">All Types</option>
+        {% for val, label in type_choices %}
+        <option value="{{ val }}" {% if filter_type == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label" style="font-size:.8rem;">Bloom's Level</label>
+      <select name="bloom" class="form-select form-select-sm" onchange="this.form.submit()">
+        <option value="">All Levels</option>
+        {% for val, label in bloom_choices %}
+        <option value="{{ val }}" {% if filter_bloom == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3 d-flex gap-2">
+      <a href="{% url 'assessments:questionset_detail' course.pk questionset.pk %}"
+         class="btn btn-sm btn-outline-secondary">Clear Filter</a>
+    </div>
+  </form>
+</div>
+
+<!-- Questions -->
+{% if questions %}
+<div class="page-card">
+  <div class="accordion" id="questionsAccordion">
+    {% for q in questions %}
+    <div class="accordion-item border-0 mb-2"
+         style="border:1px solid #e2e8f0 !important;border-radius:8px;overflow:hidden;">
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed py-2" type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#q{{ q.pk }}"
+                style="font-size:.875rem;background:#f8fafc;">
+          <div class="d-flex align-items-center gap-2 w-100 me-3 flex-wrap">
+            <!-- Type badge -->
+            {% if q.question_type == 'multiple_choice' %}
+            <span class="badge" style="background:#dbeafe;color:#1e40af;font-size:.7rem;">MC</span>
+            {% elif q.question_type == 'true_false' %}
+            <span class="badge" style="background:#e0e7ff;color:#3730a3;font-size:.7rem;">T/F</span>
+            {% elif q.question_type == 'identification' %}
+            <span class="badge" style="background:#fce7f3;color:#9d174d;font-size:.7rem;">ID</span>
+            {% elif q.question_type == 'essay' %}
+            <span class="badge" style="background:#dcfce7;color:#166534;font-size:.7rem;">Essay</span>
+            {% else %}
+            <span class="badge" style="background:#fef3c7;color:#92400e;font-size:.7rem;">Oral</span>
+            {% endif %}
+            <!-- Bloom badge -->
+            <span class="badge" style="background:#ede9fe;color:#6d28d9;font-size:.7rem;">
+              {{ q.get_bloom_level_display }}
+            </span>
+            <!-- Difficulty -->
+            <span class="badge bg-light text-secondary" style="font-size:.7rem;">
+              {{ q.get_difficulty_display }}
+            </span>
+            {% if q.week_ref %}
+            <span style="font-size:.75rem;color:#94a3b8;">{{ q.week_ref }}</span>
+            {% endif %}
+            <span style="font-size:.85rem;color:#1e293b;">{{ q.content|truncatechars:80 }}</span>
+          </div>
+        </button>
+      </h2>
+      <div id="q{{ q.pk }}" class="accordion-collapse collapse">
+        <div class="accordion-body py-3" style="font-size:.875rem;">
+          <p class="fw-semibold mb-3">{{ q.content }}</p>
+
+          {% if q.choices %}
+        <div class="row g-3 mb-4">
+          {% for letter, text in q.choices.items %}
+          <div class="col-12 col-sm-6">
+            <div class="choice-item d-flex gap-2 p-2 rounded {% if letter == q.answer_key %}choice-correct{% else %}choice-regular{% endif %}">
+              <strong class="choice-letter">{{ letter }}.</strong>
+              <span class="choice-text">{{ text }}</span>
+              {% if letter == q.answer_key %}
+                <span class="visually-hidden">(Correct answer)</span>
+                <i class="bi bi-check-circle-fill text-success ms-auto" aria-hidden="true"></i>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+          
+          {% if q.explanation %}
+          <div class="p-2 rounded mb-2"
+               style="background:#f0fdf4;border:1px solid #bbf7d0;font-size:.825rem;">
+            <strong style="color:#166534;">Answer: {{ q.answer_key }}</strong>
+            — {{ q.explanation }}
+          </div>
+          {% endif %}
+          {% if q.rubric %}
+          <div class="p-2 rounded mb-2"
+               style="background:#fefce8;border:1px solid #fde68a;font-size:.825rem;">
+            <strong>Rubric:</strong> {{ q.rubric }}
+          </div>
+          {% endif %}
+
+          {% if q.expected_answer %}
+          <div class="p-2 rounded mb-2"
+               style="background:#f0f9ff;border:1px solid #bae6fd;font-size:.825rem;">
+            <strong>Expected Answer:</strong> {{ q.expected_answer }}
+          </div>
+          {% endif %}
+
+          {% if q.follow_up %}
+          <div class="p-2 rounded mb-2"
+               style="background:#fdf4ff;border:1px solid #f0abfc;font-size:.825rem;">
+            <strong>Follow-up:</strong> {{ q.follow_up }}
+          </div>
+          {% endif %}
+
+          <div class="d-flex justify-content-end gap-2 mt-2">
+            <a href="{% url 'assessments:question_detail' course.pk q.pk %}"
+               class="btn btn-sm btn-outline-secondary">
+              <i class="bi bi-eye"></i> View
+            </a>
+            <a href="{% url 'assessments:question_edit' course.pk q.pk %}"
+               class="btn btn-sm btn-outline-primary">
+              <i class="bi bi-pencil"></i> Edit
+            </a>
+            <a href="{% url 'assessments:question_delete' course.pk q.pk %}"
+               class="btn btn-sm btn-outline-danger">
+              <i class="bi bi-trash"></i> Delete
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% else %}
+<div class="page-card text-center py-5">
+  <i class="bi bi-patch-question" style="font-size:2.5rem;color:#cbd5e1;"></i>
+  <p class="mt-3 text-muted">No questions yet in this set.</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const deleteModal = new bootstrap.Modal(document.getElementById('deleteQsModal'));
+  const deleteForm = document.getElementById('deleteQsForm');
+  const courseId = '{{ course.pk }}';
+  const qsId = '{{ questionset.pk }}';
+
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('.delete-qs-btn')) {
+      const btn = e.target.closest('.delete-qs-btn');
+      const qsTitle = btn.dataset.qsTitle;
+      const qsCount = btn.dataset.qsCount;
+
+      document.getElementById('qsModalTitle').textContent = '"' + qsTitle + '"';
+      document.getElementById('qsModalCount').textContent = qsCount;
+      deleteForm.action = `/assessments/course/${courseId}/assessments/${qsId}/delete/`;
+
+      deleteModal.show();
+    }
+  });
+});
+</script>
+{% endblock %}

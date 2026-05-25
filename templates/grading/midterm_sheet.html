@@ -1,0 +1,1386 @@
+{% extends 'accounts/course_base.html' %}
+{% block course_content %}
+<style>
+/* ── Layout ─────────────────────────────────────────────────────────── */
+.eclass-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.eclass-main  { flex: 1; min-width: 0; overflow-x: auto; }
+.eclass-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+/* ── Toolbar ─────────────────────────────────────────────────────────── */
+.ec-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ec-toolbar .btn-group-left,
+.ec-toolbar .btn-group-right { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* ── Table ───────────────────────────────────────────────────────────── */
+.ec-table {
+  border-collapse: collapse;
+  font-size: .72rem;
+  font-family: 'Calibri', 'Segoe UI', sans-serif;
+  white-space: nowrap;
+  background: #fff;
+}
+.ec-table th, .ec-table td {
+  border: 1px solid #9e9e9e;
+  padding: 2px 4px;
+  text-align: center;
+  vertical-align: middle;
+}
+/* Section header rows */
+.ec-table .row-section th {
+  background: #1565c0;
+  color: #fff;
+  font-weight: 700;
+  font-size: .73rem;
+  letter-spacing: .02em;
+  padding: 4px 6px;
+}
+.ec-table .row-section th.th-name  { background: #0d47a1; text-align: left; min-width: 160px; }
+.ec-table .row-section th.th-ww    { background: #1565c0; }
+.ec-table .row-section th.th-pt    { background: #1565c0; }
+.ec-table .row-section th.th-qa    { background: #1565c0; }
+.ec-table .row-section th.th-grade { background: #283593; }
+
+/* Sub-header (column numbers) */
+.ec-table .row-subhdr th {
+  background: #e3f2fd;
+  color: #0d47a1;
+  font-weight: 700;
+  font-size: .68rem;
+  padding: 2px 3px;
+}
+.ec-table .row-subhdr th.th-name { background: #bbdefb; text-align: left; }
+
+/* HPS row */
+.ec-table .row-hps td {
+  background: #fff9c4;
+  font-weight: 700;
+  font-size: .68rem;
+  color: #333;
+}
+.ec-table .row-hps td.hps-label {
+  background: #fff176;
+  font-weight: 800;
+  text-align: left;
+  font-size: .68rem;
+  color: #555;
+  padding-left: 4px;
+}
+.ec-table .row-hps td.hps-computed {
+  background: #f9fbe7;
+  color: #666;
+  font-style: italic;
+}
+
+/* Student rows */
+.ec-table tbody.students tr:nth-child(even) td { background: #f5f5f5; }
+.ec-table tbody.students tr:hover td           { background: #e3f2fd !important; }
+.ec-table tbody.students td.td-name {
+  text-align: left;
+  font-weight: 600;
+  background: #fafafa !important;
+  border-right: 2px solid #9e9e9e;
+  min-width: 160px;
+  padding-left: 5px;
+}
+.ec-table tbody.students td.td-num {
+  background: #f0f0f0 !important;
+  color: #888;
+  font-size: .68rem;
+  width: 22px;
+  border-right: 1px solid #bbb;
+}
+
+/* Computed cells */
+.ec-table td.c-total { background: #e8eaf6 !important; color: #283593; font-weight: 700; }
+.ec-table td.c-ps    { background: #e0f7fa !important; color: #006064; font-weight: 700; }
+.ec-table td.c-ws    { background: #e8f5e9 !important; color: #1b5e20; font-weight: 700; }
+.ec-table td.c-ig    { background: #fff3e0 !important; color: #e65100; font-weight: 800; }
+.ec-table td.c-qg    { font-weight: 800; }
+.ec-table td.c-qg.pass { background: #c8e6c9 !important; color: #1b5e20; }
+.ec-table td.c-qg.fail { background: #ffcdd2 !important; color: #b71c1c; }
+.ec-table td.c-qg.blank{ background: #f5f5f5 !important; color: #aaa; }
+
+/* Editable inputs in table */
+.ec-table input[type=number],
+.ec-table input[type=text] {
+  border: none;
+  background: transparent;
+  width: 100%;
+  min-width: 36px;
+  padding: 1px 2px;
+  font-size: .72rem;
+  font-family: inherit;
+  text-align: center;
+  outline: none;
+}
+.ec-table input[type=number]:focus,
+.ec-table input[type=text]:focus {
+  background: #fff9c4;
+  outline: 2px solid #1565c0;
+  border-radius: 2px;
+}
+.ec-table .row-subhdr input[type=text] {
+  color: #0d47a1;
+  font-weight: 700;
+  width: 100%;
+  min-width: 28px;
+  font-size: .65rem;
+}
+.ec-table .row-hps input[type=number] {
+  background: transparent;
+  font-weight: 700;
+  color: #333;
+  min-width: 28px;
+}
+
+/* ── Stats panel ─────────────────────────────────────────────────────── */
+.stat-box {
+  background: #fff;
+  border: 1px solid #9e9e9e;
+  font-size: .72rem;
+  font-family: 'Calibri', 'Segoe UI', sans-serif;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.stat-box .stat-header {
+  background: #1565c0;
+  color: #fff;
+  font-weight: 700;
+  font-size: .72rem;
+  padding: 3px 8px;
+  letter-spacing: .03em;
+}
+.stat-box table { width: 100%; border-collapse: collapse; }
+.stat-box table td {
+  border: 1px solid #ccc;
+  padding: 3px 6px;
+  color: #222;
+}
+.stat-box table td:last-child {
+  text-align: right;
+  font-weight: 700;
+  background: #f5f5f5;
+  min-width: 60px;
+}
+
+/* ── Column editor modal ─────────────────────────────────────────────── */
+.col-editor-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; background: #f8faff;
+  border: 1px solid #e3e8f0; border-radius: 7px;
+  margin-bottom: 6px; transition: background .12s;
+}
+.col-editor-row:hover { background: #eef3ff; }
+.col-editor-row.deleted { opacity: .45; pointer-events: none; }
+.col-num-badge {
+  width: 34px; height: 34px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: .72rem; flex-shrink: 0;
+}
+.col-num-badge.cs { background: #eef2ff; color: #4338ca; }
+.col-num-badge.pt { background: #ecfdf5; color: #059669; }
+.col-num-badge.ex { background: #fff7ed; color: #ea580c; }
+.col-editor-row input[type=text]   { flex: 1; font-size: .85rem; }
+.col-editor-row input[type=number] { width: 68px; font-size: .85rem; text-align: center; }
+.col-add-btn {
+  width: 100%; border: 2px dashed #cbd5e1; background: transparent;
+  color: #64748b; border-radius: 7px; padding: 7px;
+  font-size: .8rem; font-weight: 600; cursor: pointer;
+  transition: all .15s; margin-top: 4px;
+}
+.col-add-btn:hover     { border-color: #4f46e5; color: #4f46e5; background: #eef2ff; }
+.col-add-btn.pt:hover  { border-color: #059669; color: #059669; background: #ecfdf5; }
+.col-section-label {
+  display: flex; align-items: center; gap: 8px;
+  font-size: .72rem; font-weight: 800; letter-spacing: .06em;
+  text-transform: uppercase; padding: 6px 4px 4px;
+  margin-top: 12px; border-top: 1px solid #e2e8f0; color: #475569;
+}
+.col-section-label:first-child { margin-top: 0; border-top: none; }
+.col-section-label .col-section-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.col-list-header {
+  display: flex; gap: 8px; padding: 3px 10px 5px;
+  font-size: .67rem; font-weight: 700; color: #94a3b8;
+  text-transform: uppercase; letter-spacing: .05em;
+}
+
+/* ── Term tabs ────────────────────────────────────────────────────── */
+.ec-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 10px;
+  border-bottom: 2px solid #1565c0;
+}
+.ec-tab {
+  padding: 5px 18px;
+  font-size: .78rem;
+  font-weight: 700;
+  border: 1px solid #ccc;
+  border-bottom: none;
+  background: #f5f5f5;
+  color: #555;
+  cursor: pointer;
+  text-decoration: none;
+  border-radius: 4px 4px 0 0;
+  margin-right: 2px;
+}
+.ec-tab.active {
+  background: #1565c0;
+  color: #fff;
+  border-color: #1565c0;
+}
+.ec-tab:hover:not(.active) { background: #e3f2fd; color: #1565c0; }
+
+/* ── Remove number input spinners ────────────────────────────────── */
+.ec-table input[type=number]::-webkit-outer-spin-button,
+.ec-table input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.ec-table input[type=number] { -moz-appearance: textfield; }
+
+/* ── Column editor overlay ────────────────────────────────────────── */
+#colEditorOverlay {
+  display: none;
+  position: fixed;
+  left: var(--sidebar-w, 256px);
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 300;
+  background: #f1f5f9;
+  flex-direction: column;
+  overflow: hidden;
+}
+#colEditorOverlay.show { display: flex; }
+#colEditorOverlay .editor-header {
+  background: #1565c0;
+  color: #fff;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  border-bottom: 1px solid #0d47a1;
+}
+#colEditorOverlay .editor-title {
+  font-weight: 700;
+  font-size: .95rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+#colEditorOverlay .editor-close {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.3rem;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#colEditorOverlay .editor-close:hover { background: rgba(255,255,255,.1); border-radius: 4px; }
+#colEditorOverlay .editor-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+}
+#colEditorOverlay .editor-panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+#colEditorOverlay .editor-panel {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+}
+#colEditorOverlay .editor-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+#colEditorOverlay .section-label-input {
+  flex: 1;
+  font-size: .85rem;
+  padding: 4px 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+}
+#colEditorOverlay .section-weight-input {
+  width: 50px;
+  font-size: .85rem;
+  padding: 4px 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  text-align: center;
+}
+#colEditorOverlay .section-weight-input::-webkit-outer-spin-button,
+#colEditorOverlay .section-weight-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+#colEditorOverlay .section-weight-input { -moz-appearance: textfield; }
+#colEditorOverlay .section-weight-label { font-weight: 600; color: #64748b; font-size: .8rem; }
+#colEditorOverlay .editor-col-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .8rem;
+  margin-bottom: 10px;
+}
+#colEditorOverlay .editor-col-table th {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  padding: 6px 8px;
+  text-align: left;
+  font-weight: 600;
+  color: #334155;
+}
+#colEditorOverlay .editor-col-table td {
+  border: 1px solid #cbd5e1;
+  padding: 6px 8px;
+  background: #fff;
+}
+#colEditorOverlay .editor-col-table input {
+  border: none;
+  background: transparent;
+  font-size: .8rem;
+  width: 100%;
+  padding: 2px;
+}
+#colEditorOverlay .editor-col-table input:focus { outline: 2px solid #1565c0; background: #fef9c3; }
+#colEditorOverlay .editor-del-btn {
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  color: #991b1b;
+  padding: 4px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: .75rem;
+  font-weight: 600;
+}
+#colEditorOverlay .editor-del-btn:hover { background: #f87171; color: #fff; }
+#colEditorOverlay .editor-add-btn {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px dashed #cbd5e1;
+  background: transparent;
+  color: #64748b;
+  font-size: .8rem;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all .15s;
+}
+#colEditorOverlay .editor-add-btn:hover { border-color: #1565c0; color: #1565c0; background: #e3f2fd; }
+#colEditorOverlay .editor-exam-panel {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  grid-column: 1 / -1;
+}
+#colEditorOverlay .weight-warning {
+  padding: 12px;
+  margin: 16px 0;
+  border-radius: 6px;
+  font-size: .8rem;
+  font-weight: 600;
+}
+#colEditorOverlay .weight-warning.valid { background: #d1fae5; color: #065f46; }
+#colEditorOverlay .weight-warning.invalid { background: #fee2e2; color: #991b1b; }
+#colEditorOverlay .editor-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #fff;
+  border-top: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+#colEditorOverlay .editor-status {
+  font-size: .75rem;
+  color: #64748b;
+  flex: 1;
+}
+</style>
+
+{% if enrollments %}
+<!-- Term tabs -->
+<div class="ec-tabs">
+  <a href="{% url 'grading:eclass_record' course.pk %}" class="ec-tab">Midterm</a>
+  <a href="{% url 'grading:midterm_sheet' course.pk %}" class="ec-tab active">Final</a>
+  <a href="{% url 'grading:grade_summary' course.pk %}" class="ec-tab">Final Semestral Grade</a>
+</div>
+
+<!-- Toolbar -->
+<div class="ec-toolbar">
+  <div class="btn-group-left">
+    <button type="button" class="btn btn-sm btn-outline-primary" onclick="openColumnEditor()">
+      <i class="bi bi-pencil-square"></i> Edit Columns
+    </button>
+  </div>
+  <div class="btn-group-right">
+    <button type="submit" form="final-form" class="btn btn-sm btn-primary px-3">
+      <i class="bi bi-floppy"></i> Save Grades
+    </button>
+  </div>
+</div>
+
+<form method="post" id="final-form">{% csrf_token %}
+
+<div class="eclass-layout">
+  <!-- ── Main spreadsheet ─────────────────────────────────────────── -->
+  <div class="eclass-main">
+    <table class="ec-table" id="ec-table-final">
+      <thead>
+        <!-- Row 1: Section headers -->
+        <tr class="row-section">
+          <th class="th-name" rowspan="3">LEARNERS' NAMES</th>
+          <th class="th-ww" colspan="{{ cs_col_data|length|add:3 }}">CLASS STANDING (CS) — 20%</th>
+          <th class="th-pt" colspan="{{ pt_col_data|length|add:3 }}">PERFORMANCE TASK (PT) — 20%</th>
+          <th style="background: #7cb342;" colspan="{{ ao_col_data|length|add:3 }}">ACTIVITY OUTPUT (AO) — 20%</th>
+          <th class="th-qa" colspan="3">MAJOR EXAMS — 40%</th>
+          <th class="th-grade" rowspan="3" style="min-width:58px;">Initial<br>Grade</th>
+          <th class="th-grade" rowspan="3" style="min-width:58px;">Final<br>Grade</th>
+        </tr>
+
+        <!-- Row 2: Column names + computed labels -->
+        <tr class="row-subhdr">
+          {% for col in cs_col_data %}
+          <th style="min-width:30px;">
+            <input type="text" name="fcs_name_{{ col.n }}" value="{{ col.name }}" style="min-width:26px;">
+          </th>
+          {% endfor %}
+          <th>Total</th><th>PS</th><th>WS</th>
+
+          {% for col in pt_col_data %}
+          <th style="min-width:30px;">
+            <input type="text" name="fpt_name_{{ col.n }}" value="{{ col.name }}" style="min-width:26px;">
+          </th>
+          {% endfor %}
+          <th>Total</th><th>PS</th><th>WS</th>
+
+          {% for col in ao_col_data %}
+          <th style="min-width:30px;">
+            <input type="text" name="fao_name_{{ col.n }}" value="{{ col.name }}" style="min-width:26px;">
+          </th>
+          {% endfor %}
+          <th>Total</th><th>PS</th><th>WS</th>
+
+          <th>1</th><th>PS</th><th>WS</th>
+        </tr>
+
+        <!-- Row 3: Highest Possible Score row -->
+        <tr class="row-hps">
+          {% for col in cs_col_data %}
+          <td><input type="number" name="fcs_max_{{ col.n }}" value="{{ col.max }}" min="1" class="hps-input" data-type="fcs-max" data-idx="{{ forloop.counter0 }}"></td>
+          {% endfor %}
+          <td class="hps-computed" id="fcs-hps-total">—</td>
+          <td class="hps-computed">100</td>
+          <td class="hps-computed">20</td>
+
+          {% for col in pt_col_data %}
+          <td><input type="number" name="fpt_max_{{ col.n }}" value="{{ col.max }}" min="1" class="hps-input" data-type="fpt-max" data-idx="{{ forloop.counter0 }}"></td>
+          {% endfor %}
+          <td class="hps-computed" id="fpt-hps-total">—</td>
+          <td class="hps-computed">100</td>
+          <td class="hps-computed">20</td>
+
+          {% for col in ao_col_data %}
+          <td><input type="number" name="fao_max_{{ col.n }}" value="{{ col.max }}" min="1" class="hps-input" data-type="fao-max" data-idx="{{ forloop.counter0 }}"></td>
+          {% endfor %}
+          <td class="hps-computed" id="fao-hps-total">—</td>
+          <td class="hps-computed">100</td>
+          <td class="hps-computed">20</td>
+
+          <td><input type="number" name="fexam_max" id="fexam-max" value="{{ course.final_exam_max }}" min="1" class="hps-input" data-type="fexam-max"></td>
+          <td class="hps-computed">100</td>
+          <td class="hps-computed">40</td>
+        </tr>
+      </thead>
+
+      <tbody class="students">
+        {% for e in enrollments %}
+        {% with rec=e.grade_record %}
+        <tr data-epk="{{ e.pk }}">
+          <td class="td-name">
+            {{ e.student.get_full_name }}
+            {% if e.student.student_id %}
+            <span style="font-size:.62rem;color:#999;font-weight:400;"> · {{ e.student.student_id }}</span>
+            {% endif %}
+          </td>
+
+          <!-- CS scores -->
+          {% for col in cs_col_data %}
+          <td style="padding:1px;"><input type="number" step="0.01" min="0"
+               name="fcs_{{ e.pk }}_{{ col.n }}"
+               class="fcs-score" data-epk="{{ e.pk }}"></td>
+          {% endfor %}
+          <td class="c-total" data-fcs-total="{{ e.pk }}">—</td>
+          <td class="c-ps"    data-fcs-ps="{{ e.pk }}">—</td>
+          <td class="c-ws"    data-fcs-ws="{{ e.pk }}">—</td>
+
+          <!-- PT scores -->
+          {% for col in pt_col_data %}
+          <td style="padding:1px;"><input type="number" step="0.01" min="0"
+               name="fpt_{{ e.pk }}_{{ col.n }}"
+               class="fpt-score" data-epk="{{ e.pk }}"></td>
+          {% endfor %}
+          <td class="c-total" data-fpt-total="{{ e.pk }}">—</td>
+          <td class="c-ps"    data-fpt-ps="{{ e.pk }}">—</td>
+          <td class="c-ws"    data-fpt-ws="{{ e.pk }}">—</td>
+
+          <!-- AO scores -->
+          {% for col in ao_col_data %}
+          <td style="padding:1px;"><input type="number" step="0.01" min="0"
+               name="fao_{{ e.pk }}_{{ col.n }}"
+               class="fao-score" data-epk="{{ e.pk }}"></td>
+          {% endfor %}
+          <td class="c-total" data-fao-total="{{ e.pk }}">—</td>
+          <td class="c-ps"    data-fao-ps="{{ e.pk }}">—</td>
+          <td class="c-ws"    data-fao-ws="{{ e.pk }}">—</td>
+
+          <!-- Major Exam score -->
+          <td style="padding:1px;"><input type="number" step="0.01" min="0"
+               name="fexam_{{ e.pk }}"
+               value="{{ rec.final_exam_score|default_if_none:'' }}"
+               class="fexam-score" data-epk="{{ e.pk }}"></td>
+          <td class="c-ps" data-fexam-ps="{{ e.pk }}">—</td>
+          <td class="c-ws" data-fexam-ws="{{ e.pk }}">—</td>
+
+          <!-- Grades -->
+          <td class="c-ig"          data-fig="{{ e.pk }}">—</td>
+          <td class="c-qg blank"    data-ffg="{{ e.pk }}">—</td>
+        </tr>
+        {% endwith %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div><!-- /eclass-main -->
+
+  <!-- ── Stats panel ──────────────────────────────────────────────── -->
+  <div class="eclass-stats">
+    <div class="stat-box">
+      <table>
+        <tr><td>Number of Examinees:</td><td>{{ stats.total }}</td></tr>
+        <tr><td>Highest Possible Score:</td><td>100</td></tr>
+      </table>
+    </div>
+
+    <div class="stat-box">
+      <div class="stat-header">CRITERION-REFERENCED</div>
+      <table>
+        <tr><td>Got 75% &amp; above</td><td>{{ stats.passed|default:"—" }}</td></tr>
+        <tr><td>Percentage</td><td>{% if stats.passed_pct is not None %}{{ stats.passed_pct }}%{% else %}—{% endif %}</td></tr>
+        <tr><td>Got below 75%</td><td>{{ stats.failed|default:"—" }}</td></tr>
+        <tr><td>Percentage</td><td>{% if stats.failed_pct is not None %}{{ stats.failed_pct }}%{% else %}—{% endif %}</td></tr>
+      </table>
+    </div>
+
+    <div class="stat-box">
+      <div class="stat-header">NORM-REFERENCED</div>
+      <table>
+        <tr><td>Mean</td><td>{{ stats.mean|default:"—" }}</td></tr>
+        <tr><td>Median</td><td>{{ stats.median|default:"—" }}</td></tr>
+        <tr><td>SD</td><td>{{ stats.sd|default:"—" }}</td></tr>
+        <tr><td>MPS</td><td>{% if stats.mps is not None %}{{ stats.mps }}%{% else %}—{% endif %}</td></tr>
+      </table>
+    </div>
+
+    <div class="stat-box">
+      <div class="stat-header">OTHER INFO</div>
+      <table>
+        <tr><td>Highest Score</td><td>{{ stats.highest|default:"—" }}</td></tr>
+        <tr><td>Lowest Score</td><td>{{ stats.lowest|default:"—" }}</td></tr>
+        <tr><td>Total Score</td><td>{{ stats.total_score|default:"—" }}</td></tr>
+      </table>
+    </div>
+  </div><!-- /eclass-stats -->
+</div><!-- /eclass-layout -->
+
+</form>
+
+{% else %}
+<div class="page-card text-center py-5">
+  <i class="bi bi-people" style="font-size:2.5rem;color:#cbd5e1;"></i>
+  <p class="mt-3 text-muted">No students enrolled yet.</p>
+  <a href="{% url 'accounts:enroll_students' course.pk %}" class="btn btn-primary btn-sm">Enroll Students</a>
+</div>
+{% endif %}
+
+<!-- ── Column Editor Overlay ─────────────────────────────────────────── -->
+<div id="colEditorOverlay">
+  <div class="editor-header">
+    <div class="editor-title">
+      <i class="bi bi-pencil-square"></i>
+      Edit Columns — Final Term
+    </div>
+    <button type="button" class="editor-close" onclick="closeColumnEditor()">×</button>
+  </div>
+
+  <div class="editor-body">
+    <div id="weightWarning" class="weight-warning valid">
+      <i class="bi bi-check-circle-fill me-1"></i>
+      <span id="weightSumText">Weights: 20+20+20+40 = 100 ✓</span>
+    </div>
+
+    <div class="editor-panels">
+      <!-- ══ CLASS STANDING (CS) ══ -->
+      <div class="editor-panel">
+        <div class="editor-section-header">
+          <input type="text" class="section-label-input" id="csLabel"
+                 placeholder="e.g., Class Standing (CS)"
+                 value="{{ course.cs_section_name|default:'' }}"
+                 data-original="{{ course.cs_section_name|default:'' }}"
+                 oninput="markLabelChanged(this, 'cs_section_name')">
+          <input type="number" class="section-weight-input" id="csWeight" min="1" max="98"
+                 value="{{ course.cs_weight }}"
+                 oninput="markWeightChanged(this, 'cs_weight')">
+          <span class="section-weight-label">%</span>
+        </div>
+        <table class="editor-col-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>HPS</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="csColsList">
+            {% for col in cs_col_data %}
+            <tr id="cs-row-{{ col.n }}" data-type="cs" data-col="{{ col.n }}">
+              <td><input type="text" value="{{ col.name }}" data-original="{{ col.name }}"
+                        oninput="markColumnChanged(this, 'cs', this.parentElement.parentElement.dataset.col)"></td>
+              <td><input type="number" value="{{ col.max }}" min="1" data-original="{{ col.max }}"
+                        oninput="markHpsChanged(this, 'fcs', this.parentElement.parentElement.dataset.col)"></td>
+              <td><button type="button" class="editor-del-btn" onclick="markDelete('cs', this.parentElement.parentElement.dataset.col)">✕ Delete</button></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <button type="button" class="editor-add-btn" onclick="queueAdd('cs')">
+          <i class="bi bi-plus-circle me-1"></i>Add CS Column
+        </button>
+      </div>
+
+      <!-- ══ PERFORMANCE TASK (PT) ══ -->
+      <div class="editor-panel">
+        <div class="editor-section-header">
+          <input type="text" class="section-label-input" id="ptLabel"
+                 placeholder="e.g., Performance Task (PT)"
+                 value="{{ course.pt_section_name|default:'' }}"
+                 data-original="{{ course.pt_section_name|default:'' }}"
+                 oninput="markLabelChanged(this, 'pt_section_name')">
+          <input type="number" class="section-weight-input" id="ptWeight" min="1" max="98"
+                 value="{{ course.req_weight }}"
+                 oninput="markWeightChanged(this, 'req_weight')">
+          <span class="section-weight-label">%</span>
+        </div>
+        <table class="editor-col-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>HPS</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="ptColsList">
+            {% for col in pt_col_data %}
+            <tr id="pt-row-{{ col.n }}" data-type="pt" data-col="{{ col.n }}">
+              <td><input type="text" value="{{ col.name }}" data-original="{{ col.name }}"
+                        oninput="markColumnChanged(this, 'pt', this.parentElement.parentElement.dataset.col)"></td>
+              <td><input type="number" value="{{ col.max }}" min="1" data-original="{{ col.max }}"
+                        oninput="markHpsChanged(this, 'fpt', this.parentElement.parentElement.dataset.col)"></td>
+              <td><button type="button" class="editor-del-btn" onclick="markDelete('pt', this.parentElement.parentElement.dataset.col)">✕ Delete</button></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <button type="button" class="editor-add-btn" onclick="queueAdd('pt')">
+          <i class="bi bi-plus-circle me-1"></i>Add PT Column
+        </button>
+      </div>
+    </div>
+
+    <!-- ══ MAJOR EXAMS ══ -->
+    <div class="editor-exam-panel">
+      <div class="editor-section-header">
+        <input type="text" class="section-label-input" id="examLabel"
+               placeholder="e.g., Major Exams"
+               value="{{ course.exam_section_name|default:'' }}"
+               data-original="{{ course.exam_section_name|default:'' }}"
+               oninput="markLabelChanged(this, 'exam_section_name')">
+        <input type="number" class="section-weight-input" id="examWeight" min="1" max="98"
+               value="{{ course.exam_weight }}"
+               oninput="markWeightChanged(this, 'exam_weight')">
+        <span class="section-weight-label">%</span>
+      </div>
+      <div style="margin-top: 12px; padding: 8px; background: #f8fafc; border-radius: 4px; font-size: .8rem;">
+        <div>Major Examination Score — Single score per student</div>
+        <div style="margin-top: 8px; display: flex; align-items: center; gap: 8px;">
+          <span>HPS (Max):</span>
+          <input type="number" id="exam-hps-edit" value="{{ course.final_exam_max }}" min="1"
+                 style="width: 80px; padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 4px;"
+                 oninput="markHpsChanged(this, 'fexam', 0)">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="editor-footer">
+    <span class="editor-status" id="col-editor-status">No pending changes</span>
+    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="closeColumnEditor()">Cancel</button>
+    <button type="button" class="btn btn-sm btn-primary" id="colEditorSaveBtn" onclick="saveColumnChanges()">
+      <i class="bi bi-check2-circle me-1"></i>Apply Changes
+    </button>
+  </div>
+</div>
+
+<!-- HPS Exceeded Warning Modal -->
+<div class="modal fade" id="hpsWarningModal" tabindex="-1" aria-labelledby="hpsWarningLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header py-2" style="background:#b71c1c;">
+        <h6 class="modal-title text-white mb-0" id="hpsWarningLabel">
+          <i class="bi bi-exclamation-triangle-fill me-1"></i> Score Exceeds HPS
+        </h6>
+        <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body py-3 px-4 text-center">
+        <p class="mb-1 fw-semibold" id="hpsWarningMsg" style="font-size:.9rem;"></p>
+        <p class="text-muted mb-0" style="font-size:.78rem;">
+          Please correct the score before saving.
+        </p>
+      </div>
+      <div class="modal-footer py-2 justify-content-center">
+        <button type="button" class="btn btn-sm btn-danger px-4" data-bs-dismiss="modal">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block extra_js %}
+<script>
+const FCS_JSON  = {{ fcs_json|safe }};
+const FPT_JSON  = {{ fpt_json|safe }};
+const FAO_JSON  = {{ fao_json|safe }};
+const FCS_COUNT = {{ fcs_count }};
+const FPT_COUNT = {{ fpt_count }};
+const FAO_COUNT = {{ fao_count }};
+
+// Weights (mutable, updated by editor)
+let csWeightCurrent   = {{ course.cs_weight }};
+let ptWeightCurrent   = {{ course.req_weight }};
+let aoWeightCurrent   = {{ course.ao_weight }};
+let examWeightCurrent = {{ course.exam_weight }};
+
+function getNum(sel) {
+  const el = document.querySelector(sel);
+  return el && el.value !== '' ? parseFloat(el.value) : null;
+}
+function getHPSArray(type) {
+  const arr = [];
+  document.querySelectorAll(`.hps-input[data-type="${type}"]`).forEach(el => {
+    arr.push(parseFloat(el.value) || 10);
+  });
+  return arr;
+}
+
+function computeRow(epk) {
+  // ── Class Standing ────────────────────────────────────────────────
+  const csMaxes = getHPSArray('fcs-max');
+  let csTotal = 0, csHps = csMaxes.reduce((a,b)=>a+b,0), csHasAny = false;
+  for (let n = 1; n <= FCS_COUNT; n++) {
+    const v = getNum(`input[name="fcs_${epk}_${n}"]`);
+    if (v !== null) { csTotal += v; csHasAny = true; }
+  }
+  const csPS = csHasAny && csHps ? csTotal / csHps * 100 : null;
+  const csWS = csPS !== null ? csPS * (csWeightCurrent / 100) : null;
+
+  // ── Performance Task ──────────────────────────────────────────────
+  const ptMaxes = getHPSArray('fpt-max');
+  let ptTotal = 0, ptHps = ptMaxes.reduce((a,b)=>a+b,0), ptHasAny = false;
+  for (let n = 1; n <= FPT_COUNT; n++) {
+    const v = getNum(`input[name="fpt_${epk}_${n}"]`);
+    if (v !== null) { ptTotal += v; ptHasAny = true; }
+  }
+  const ptPS = ptHasAny && ptHps ? ptTotal / ptHps * 100 : null;
+  const ptWS = ptPS !== null ? ptPS * (ptWeightCurrent / 100) : null;
+
+  // ── Activity Output ────────────────────────────────────────────────
+  const aoMaxes = getHPSArray('fao-max');
+  let aoTotal = 0, aoHps = aoMaxes.reduce((a,b)=>a+b,0), aoHasAny = false;
+  for (let n = 1; n <= FAO_COUNT; n++) {
+    const v = getNum(`input[name="fao_${epk}_${n}"]`);
+    if (v !== null) { aoTotal += v; aoHasAny = true; }
+  }
+  const aoPS = aoHasAny && aoHps ? aoTotal / aoHps * 100 : null;
+  const aoWS = aoPS !== null ? aoPS * (aoWeightCurrent / 100) : null;
+
+  // ── Major Exams ───────────────────────────────────────────────────
+  const examScore = getNum(`input[name="fexam_${epk}"]`);
+  const examMax   = parseFloat(document.getElementById('fexam-max')?.value) || 100;
+  const examPS    = examScore !== null ? examScore / examMax * 100 : null;
+  const examWS    = examPS    !== null ? examPS * (examWeightCurrent / 100) : null;
+
+  // ── Initial / Final Grade ─────────────────────────────────────────
+  const IG = (csWS !== null && ptWS !== null && aoWS !== null && examWS !== null)
+    ? csWS + ptWS + aoWS + examWS : null;
+  const FG = IG !== null ? 60 + IG * 0.4 : null;
+
+  // ── Update cells ──────────────────────────────────────────────────
+  const fmt = (v, d=2) => v !== null ? v.toFixed(d) : '—';
+  const set = (sel, v, d=2) => { const el = document.querySelector(sel); if (el) el.textContent = fmt(v,d); };
+
+  set(`[data-fcs-total="${epk}"]`, csHasAny ? csTotal : null, 2);
+  set(`[data-fcs-ps="${epk}"]`,    csPS, 2);
+  set(`[data-fcs-ws="${epk}"]`,    csWS, 2);
+  set(`[data-fpt-total="${epk}"]`, ptHasAny ? ptTotal : null, 2);
+  set(`[data-fpt-ps="${epk}"]`,    ptPS, 2);
+  set(`[data-fpt-ws="${epk}"]`,    ptWS, 2);
+  set(`[data-fao-total="${epk}"]`, aoHasAny ? aoTotal : null, 2);
+  set(`[data-fao-ps="${epk}"]`,    aoPS, 2);
+  set(`[data-fao-ws="${epk}"]`,    aoWS, 2);
+  set(`[data-fexam-ps="${epk}"]`,  examPS, 2);
+  set(`[data-fexam-ws="${epk}"]`,  examWS, 2);
+  set(`[data-fig="${epk}"]`,       IG, 2);
+
+  const fgEl = document.querySelector(`[data-ffg="${epk}"]`);
+  if (fgEl) {
+    fgEl.textContent = FG !== null ? FG.toFixed(2) : '—';
+    fgEl.className   = 'c-qg ' + (FG === null ? 'blank' : FG >= 75 ? 'pass' : 'fail');
+  }
+}
+
+function updateHPSTotals() {
+  const csHps = getHPSArray('fcs-max').reduce((a,b)=>a+b,0);
+  const ptHps = getHPSArray('fpt-max').reduce((a,b)=>a+b,0);
+  const aoHps = getHPSArray('fao-max').reduce((a,b)=>a+b,0);
+  const csEl  = document.getElementById('fcs-hps-total');
+  const ptEl  = document.getElementById('fpt-hps-total');
+  const aoEl  = document.getElementById('fao-hps-total');
+  if (csEl) csEl.textContent = csHps || '—';
+  if (ptEl) ptEl.textContent = ptHps || '—';
+  if (aoEl) aoEl.textContent = aoHps || '—';
+}
+
+function computeAll() {
+  updateHPSTotals();
+  document.querySelectorAll('tr[data-epk]').forEach(row => computeRow(row.dataset.epk));
+}
+
+// ── HPS Warning ───────────────────────────────────────────────────────────────
+function showHpsWarning(entered, max, colLabel) {
+  const msg = document.getElementById('hpsWarningMsg');
+  if (msg) msg.textContent =
+    `Entered score (${entered}) exceeds the Highest Possible Score (${max}) for "${colLabel}".`;
+  const modal = new bootstrap.Modal(document.getElementById('hpsWarningModal'));
+  modal.show();
+}
+
+function checkHps(input, max, colLabel) {
+  const v = parseFloat(input.value);
+  if (!isNaN(v) && v > max) {
+    input.style.outline = '2px solid #b71c1c';
+    input.style.background = '#ffebee';
+    showHpsWarning(v, max, colLabel);
+  } else {
+    input.style.outline = '';
+    input.style.background = '';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  // Populate CS scores from server JSON
+  Object.entries(FCS_JSON).forEach(([epk, scores]) => {
+    scores.forEach((v, i) => {
+      if (v === null) return;
+      const el = document.querySelector(`input[name="fcs_${epk}_${i+1}"]`);
+      if (el) el.value = v;
+    });
+  });
+
+  // Populate PT scores from server JSON
+  Object.entries(FPT_JSON).forEach(([epk, scores]) => {
+    scores.forEach((v, i) => {
+      if (v === null) return;
+      const el = document.querySelector(`input[name="fpt_${epk}_${i+1}"]`);
+      if (el) el.value = v;
+    });
+  });
+
+  // Populate AO scores from server JSON
+  Object.entries(FAO_JSON).forEach(([epk, scores]) => {
+    scores.forEach((v, i) => {
+      if (v === null) return;
+      const el = document.querySelector(`input[name="fao_${epk}_${i+1}"]`);
+      if (el) el.value = v;
+    });
+  });
+
+  computeAll();
+
+  // Live recompute + HPS check on any score change
+  document.querySelectorAll('.fcs-score').forEach(el => {
+    el.addEventListener('input', () => {
+      const idx = parseInt(el.name.split('_').pop()) - 1;
+      const maxes = getHPSArray('fcs-max');
+      checkHps(el, maxes[idx] ?? 10, `CS Col ${idx + 1}`);
+      computeRow(el.dataset.epk);
+    });
+  });
+  document.querySelectorAll('.fpt-score').forEach(el => {
+    el.addEventListener('input', () => {
+      const idx = parseInt(el.name.split('_').pop()) - 1;
+      const maxes = getHPSArray('fpt-max');
+      checkHps(el, maxes[idx] ?? 10, `PT Col ${idx + 1}`);
+      computeRow(el.dataset.epk);
+    });
+  });
+  document.querySelectorAll('.fao-score').forEach(el => {
+    el.addEventListener('input', () => {
+      const idx = parseInt(el.name.split('_').pop()) - 1;
+      const maxes = getHPSArray('fao-max');
+      checkHps(el, maxes[idx] ?? 10, `AO Col ${idx + 1}`);
+      computeRow(el.dataset.epk);
+    });
+  });
+  document.querySelectorAll('.fexam-score').forEach(el => {
+    el.addEventListener('input', () => {
+      const max = parseFloat(document.getElementById('fexam-max')?.value) || 100;
+      checkHps(el, max, 'Major Exams');
+      computeRow(el.dataset.epk);
+    });
+  });
+
+  // HPS changes → recompute + re-validate all scores
+  document.querySelectorAll('.hps-input').forEach(el =>
+    el.addEventListener('input', () => {
+      computeAll();
+      document.querySelectorAll('.fcs-score').forEach(s => {
+        const idx = parseInt(s.name.split('_').pop()) - 1;
+        const maxes = getHPSArray('fcs-max');
+        if (s.value !== '') checkHps(s, maxes[idx] ?? 10, `CS Col ${idx + 1}`);
+      });
+      document.querySelectorAll('.fpt-score').forEach(s => {
+        const idx = parseInt(s.name.split('_').pop()) - 1;
+        const maxes = getHPSArray('fpt-max');
+        if (s.value !== '') checkHps(s, maxes[idx] ?? 10, `PT Col ${idx + 1}`);
+      });
+      document.querySelectorAll('.fexam-score').forEach(s => {
+        const max = parseFloat(document.getElementById('fexam-max')?.value) || 100;
+        if (s.value !== '') checkHps(s, max, 'Major Exams');
+      });
+    }));
+
+  // Block form save if any score exceeds HPS
+  document.getElementById('final-form')?.addEventListener('submit', function(e) {
+    const over = document.querySelectorAll('.ec-table input[type=number][style*="b71c1c"]');
+    if (over.length > 0) {
+      e.preventDefault();
+      showHpsWarning('one or more scores', 'HPS', 'the highlighted field(s)');
+    }
+  });
+
+  // Enter key moves to next input
+  const inputs = Array.from(document.querySelectorAll('.ec-table input[type=number]'));
+  inputs.forEach((el, i) => el.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); if (inputs[i+1]) inputs[i+1].focus(); }
+  }));
+
+  // ── Auto-save functionality ──────────────────────────────────────────────
+  let autoSaveTimeout = null;
+  const AUTOSAVE_DELAY = 1500; // 1.5 seconds after user stops typing
+
+  function autoSaveFinalScore(input) {
+    const name = input.name; // e.g., 'fcs_123_1', 'fpt_123_2', 'fao_123_3', 'fexam_123', 'fcs_max_1'
+    const parts = name.split('_');
+
+    if (parts.length < 2) return; // Not a valid field
+
+    let enrollmentId, fieldName;
+
+    // HPS/max score updates (no enrollment ID needed)
+    if (name.startsWith('fcs_max_') || name.startsWith('fpt_max_') ||
+        name.startsWith('fao_max_') || name === 'fexam_max') {
+      fieldName = name; // e.g., 'fcs_max_1', 'fpt_max_2'
+      enrollmentId = null;
+    }
+    // Column name updates (no enrollment ID needed)
+    else if (name.startsWith('fcs_name_') || name.startsWith('fpt_name_') || name.startsWith('fao_name_')) {
+      fieldName = name; // e.g., 'fcs_name_1', 'fpt_name_2'
+      enrollmentId = null;
+    }
+    // Student score updates (require enrollment ID)
+    else if (name.startsWith('fcs_') && parts.length >= 3) {
+      // Format: fcs_enrollmentId_columnNum
+      enrollmentId = parts[1];
+      fieldName = `${parts[0]}_${parts[2]}`; // e.g., 'fcs_1', 'fcs_2'
+    } else if (name.startsWith('fpt_') && parts.length >= 3) {
+      // Format: fpt_enrollmentId_columnNum
+      enrollmentId = parts[1];
+      fieldName = `${parts[0]}_${parts[2]}`; // e.g., 'fpt_1', 'fpt_2'
+    } else if (name.startsWith('fao_') && parts.length >= 3) {
+      // Format: fao_enrollmentId_columnNum
+      enrollmentId = parts[1];
+      fieldName = `${parts[0]}_${parts[2]}`; // e.g., 'fao_1', 'fao_2'
+    } else if (name.startsWith('fexam_') && parts.length >= 2 && parts[1] !== 'max') {
+      // Format: fexam_enrollmentId
+      enrollmentId = parts[1];
+      fieldName = 'fexam';
+    } else {
+      return; // Unknown field
+    }
+
+    const value = input.value.trim();
+
+    // Show saving indicator
+    input.style.borderColor = '#f59e0b';
+    input.style.backgroundColor = '#fffbeb';
+
+    // Get CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    // Prepare form data
+    const formData = new URLSearchParams({
+      'field_name': fieldName,
+      'value': value
+    });
+
+    // Add enrollment_id only if it's a score field (not a column name)
+    if (enrollmentId) {
+      formData.append('enrollment_id', enrollmentId);
+    }
+
+    // Send AJAX request to final_autosave_score endpoint
+    fetch('{% url "grading:final_autosave_score" course.pk %}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': csrfToken
+      },
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        // Show success indicator briefly
+        input.style.borderColor = '#10b981';
+        input.style.backgroundColor = '#f0fdf4';
+        setTimeout(() => {
+          input.style.borderColor = '';
+          input.style.backgroundColor = '';
+        }, 800);
+      } else {
+        // Show error indicator
+        input.style.borderColor = '#ef4444';
+        input.style.backgroundColor = '#fef2f2';
+        console.error('Auto-save error:', data.error);
+      }
+    })
+    .catch(error => {
+      console.error('Auto-save failed:', error);
+      input.style.borderColor = '#ef4444';
+      input.style.backgroundColor = '#fef2f2';
+    });
+  }
+
+  // Attach auto-save to all score inputs, HPS inputs, and column name inputs
+  document.querySelectorAll('.fcs-score, .fpt-score, .fao-score, .fexam-score, .hps-input, .row-subhdr input[type=text]').forEach(input => {
+    input.addEventListener('input', function() {
+      // Clear previous timeout
+      if (autoSaveTimeout) {
+        clearTimeout(autoSaveTimeout);
+      }
+
+      // Set new timeout
+      autoSaveTimeout = setTimeout(() => {
+        autoSaveFinalScore(this);
+      }, AUTOSAVE_DELAY);
+    });
+
+    // Also save on blur (when user leaves the field)
+    input.addEventListener('blur', function() {
+      if (autoSaveTimeout) {
+        clearTimeout(autoSaveTimeout);
+      }
+      autoSaveFinalScore(this);
+    });
+  });
+});
+
+// ── Column Editor Overlay ────────────────────────────────────────────────────
+let pending = { renames: {}, hpsChanges: {}, deletes: new Set(), adds: [], labelChanges: {}, weightChanges: {} };
+
+function openColumnEditor() {
+  resetPending();
+  document.getElementById('colEditorOverlay').classList.add('show');
+}
+
+function closeColumnEditor() {
+  document.getElementById('colEditorOverlay').classList.remove('show');
+  resetPending();
+}
+
+function resetPending() {
+  pending = { renames: {}, hpsChanges: {}, deletes: new Set(), adds: [], labelChanges: {}, weightChanges: {} };
+
+  // Reset deleted row styling
+  document.querySelectorAll('#colEditorOverlay [id^="cs-row-"], #colEditorOverlay [id^="pt-row-"]').forEach(row => {
+    row.style.opacity = '';
+    row.style.pointerEvents = '';
+  });
+
+  // Reset input styling
+  document.querySelectorAll('#colEditorOverlay input').forEach(input => {
+    input.style.background = '';
+    input.style.borderColor = '';
+  });
+
+  // Reset add button text
+  document.querySelectorAll('#colEditorOverlay .editor-add-btn').forEach(btn => {
+    const isSec = btn.parentElement.parentElement.id;
+    if (isSec.includes('csColsList')) {
+      btn.innerHTML = '<i class="bi bi-plus-circle me-1"></i>Add CS Column';
+    } else if (isSec.includes('ptColsList')) {
+      btn.innerHTML = '<i class="bi bi-plus-circle me-1"></i>Add PT Column';
+    }
+  });
+
+  // Remove preview rows
+  document.querySelectorAll('#colEditorOverlay .col-editor-row.preview').forEach(r => r.remove());
+
+  // Reset weight inputs to current values
+  document.getElementById('csWeight').value = csWeightCurrent;
+  document.getElementById('ptWeight').value = ptWeightCurrent;
+  document.getElementById('examWeight').value = examWeightCurrent;
+
+  updateEditorStatus();
+  updateWeightWarning();
+}
+
+function updateEditorStatus() {
+  const total = Object.keys(pending.renames).length +
+                Object.keys(pending.hpsChanges).length +
+                Object.keys(pending.labelChanges).length +
+                Object.keys(pending.weightChanges).length +
+                pending.deletes.size + pending.adds.length;
+  const el = document.getElementById('col-editor-status');
+  if (!el) return;
+  el.textContent = total > 0 ? `${total} unsaved change(s)` : 'No pending changes';
+}
+
+function updateWeightWarning() {
+  const csW = parseInt(document.getElementById('csWeight').value) || csWeightCurrent;
+  const ptW = parseInt(document.getElementById('ptWeight').value) || ptWeightCurrent;
+  const exW = parseInt(document.getElementById('examWeight').value) || examWeightCurrent;
+  const sum = csW + ptW + exW;
+
+  const warn = document.getElementById('weightWarning');
+  const text = document.getElementById('weightSumText');
+
+  if (sum === 100) {
+    warn.className = 'weight-warning valid';
+    text.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i>Weights: ${csW}+${ptW}+${exW} = ${sum} ✓`;
+  } else {
+    warn.className = 'weight-warning invalid';
+    text.innerHTML = `<i class="bi bi-exclamation-circle-fill me-1"></i>Weights: ${csW}+${ptW}+${exW} = ${sum} (must equal 100)`;
+  }
+}
+
+function markLabelChanged(input, fieldName) {
+  const val = input.value.trim();
+  const original = input.dataset.original || '';
+  if (val !== original) {
+    pending.labelChanges[fieldName] = { field: fieldName, value: val };
+    input.style.background = '#fefce8';
+  } else {
+    delete pending.labelChanges[fieldName];
+    input.style.background = '';
+  }
+  updateEditorStatus();
+}
+
+function markWeightChanged(input, fieldName) {
+  const val = parseInt(input.value);
+  if (!isNaN(val) && val > 0 && val < 100) {
+    pending.weightChanges[fieldName] = { field: fieldName, value: val };
+    input.style.background = '#fefce8';
+    // Update live weight display
+    if (fieldName === 'cs_weight') csWeightCurrent = val;
+    else if (fieldName === 'req_weight') ptWeightCurrent = val;
+    else if (fieldName === 'exam_weight') examWeightCurrent = val;
+    computeAll();
+  } else {
+    delete pending.weightChanges[fieldName];
+    input.style.background = '';
+  }
+  updateWeightWarning();
+  updateEditorStatus();
+}
+
+function markColumnChanged(input, type, colNum) {
+  const key = `${type}_${colNum}`;
+  const val = input.value.trim();
+  if (val !== input.dataset.original) {
+    pending.renames[key] = { type, col: colNum, name: val };
+    input.style.background = '#fefce8';
+  } else {
+    delete pending.renames[key];
+    input.style.background = '';
+  }
+  updateEditorStatus();
+}
+
+function markHpsChanged(input, prefix, colNum) {
+  const val = parseInt(input.value);
+  if (!isNaN(val) && val > 0) {
+    pending.hpsChanges[`${prefix}_${colNum}`] = { prefix, col: colNum, max: val };
+    input.style.background = '#fefce8';
+  } else {
+    delete pending.hpsChanges[`${prefix}_${colNum}`];
+    input.style.background = '';
+  }
+  updateEditorStatus();
+}
+
+function markDelete(type, colNum) {
+  const key = `${type}_${colNum}`;
+  const row = document.getElementById(`${type}-row-${colNum}`);
+  if (!row) return;
+  if (pending.deletes.has(key)) {
+    pending.deletes.delete(key);
+    row.style.opacity = '';
+    row.style.pointerEvents = '';
+  } else {
+    pending.deletes.add(key);
+    row.style.opacity = '0.5';
+    row.style.pointerEvents = 'none';
+  }
+  updateEditorStatus();
+}
+
+function queueAdd(type) {
+  pending.adds.push({ type });
+  const btn = event.currentTarget;
+  const n = pending.adds.filter(a => a.type === type).length;
+  const label = type === 'cs' ? 'CS' : 'PT';
+  const tbody = document.getElementById(type === 'cs' ? 'csColsList' : 'ptColsList');
+
+  const tr = document.createElement('tr');
+  tr.className = 'col-editor-row preview';
+  tr.style.opacity = '0.7';
+  tr.innerHTML = `
+    <td><input class="form-control form-control-sm" placeholder="New ${label} column" disabled style="background: transparent;"></td>
+    <td><input type="number" class="form-control form-control-sm" value="10" disabled style="background: transparent; text-align: center;"></td>
+    <td><span class="badge bg-success" style="font-size:.68rem;">+ New</span></td>`;
+  tbody.appendChild(tr);
+
+  btn.textContent = `${n} column(s) queued`;
+  updateEditorStatus();
+}
+
+async function saveColumnChanges() {
+  const csrf    = document.querySelector('[name=csrfmiddlewaretoken]').value;
+  const saveBtn = document.getElementById('colEditorSaveBtn');
+  const status  = document.getElementById('col-editor-status');
+
+  const hasChanges = Object.keys(pending.renames).length ||
+                     Object.keys(pending.hpsChanges).length ||
+                     Object.keys(pending.labelChanges).length ||
+                     Object.keys(pending.weightChanges).length ||
+                     pending.deletes.size || pending.adds.length;
+  if (!hasChanges) {
+    closeColumnEditor();
+    return;
+  }
+
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving…';
+  status.textContent = 'Applying changes…';
+
+  const autosaveUrl = '{% url "grading:final_autosave_score" course.pk %}';
+
+  const post = (url, body) => fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrf },
+    body: new URLSearchParams(body)
+  });
+
+  try {
+    // 0. Section labels + weights
+    for (const { field, value } of Object.values(pending.labelChanges)) {
+      await post(autosaveUrl, { field_name: field, value: value });
+    }
+    for (const { field, value } of Object.values(pending.weightChanges)) {
+      await post(autosaveUrl, { field_name: field, value: value });
+    }
+
+    // 1. Column renames
+    for (const { type, col, name } of Object.values(pending.renames)) {
+      const field = type === 'cs' ? `fcs_name_${col}` : `fpt_name_${col}`;
+      await post(autosaveUrl, { field_name: field, value: name });
+    }
+
+    // 2. HPS changes
+    for (const { prefix, col, max } of Object.values(pending.hpsChanges)) {
+      let field;
+      if (prefix === 'fexam') { field = 'fexam_max'; }
+      else if (prefix === 'fcs') { field = `fcs_max_${col}`; }
+      else { field = `fpt_max_${col}`; }
+      await post(autosaveUrl, { field_name: field, value: max });
+    }
+
+    // 3. Deletes — highest column number first to avoid index shifting
+    const sortedDeletes = [...pending.deletes].sort((a, b) => {
+      const [, ca] = a.split('_'); const [, cb] = b.split('_');
+      return parseInt(cb) - parseInt(ca);
+    });
+    for (const key of sortedDeletes) {
+      const [type, col] = key.split('_');
+      const url = type === 'cs'
+        ? '{% url "grading:delete_final_cs_column" course.pk 0 %}'.replace('/0/', `/${col}/`)
+        : '{% url "grading:delete_final_pt_column" course.pk 0 %}'.replace('/0/', `/${col}/`);
+      await fetch(url, { method: 'GET' });
+    }
+
+    // 4. Adds
+    for (const { type } of pending.adds) {
+      const url = type === 'cs'
+        ? '{% url "grading:add_final_cs_column" course.pk %}'
+        : '{% url "grading:add_final_pt_column" course.pk %}';
+      await fetch(url, { method: 'GET' });
+    }
+
+    status.textContent = 'Done! Reloading…';
+    window.location.reload();
+  } catch (err) {
+    console.error(err);
+    status.textContent = 'Error — please try again.';
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = '<i class="bi bi-check2-circle me-1"></i>Apply Changes';
+  }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,770 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="{{ theme }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#4f46e5">
+  <title>{% block title %}INSTAASYS{% endblock %}</title>
+  <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
+  <link rel="stylesheet" href="{% static 'css/layout.css' %}">
+  <link rel="stylesheet" href="{% static 'css/components.css' %}">
+  <link rel="stylesheet" href="{% static 'css/utilities.css' %}">
+  <link rel="stylesheet" href="{% static 'css/mobile.css' %}">
+  <link rel="stylesheet" href="{% static 'css/mobile-features.css' %}">
+  <style>
+    /* ── Page-specific overrides only — global styles live in css/*.css ── */
+
+    /* ── E-Class Record sidebar sub-menu ── */
+    .nav-eclass-group {
+      margin: 0 0 2px 0;
+    }
+
+    .nav-eclass-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding: 0.5rem 0.875rem;
+      background: none;
+      border: none;
+      border-radius: 8px;
+      color: var(--sidebar-text, #94a3b8);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      text-align: left;
+      gap: 0.5rem;
+    }
+
+    .nav-eclass-toggle:hover {
+      background: var(--sidebar-hover, rgba(255,255,255,0.07));
+      color: var(--sidebar-text-active, #fff);
+    }
+
+    .nav-eclass-toggle.active {
+      color: var(--sidebar-text-active, #fff);
+      background: var(--sidebar-hover, rgba(255,255,255,0.07));
+    }
+
+    .nav-eclass-chevron {
+      font-size: 0.7rem;
+      transition: transform 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .nav-eclass-items {
+      display: none;
+      padding-left: 0.75rem;
+      margin-bottom: 2px;
+    }
+
+    .nav-eclass-group.open .nav-eclass-items {
+      display: block;
+    }
+
+    .nav-eclass-group.open .nav-eclass-chevron {
+      transform: rotate(180deg);
+    }
+
+    .nav-link.nav-sub {
+      font-size: 0.8125rem;
+      padding: 0.375rem 0.875rem;
+      border-radius: 6px;
+      color: var(--sidebar-text, #94a3b8);
+      opacity: 0.85;
+    }
+
+    .nav-link.nav-sub:hover,
+    .nav-link.nav-sub.active {
+      opacity: 1;
+    }
+
+    .nav-link.nav-sub i {
+      font-size: 0.8rem;
+      width: 1rem;
+    }
+  </style>
+  <link rel="stylesheet" href="{% static 'css/instaasys.css' %}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+{% if user.is_authenticated %}
+
+<!-- ── Sidebar ───────────────────────────────────────────── -->
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <img src="{% static 'images/favicon.png' %}" alt="INSTAASYS logo" style="width:36px;height:36px;border-radius:9px;object-fit:cover;flex-shrink:0;">
+    <div class="sidebar-brand-text">
+      <div class="sidebar-brand-name">INSTAASYS</div>
+      <div class="sidebar-brand-sub">Academic Assistant</div>
+    </div>
+  </div>
+
+  <!-- Scrollable navigation area -->
+  <div class="sidebar-nav">
+    {% if user.is_superuser %}
+      {% with url_name=request.resolver_match.url_name %}
+      <div class="nav-section-label">Administration</div>
+      <a href="{% url 'accounts:portal_dashboard' %}"
+         class="nav-link {% if url_name == 'portal_dashboard' %}active{% endif %}">
+        <i class="bi bi-grid-1x2"></i> Dashboard
+      </a>
+      <a href="{% url 'accounts:portal_users' %}"
+         class="nav-link {% if 'portal_user' in url_name %}active{% endif %}">
+        <i class="bi bi-people"></i> Users
+      </a>
+      <a href="{% url 'accounts:portal_create_user' %}"
+         class="nav-link {% if url_name == 'portal_create_user' %}active{% endif %}">
+        <i class="bi bi-person-plus"></i> Add User
+      </a>
+      <a href="{% url 'accounts:portal_courses' %}"
+         class="nav-link {% if url_name == 'portal_courses' %}active{% endif %}">
+        <i class="bi bi-book"></i> Courses
+      </a>
+      <a href="{% url 'accounts:portal_logs' %}"
+         class="nav-link {% if url_name == 'portal_logs' %}active{% endif %}">
+        <i class="bi bi-activity"></i> System Logs
+      </a>
+      <a href="{% url 'accounts:portal_django_admin' %}"
+         class="nav-link {% if url_name == 'portal_django_admin' %}active{% endif %}">
+        <i class="bi bi-terminal"></i> Django Admin
+      </a>
+      {% endwith %}
+    {% elif user.is_instructor %}
+      <div class="nav-section-label">Instructor</div>
+      <a href="{% url 'accounts:instructor_dashboard' %}"
+         class="nav-link {% if request.resolver_match.url_name == 'instructor_dashboard' %}active{% endif %}">
+        <i class="bi bi-grid-1x2"></i> Dashboard
+      </a>
+
+      {% with url_name=request.resolver_match.url_name cur_pk=request.resolver_match.kwargs.pk|default:'' cur_course_pk=request.resolver_match.kwargs.course_pk|default:'' %}
+
+      {# ── E-Class Record — single button below Dashboard ── #}
+      {% if cur_pk or cur_course_pk %}
+        {# On a course page — link to that course's grade management #}
+        {% for c in active_courses %}
+          {% if cur_pk == c.pk or cur_course_pk == c.pk %}
+            <a href="{% url 'grading:grade_management' c.pk %}"
+               class="nav-link {% if url_name == 'grade_management' or url_name == 'eclass_record' or url_name == 'midterm_sheet' or url_name == 'final_sheet' or url_name == 'grade_summary' %}active{% endif %}">
+              <i class="bi bi-journal-text"></i> E-Class Record
+            </a>
+          {% endif %}
+        {% endfor %}
+      {% else %}
+        {# Not on a course page — link to first course or show disabled #}
+        {% if active_courses %}
+          <a href="{% url 'grading:grade_management' active_courses.0.pk %}"
+             class="nav-link">
+            <i class="bi bi-journal-text"></i> E-Class Record
+          </a>
+        {% else %}
+          <span class="nav-link" style="opacity:.45;cursor:default;">
+            <i class="bi bi-journal-text"></i> E-Class Record
+          </span>
+        {% endif %}
+      {% endif %}
+
+      <div class="nav-section-label">Subjects</div>
+      <a href="{% url 'accounts:course_list' %}"
+         class="nav-link {% if url_name == 'course_list' %}active{% endif %}">
+        <i class="bi bi-list-ul"></i> All Subjects
+      </a>
+      <a href="{% url 'accounts:syllabus_upload' %}"
+         class="nav-link {% if url_name == 'syllabus_upload' %}active{% endif %}">
+        <i class="bi bi-plus-circle"></i> Add Subject
+      </a>
+
+      {% for c in active_courses %}
+        {% if cur_pk == c.pk or cur_course_pk == c.pk %}
+        <a href="{% url 'accounts:course_detail' c.pk %}"
+           class="nav-link active">
+          <span style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;overflow:hidden;text-overflow:ellipsis;">
+            {{ c.code|default:c.title|truncatechars:18 }}
+            {% if c.program %}
+            <span class="course-nav-badge program active">{{ c.program }}</span>
+            {% endif %}
+            {% if c.block %}
+            <span class="course-nav-badge block active">{{ c.block }}</span>
+            {% endif %}
+          </span>
+        </a>
+        {% else %}
+        <a href="{% url 'accounts:course_detail' c.pk %}"
+           class="nav-link">
+          <span style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;overflow:hidden;text-overflow:ellipsis;">
+            {{ c.code|default:c.title|truncatechars:18 }}
+            {% if c.program %}
+            <span class="course-nav-badge program">{{ c.program }}</span>
+            {% endif %}
+            {% if c.block %}
+            <span class="course-nav-badge block">{{ c.block }}</span>
+            {% endif %}
+          </span>
+        </a>
+        {% endif %}
+      {% endfor %}
+      {% endwith %}
+
+    {% else %}
+      <div class="nav-section-label">Student</div>
+      <a href="{% url 'accounts:student_dashboard' %}"
+         class="nav-link {% if request.resolver_match.url_name == 'student_dashboard' %}active{% endif %}">
+        <i class="bi bi-grid-1x2"></i> Dashboard
+      </a>
+      
+      {% with url_name=request.resolver_match.url_name cur_course_pk=request.resolver_match.kwargs.course_pk|default:'' %}
+      <div class="nav-section-label">My Subjects</div>
+      <a href="{% url 'grading:student_grades' %}"
+         class="nav-link {% if url_name == 'student_grades' %}active{% endif %}">
+        <i class="bi bi-bar-chart-line"></i> All Grades
+      </a>
+      {% for enrollment in user.enrollments.all %}
+        <a href="{% url 'grading:student_course_grades' enrollment.course.pk %}"
+           class="nav-link {% if cur_course_pk == enrollment.course.pk %}active{% endif %}">
+          <span style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;overflow:hidden;text-overflow:ellipsis;">
+            {{ enrollment.course.code|default:enrollment.course.title|truncatechars:20 }}
+          </span>
+        </a>
+      {% endfor %}
+      {% endwith %}
+    {% endif %}
+  </div> <!-- end .sidebar-nav -->
+
+  <!-- NEW: Fixed Account section (always visible at bottom, above footer) -->
+  <div class="sidebar-account" style="padding: 0 1rem 0.5rem 1rem;">
+    <div class="nav-section-label">Account</div>
+    <a href="{% url 'accounts:profile' %}"
+       class="nav-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+      <i class="bi bi-gear"></i> Settings
+    </a>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="sidebar-user">
+      <div class="sidebar-avatar">
+        {{ user.first_name|slice:":1" }}{{ user.last_name|slice:":1" }}
+      </div>
+      <div>
+        <div class="sidebar-user-name">{{ user.get_full_name }}</div>
+        <div class="sidebar-user-role">
+          {% if user.is_superuser %}Administrator{% else %}{{ user.get_role_display }}{% endif %}
+        </div>
+      </div>
+    </div>
+    <a href="{% url 'accounts:logout' %}" class="sidebar-logout">
+      <i class="bi bi-box-arrow-left"></i> Sign out
+    </a>
+  </div>
+</nav>
+
+<!-- ── Topbar ────────────────────────────────────────────── -->
+<div class="topbar">
+  <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
+    <i class="bi bi-list"></i>
+  </button>
+  <h1 class="topbar-title">{% block page_title %}{% endblock %}</h1>
+  <div class="topbar-right">
+    <div class="topbar-actions">
+      <!-- Notifications -->
+      <div style="position:relative;">
+        <button class="icon-btn" id="notifToggle" title="Notifications">
+          <i class="bi bi-bell-fill"></i>
+          <span class="notification-badge" id="notifBadge" style="display:none;"></span>
+        </button>
+        
+        <div class="notifications-dropdown" id="notifDropdown">
+          <div class="notif-header">
+            <div class="notif-title">Notifications</div>
+            <a href="#" class="notif-clear" id="clearNotif">Clear all</a>
+          </div>
+          <div class="notif-list" id="notifList">
+            <div class="notif-empty">
+              <i class="bi bi-bell" style="font-size:2rem;opacity:.3;"></i>
+              <p style="margin-top:.5rem;font-size:.875rem;">No notifications</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% if user.is_superuser %}
+    <span class="topbar-badge" style="background:#fef3c7;color:#92400e;">Admin</span>
+    {% elif user.is_instructor %}
+    <span class="topbar-badge instructor">Instructor</span>
+    {% else %}
+    <span class="topbar-badge student">Student</span>
+    {% endif %}
+    <span class="topbar-username d-none d-md-inline">{{ user.get_full_name }}</span>
+  </div>
+</div>
+
+<!-- ── Sidebar Overlay (Mobile) ──────────────────────────── -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- ── Main content ──────────────────────────────────────── -->
+<div class="main-content">
+  {% if messages %}
+    {% for message in messages %}
+      <span hidden
+            data-django-message="{{ message|escapejs }}"
+            data-django-message-type="{{ message.tags|default:'info' }}"></span>
+    {% endfor %}
+  {% endif %}
+  {% block content %}{% endblock %}
+</div>
+
+<!-- Chatbot (only for authenticated users) -->
+<button class="chatbot-toggle" id="chatbotToggle">
+  <i class="bi bi-chat-dots-fill"></i>
+</button>
+
+<div class="chatbot-window" id="chatbotWindow">
+  <div class="chatbot-header">
+    <div>
+      <div class="chatbot-header-title">INSTAASYS Assistant</div>
+      <div class="chatbot-header-subtitle">How can I help you?</div>
+    </div>
+    <button class="chatbot-close" id="chatbotClose">
+      <i class="bi bi-x-lg"></i>
+    </button>
+  </div>
+  
+  <div class="chatbot-messages" id="chatMessages">
+    <div class="chat-message bot">
+      <div class="chat-avatar bot">
+        <i class="bi bi-robot"></i>
+      </div>
+      <div class="chat-bubble">
+        Hello! I'm your INSTAASYS assistant. I can help you with:
+        <ul style="margin:.5rem 0 0 1.25rem;padding:0;">
+          <li>Course management</li>
+          <li>Generating lessons</li>
+          <li>Creating assessments</li>
+          <li>Grading questions</li>
+        </ul>
+        What would you like to know?
+      </div>
+    </div>
+  </div>
+  
+  <div class="chatbot-input-area">
+    <input type="text" class="chatbot-input" id="chatInput" placeholder="Type your message...">
+    <button class="chatbot-send" id="chatSend">
+      <i class="bi bi-send-fill"></i>
+    </button>
+  </div>
+</div>
+
+{% else %}
+  {% block auth_content %}{% endblock %}
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{% static 'js/instaasys.js' %}"></script>
+<!-- Global toast container (positioned by CSS) -->
+<div id="insta-toast-container" aria-live="polite" aria-atomic="false"></div>
+<script>
+  // ═══════════════════════════════════════════════════════════
+  // Mobile Menu Toggle
+  // ═══════════════════════════════════════════════════════════
+  const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+  const sidebar = document.querySelector('.sidebar');
+  const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+  function openSidebar() {
+    sidebar?.classList.add('open');
+    sidebarOverlay?.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeSidebar() {
+    sidebar?.classList.remove('open');
+    sidebarOverlay?.classList.remove('show');
+    document.body.style.overflow = '';
+  }
+
+  mobileMenuToggle?.addEventListener('click', () => {
+    if (sidebar?.classList.contains('open')) {
+      closeSidebar();
+    } else {
+      openSidebar();
+    }
+  });
+
+  sidebarOverlay?.addEventListener('click', closeSidebar);
+
+  // Close sidebar when clicking a nav link on mobile
+  if (window.innerWidth <= 768) {
+    document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+      link.addEventListener('click', () => {
+        setTimeout(closeSidebar, 150);
+      });
+    });
+  }
+
+  // Close sidebar on window resize if it's open
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      if (window.innerWidth > 768) {
+        closeSidebar();
+      }
+    }, 250);
+  });
+
+  // ═══════════════════════════════════════════════════════════
+  // Theme Toggle with System Preference Detection
+  // ═══════════════════════════════════════════════════════════
+  const themeToggle = document.getElementById('themeToggle');
+  const themeIcon = document.getElementById('themeIcon');
+  const html = document.documentElement;
+  
+  // User preference from backend (via Django context)
+  const serverTheme = '{{ theme }}';
+  const isSystemPreference = {% if theme_preference_system %}true{% else %}false{% endif %};
+
+  /**
+   * Determine the effective theme to display:
+   * 1. Check localStorage first (user may have toggled in current session)
+   * 2. If system preference mode is enabled, detect OS preference
+   * 3. Fall back to server-side preference
+   */
+  function getEffectiveTheme() {
+    const localTheme = localStorage.getItem('theme');
+    
+    if (localTheme) {
+      return localTheme;  // User toggled in this session
+    }
+    
+    if (isSystemPreference) {
+      // Detect OS preference using prefers-color-scheme
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    
+    return serverTheme;  // Use server preference
+  }
+
+  // Initialize theme on page load
+  const effectiveTheme = getEffectiveTheme();
+  html.setAttribute('data-theme', effectiveTheme);
+  updateThemeIcon(effectiveTheme);
+
+  // Listen for system preference changes
+  if (isSystemPreference) {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+      const newTheme = e.matches ? 'dark' : 'light';
+      html.setAttribute('data-theme', newTheme);
+      updateThemeIcon(newTheme);
+      localStorage.setItem('theme', newTheme);
+    });
+  }
+
+  // Handle theme toggle button click
+  themeToggle?.addEventListener('click', () => {
+    const currentTheme = html.getAttribute('data-theme');
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    
+    // Update DOM immediately for instant feedback
+    html.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    updateThemeIcon(newTheme);
+    
+    // Save to backend if user is authenticated
+    if ('{{ user.is_authenticated|lower }}' === 'true') {
+      saveThemePreference(newTheme);
+    }
+  });
+
+  function updateThemeIcon(theme) {
+    if (themeIcon) {
+      themeIcon.className = theme === 'light' ? 'bi bi-moon-fill' : 'bi bi-sun-fill';
+    }
+  }
+
+  /**
+   * Save theme preference to backend database
+   * @param {string} theme - 'light' or 'dark'
+   */
+  function saveThemePreference(theme) {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                      document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1];
+    
+    fetch('/api/user/theme-preference/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken,
+      },
+      body: JSON.stringify({ theme_preference: theme })
+    })
+    .catch(err => console.log('Theme preference saved locally only:', err));
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // Notifications — real-time generation status polling
+  // ═══════════════════════════════════════════════════════════
+  const notifToggle   = document.getElementById('notifToggle');
+  const notifDropdown = document.getElementById('notifDropdown');
+  const notifBadge    = document.getElementById('notifBadge');
+  const notifList     = document.getElementById('notifList');
+  const clearNotif    = document.getElementById('clearNotif');
+
+  // Persist dismissed states across page loads: Set of "{key}_{status}" strings
+  let seen = new Set(JSON.parse(localStorage.getItem('insta_notif_seen') || '[]'));
+  let lastItems = [];
+  let pollTimer  = null;
+
+  function saveSeen() {
+    localStorage.setItem('insta_notif_seen', JSON.stringify([...seen]));
+  }
+
+  const IN_PROGRESS = new Set(['pending', 'generating', 'blueprint_pending', 'blueprint_approved']);
+
+  const STATUS_META = {
+    pending:            { icon: 'bi-arrow-clockwise notif-spin', color: 'warning', label: 'Generating…' },
+    generating:         { icon: 'bi-arrow-clockwise notif-spin', color: 'warning', label: 'Generating…' },
+    blueprint_pending:  { icon: 'bi-clipboard-check',            color: 'info',    label: 'Needs Review' },
+    blueprint_approved: { icon: 'bi-arrow-clockwise notif-spin', color: 'info',    label: 'Processing…' },
+    ready:              { icon: 'bi-check-circle-fill',           color: 'success', label: 'Ready' },
+    failed:             { icon: 'bi-x-circle-fill',              color: 'danger',  label: 'Failed' },
+  };
+
+  const TYPE_ICON = {
+    lesson:       'bi-book',
+    tos:          'bi-table',
+    assessment:   'bi-question-circle',
+    presentation: 'bi-easel',
+    student_join: 'bi-person-plus',
+    enrollment:   'bi-mortarboard',
+  };
+
+  function timeAgo(iso) {
+    const s = (Date.now() - new Date(iso)) / 1000;
+    if (s < 60)    return 'just now';
+    if (s < 3600)  return `${Math.floor(s / 60)}m ago`;
+    if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+    return `${Math.floor(s / 86400)}d ago`;
+  }
+
+  function renderNotifList(items) {
+    const visible = items.filter(i => !seen.has(`${i.key}_${i.status}`));
+    const badgeN  = visible.length;
+
+    if (badgeN > 0) {
+      notifBadge.textContent    = badgeN > 9 ? '9+' : String(badgeN);
+      notifBadge.style.display  = 'flex';
+    } else {
+      notifBadge.style.display  = 'none';
+    }
+
+    if (visible.length === 0) {
+      notifList.innerHTML = `
+        <div class="notif-empty">
+          <i class="bi bi-bell" style="font-size:2rem;opacity:.3;"></i>
+          <p style="margin-top:.5rem;font-size:.875rem;">No active generations</p>
+        </div>`;
+      return;
+    }
+
+    notifList.innerHTML = visible.map(item => {
+      const meta     = STATUS_META[item.status] || { icon: 'bi-circle', color: 'info', label: item.status };
+      const typeIcon = TYPE_ICON[item.type] || 'bi-circle';
+      const errorHtml = item.status === 'failed' && item.error
+        ? `<div style="font-size:.7rem;color:#dc2626;margin-top:2px;line-height:1.3;">${item.error.substring(0, 90)}</div>`
+        : '';
+      return `
+      <div class="notif-item" data-key="${item.key}" data-status="${item.status}"
+           style="cursor:${item.url ? 'pointer' : 'default'}"
+           onclick="if('${item.url}')window.location='${item.url}'">
+        <div class="notif-icon ${meta.color}">
+          <i class="bi ${meta.icon}"></i>
+        </div>
+        <div class="notif-content">
+          <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;">
+            <i class="bi ${typeIcon}" style="font-size:.75rem;opacity:.6;"></i>
+            <span class="notif-text" style="margin:0;">${item.label}</span>
+          </div>
+          <div style="display:flex;gap:.4rem;align-items:center;margin-top:3px;flex-wrap:wrap;">
+            <span style="font-size:.7rem;opacity:.55;">${item.sub}</span>
+            <span class="notif-status-pill ${meta.color}">${meta.label}</span>
+          </div>
+          ${errorHtml}
+          <div class="notif-time">${timeAgo(item.created_at)}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+    notifList.querySelectorAll('.notif-item').forEach(el => {
+      el.addEventListener('click', () => {
+        seen.add(`${el.dataset.key}_${el.dataset.status}`);
+        saveSeen();
+        renderNotifList(lastItems);
+      });
+    });
+  }
+
+  async function pollNotifications() {
+    try {
+      const res = await fetch('{% url "accounts:notifications_api" %}', {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+      if (!res.ok) return;
+      const data  = await res.json();
+      const items = data.items || [];
+
+      // Fire toasts when status transitions happen
+      for (const item of items) {
+        const prev = lastItems.find(p => p.key === item.key);
+        if (prev && prev.status !== item.status) {
+          seen.delete(`${item.key}_${prev.status}`);
+          if (item.status === 'ready') {
+            InstaUI?.toast?.success(`"${item.label}" is ready!`);
+          } else if (item.status === 'failed') {
+            InstaUI?.toast?.error(`"${item.label}" failed to generate.`);
+          } else if (item.status === 'blueprint_pending') {
+            InstaUI?.toast?.info(`Blueprint ready for review: ${item.label}`);
+          }
+        }
+      }
+
+      lastItems = items;
+      renderNotifList(items);
+
+      // Adapt poll rate: fast when something is in progress
+      const hasActive = items.some(i => IN_PROGRESS.has(i.status));
+      clearTimeout(pollTimer);
+      pollTimer = setTimeout(pollNotifications, hasActive ? 5000 : 30000);
+    } catch (_) {
+      clearTimeout(pollTimer);
+      pollTimer = setTimeout(pollNotifications, 60000);
+    }
+  }
+
+  notifToggle?.addEventListener('click', e => {
+    e.stopPropagation();
+    notifDropdown.classList.toggle('show');
+  });
+
+  clearNotif?.addEventListener('click', e => {
+    e.preventDefault();
+    lastItems.forEach(i => seen.add(`${i.key}_${i.status}`));
+    saveSeen();
+    renderNotifList(lastItems);
+  });
+
+  document.addEventListener('click', e => {
+    if (!notifDropdown?.contains(e.target) && e.target !== notifToggle) {
+      notifDropdown?.classList.remove('show');
+    }
+  });
+
+  // Kick off first poll immediately
+  pollNotifications();
+
+  // ═══════════════════════════════════════════════════════════
+  // Chatbot
+  // ═══════════════════════════════════════════════════════════
+  const chatbotToggle = document.getElementById('chatbotToggle');
+  const chatbotWindow = document.getElementById('chatbotWindow');
+  const chatbotClose = document.getElementById('chatbotClose');
+  const chatMessages = document.getElementById('chatMessages');
+  const chatInput = document.getElementById('chatInput');
+  const chatSend = document.getElementById('chatSend');
+
+  chatbotToggle?.addEventListener('click', () => {
+    chatbotWindow.classList.add('show');
+  });
+
+  chatbotClose?.addEventListener('click', () => {
+    chatbotWindow.classList.remove('show');
+  });
+
+  function addMessage(text, isUser = false) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `chat-message ${isUser ? 'user' : 'bot'}`;
+    
+    messageDiv.innerHTML = `
+      <div class="chat-avatar ${isUser ? 'user' : 'bot'}">
+        ${isUser ? '{{ user.first_name|slice:":1" }}{{ user.last_name|slice:":1" }}' : '<i class="bi bi-robot"></i>'}
+      </div>
+      <div class="chat-bubble">${text}</div>
+    `;
+    
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  function getBotResponse(userMessage) {
+    const msg = userMessage.toLowerCase();
+    
+    // Simple keyword-based responses (replace with AI/backend integration)
+    if (msg.includes('course') || msg.includes('create')) {
+      return 'To create a new course, go to "My Courses" → "New Course" and upload your syllabus. The AI will extract course information automatically.';
+    } else if (msg.includes('lesson') || msg.includes('generate')) {
+      return 'You can generate lesson plans from your course detail page. Click on the "Lessons" tab and select "Generate Lesson Plan" for any week.';
+    } else if (msg.includes('assessment') || msg.includes('question')) {
+      return 'To create assessments, navigate to the "Assessments" tab in your course. You can generate questions automatically or create them manually.';
+    } else if (msg.includes('grade') || msg.includes('grading')) {
+      return 'Access the e-Class Record from your course page to manage grades. The system automatically calculates final grades based on CHED standards.';
+    } else if (msg.includes('help')) {
+      return 'I can help you with course management, lesson generation, assessments, and grading. What specific task would you like assistance with?';
+    } else {
+      return 'I understand you need help. Could you please be more specific? You can ask about courses, lessons, assessments, or grading.';
+    }
+  }
+
+  function sendMessage() {
+    const message = chatInput.value.trim();
+    if (!message) return;
+
+    // Add user message
+    addMessage(message, true);
+    chatInput.value = '';
+
+    // Simulate bot typing delay
+    setTimeout(() => {
+      const response = getBotResponse(message);
+      addMessage(response, false);
+    }, 800);
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // E-Class Record sidebar toggle
+  // ═══════════════════════════════════════════════════════════
+  function toggleEclassMenu(coursePk) {
+    const group = document.getElementById('eclass-group-' + coursePk);
+    if (group) {
+      group.classList.toggle('open');
+    }
+  }
+
+  // Auto-open the menu if we're already on an e-class page
+  document.querySelectorAll('.nav-eclass-group').forEach(group => {
+    const hasActive = group.querySelector('.nav-link.nav-sub.active');
+    if (hasActive) {
+      group.classList.add('open');
+    }
+  });
+
+  chatSend?.addEventListener('click', sendMessage);
+  chatInput?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      sendMessage();
+    }
+  });
+
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

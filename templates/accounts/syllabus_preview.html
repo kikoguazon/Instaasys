@@ -1,0 +1,496 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% block title %}Syllabus Preview — INSTAASYS{% endblock %}
+{% block page_title %}Syllabus Preview{% endblock %}
+{% block content %}
+
+<style>
+  .confirmation-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2.5rem;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    border: 2px solid #e2e8f0;
+    margin-bottom: 2rem;
+  }
+  
+  .preview-header {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+  }
+  
+  .preview-section {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border-left: 4px solid #667eea;
+  }
+  
+  .data-table {
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+  }
+  
+  .data-table th {
+    background: #f1f5f9;
+    color: #475569;
+    font-weight: 600;
+    font-size: 0.875rem;
+    padding: 0.75rem 1rem;
+    border: none;
+  }
+  
+  .data-table td {
+    padding: 0.75rem 1rem;
+    border-color: #f1f5f9;
+    font-size: 0.875rem;
+  }
+  
+  .week-card {
+    background: white;
+    border: 1px solid #e2e8f9;
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    transition: all 0.2s ease;
+  }
+  
+  .week-card:hover {
+    border-color: #667eea;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+  }
+  
+  .badge-topic {
+    background: #ede9fe;
+    color: #6d28d9;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    margin: 0.125rem;
+    display: inline-block;
+  }
+  
+  .badge-clo {
+    background: #dcfce7;
+    color: #166534;
+    font-size: 0.7rem;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    margin: 0.125rem;
+  }
+  
+  .action-buttons {
+    position: sticky;
+    bottom: 2rem;
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    border: 2px solid #e2e8f0;
+    z-index: 100;
+  }
+  
+  .btn-confirm {
+    background: linear-gradient(135deg, #10b981, #059669);
+    border: none;
+    color: white;
+    padding: 0.875rem 2rem;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+  
+  .btn-confirm:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
+    color: white;
+  }
+  
+  .btn-edit {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border: none;
+    color: white;
+    padding: 0.875rem 2rem;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+  
+  .btn-edit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(245, 158, 11, 0.4);
+    color: white;
+  }
+  
+  .btn-cancel {
+    background: #f1f5f9;
+    border: 2px solid #cbd5e1;
+    color: #64748b;
+    padding: 0.875rem 2rem;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+  
+  .btn-cancel:hover {
+    background: #e2e8f0;
+    color: #475569;
+  }
+
+  .error-alert {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .warning-alert {
+    background: #fffbeb;
+    border: 1px solid #fed7aa;
+    color: #d97706;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+</style>
+
+<div class="container-fluid px-0">
+  <!-- Header -->
+  <div class="preview-header">
+    <div class="row align-items-center">
+      <div class="col">
+        <h4 class="mb-1">
+          <i class="bi bi-file-earmark-text me-2"></i>Syllabus Preview & Confirmation
+        </h4>
+        <p class="mb-0 opacity-75">Review the extracted information before creating your subject</p>
+      </div>
+    
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="row">
+    <div class="col-lg-8">
+      <!-- Basic Subject Information -->
+      <div class="confirmation-card">
+        <h5 class="fw-bold mb-4">
+          <i class="bi bi-book text-primary me-2"></i>Basic Subject Information
+        </h5>
+        
+        <div class="preview-section">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label fw-semibold text-muted small mb-1">Subject Code</label>
+                <div class="fw-bold">{{ extracted_data.code|default:"—" }}</div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-semibold text-muted small mb-1">Subject Title</label>
+                <div class="fw-bold">{{ extracted_data.title|default:"—" }}</div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-semibold text-muted small mb-1">Pre-Requisite</label>
+                <div>{{ extracted_data.prerequisite|default:"None" }}</div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label fw-semibold text-muted small mb-1">Credit Units</label>
+                <div>{{ extracted_data.credit_units|default:"—" }}</div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-semibold text-muted small mb-1">Contact Hours</label>
+                <div>{{ extracted_data.hours|default:"—" }}</div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-semibold text-muted small mb-1">Semester / School Year</label>
+                <div>{{ extracted_data.semester|default:"1st" }} — {{ extracted_data.school_year|default:"—" }}</div>
+              </div>
+              {% if extracted_data.block %}
+              <div class="mb-3">
+                <label class="form-label fw-semibold text-muted small mb-1">Block and Year</label>
+                <div>{{ extracted_data.block }}</div>
+              </div>
+              {% endif %}
+              {% if extracted_data.program %}
+              <div class="mb-3">
+                <label class="form-label fw-semibold text-muted small mb-1">Program / Subject</label>
+                <div>{{ extracted_data.program }}</div>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Course Description -->
+        {% if extracted_data.description %}
+        <div class="preview-section">
+          <h6 class="fw-bold mb-3">
+            <i class="bi bi-journal-text text-info me-2"></i>Course Description
+          </h6>
+          <p class="mb-0">{{ extracted_data.description }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Grading System -->
+        {% if extracted_data.grading_system %}
+        <div class="preview-section">
+          <h6 class="fw-bold mb-3">
+            <i class="bi bi-percent text-primary me-2"></i>Grading System
+          </h6>
+          <p class="mb-0">{{ extracted_data.grading_system }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Course Learning Outcomes -->
+        {% if extracted_data.clos %}
+        <div class="preview-section">
+          <h6 class="fw-bold mb-3">
+            <i class="bi bi-target text-success me-2"></i>Course Learning Outcomes (CLOs)
+          </h6>
+          <div class="table-responsive">
+            <table class="table data-table mb-0">
+              <thead>
+                <tr>
+                  <th style="width: 15%;">Code</th>
+                  <th style="width: 60%;">Description</th>
+                  <th style="width: 25%;">Mapped to</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for clo in extracted_data.clos %}
+                <tr>
+                  <td><span class="badge-clo">{{ clo.code }}</span></td>
+                  <td>{{ clo.description }}</td>
+                  <td>
+                    <div class="d-flex flex-wrap gap-1">
+                      {% for ilo in clo.ilo_codes %}
+                      <span class="badge bg-light text-dark">{{ ilo }}</span>
+                      {% endfor %}
+                      {% for plo in clo.plo_codes %}
+                      <span class="badge bg-light text-dark">{{ plo }}</span>
+                      {% endfor %}
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Weekly Course Plan -->
+        {% if extracted_data.weekly_plan %}
+        <div class="preview-section">
+          <h6 class="fw-bold mb-3">
+            <i class="bi bi-calendar-week text-warning me-2"></i>Weekly Course Plan
+          </h6>
+          
+          {% for week in extracted_data.weekly_plan %}
+          <div class="week-card">
+            <div class="row align-items-start">
+              <div class="col-md-2">
+                <div class="fw-bold text-primary">Week {{ week.week }}</div>
+                {% if week.label %}
+                <small class="text-muted">{{ week.label }}</small>
+                {% endif %}
+              </div>
+              <div class="col-md-10">
+                <!-- Topics -->
+                {% if week.topics %}
+                <div class="mb-3">
+                  <small class="text-muted d-block mb-1">Topics:</small>
+                  <div>
+                    {% for topic in week.topics %}
+                    <span class="badge-topic">{{ topic }}</span>
+                    {% endfor %}
+                  </div>
+                </div>
+                {% endif %}
+                
+                <!-- Methodology -->
+                {% if week.methodology %}
+                <div class="mb-3">
+                  <small class="text-muted d-block mb-1">Instructional Methodology:</small>
+                  <small>{{ week.methodology|join:", " }}</small>
+                </div>
+                {% endif %}
+                
+                <!-- Assessment -->
+                {% if week.assessment %}
+                <div class="mb-3">
+                  <small class="text-muted d-block mb-1">Assessment Activities:</small>
+                  <small>{{ week.assessment|join:", " }}</small>
+                </div>
+                {% endif %}
+                
+                <!-- CLOs -->
+                {% if week.clo_codes %}
+                <div>
+                  <small class="text-muted d-block mb-1">Mapped CLOs:</small>
+                  <div>
+                    {% for clo in week.clo_codes %}
+                    <span class="badge-clo">{{ clo }}</span>
+                    {% endfor %}
+                  </div>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Warnings/Errors -->
+        {% if missing_fields %}
+        <div class="warning-alert">
+          <h6 class="fw-bold mb-2">
+            <i class="bi bi-exclamation-triangle me-2"></i>Missing Information
+          </h6>
+          <p class="mb-2">The following fields could not be extracted from your syllabus:</p>
+          <ul class="mb-0">
+            {% for field in missing_fields %}
+            <li>{{ field }}</li>
+            {% endfor %}
+          </ul>
+          <small class="text-muted">You can manually edit these fields after creating the subject.</small>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+      <div class="confirmation-card">
+        <h6 class="fw-bold mb-3">
+          <i class="bi bi-info-circle text-info me-2"></i>File Information
+        </h6>
+        <div class="mb-3">
+          <small class="text-muted d-block">Original Filename</small>
+          <div class="fw-semibold">{{ filename }}</div>
+        </div>
+        <div class="mb-3">
+          <small class="text-muted d-block">File Size</small>
+          <div class="fw-semibold">{{ file_size }}</div>
+        </div>
+        <div class="mb-3">
+          <small class="text-muted d-block">Extraction Quality</small>
+          <div class="d-flex align-items-center">
+            <div class="progress flex-grow-1 me-2" style="height: 8px;">
+              <div class="progress-bar bg-success" style="width: {{ extraction_percentage }}%"></div>
+            </div>
+            <small class="fw-semibold">{{ extraction_percentage }}%</small>
+          </div>
+        </div>
+        
+        <div class="alert alert-light border rounded-3 p-3">
+          <small class="text-muted">
+            <i class="bi bi-lightbulb me-1"></i>
+            <strong>Tip:</strong> Review all extracted information carefully. You can edit any field after creating the course.
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="action-buttons">
+    <form method="post" id="syllabusActionForm" class="d-flex flex-wrap gap-3 justify-content-center">
+      {% csrf_token %}
+      
+      <!-- Hidden fields to pass the extracted data -->
+      <input type="hidden" name="action" value="confirm">
+      <input type="hidden" name="confirm" id="confirmActionInput" value="">
+      <input type="hidden" name="create_token" value="{{ create_token }}">
+      <input type="hidden" name="program" value="{{ extracted_data.program }}">
+      <input type="hidden" name="code" value="{{ extracted_data.code }}">
+      <input type="hidden" name="title" value="{{ extracted_data.title }}">
+      <input type="hidden" name="prerequisite" value="{{ extracted_data.prerequisite }}">
+      <input type="hidden" name="credit_units" value="{{ extracted_data.credit_units }}">
+      <input type="hidden" name="hours" value="{{ extracted_data.hours }}">
+      <input type="hidden" name="semester" value="{{ extracted_data.semester }}">
+      <input type="hidden" name="school_year" value="{{ extracted_data.school_year }}">
+      <input type="hidden" name="block" value="{{ extracted_data.block }}">
+      <input type="hidden" name="description" value="{{ extracted_data.description }}">
+      <input type="hidden" name="performance_target" value="{{ extracted_data.performance_target }}">
+      <input type="hidden" name="gad_themes" value="{{ extracted_data.gad_themes }}">
+      <input type="hidden" name="grading_system" value="{{ extracted_data.grading_system }}">
+      
+      <button type="button" id="cancelUploadBtn" class="btn btn-cancel">
+        <i class="bi bi-x-circle me-2"></i>Cancel & Upload Different File
+      </button>
+      <button type="button" id="editBeforeCreateBtn" class="btn btn-edit">
+        <i class="bi bi-pencil-square me-2"></i>Review & Edit Details
+      </button>
+      <button type="button" id="createCourseBtn" class="btn btn-confirm">
+        <i class="bi bi-check-circle me-2"></i>Confirm & Create Course
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+// Add smooth scrolling for better UX
+document.addEventListener('DOMContentLoaded', function() {
+  // Highlight sections on hover
+  const sections = document.querySelectorAll('.preview-section');
+  sections.forEach(section => {
+    section.addEventListener('mouseenter', function() {
+      this.style.transform = 'translateX(5px)';
+      this.style.transition = 'transform 0.2s ease';
+    });
+    section.addEventListener('mouseleave', function() {
+      this.style.transform = 'translateX(0)';
+    });
+  });
+  
+  const actionForm = document.getElementById('syllabusActionForm');
+  const confirmActionInput = document.getElementById('confirmActionInput');
+  const cancelUploadBtn = document.getElementById('cancelUploadBtn');
+  const createCourseBtn = document.getElementById('createCourseBtn');
+  const editBeforeCreateBtn = document.getElementById('editBeforeCreateBtn');
+
+  function submitPreviewAction(action, activeButton, busyHtml) {
+    if (!actionForm || !confirmActionInput || !activeButton) return;
+    confirmActionInput.value = action;
+
+    // Prevent duplicate requests while preserving submitted action value.
+    cancelUploadBtn && (cancelUploadBtn.disabled = true);
+    editBeforeCreateBtn && (editBeforeCreateBtn.disabled = true);
+    createCourseBtn && (createCourseBtn.disabled = true);
+
+    activeButton.innerHTML = busyHtml;
+    actionForm.submit();
+  }
+
+  if (cancelUploadBtn) {
+    cancelUploadBtn.addEventListener('click', function() {
+      submitPreviewAction('false', cancelUploadBtn, '<i class="bi bi-hourglass-split me-2"></i>Cancelling...');
+    });
+  }
+
+  if (editBeforeCreateBtn) {
+    editBeforeCreateBtn.addEventListener('click', function() {
+      submitPreviewAction('edit', editBeforeCreateBtn, '<i class="bi bi-hourglass-split me-2"></i>Opening Editor...');
+    });
+  }
+
+  if (createCourseBtn) {
+    createCourseBtn.addEventListener('click', function() {
+      submitPreviewAction('create', createCourseBtn, '<i class="bi bi-hourglass-split me-2"></i>Creating...');
+    });
+  }
+});
+</script>
+
+{% endblock %}

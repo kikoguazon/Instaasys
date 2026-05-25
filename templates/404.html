@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>404 - Page Not Found | INSTAASYS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: radial-gradient(circle at 30% 40%, #1a1a3e 0%, #0f0f23 50%, #050510 100%);
+            overflow: hidden;
+            position: relative;
+            cursor: default;
+        }
+
+        /* Dynamic gradient overlay (follows mouse) */
+        .dynamic-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at var(--mouseX, 50%) var(--mouseY, 50%), rgba(139, 92, 246, 0.15), rgba(15, 15, 45, 0.95));
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Canvas for interactive particle network */
+        #networkCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Main content container */
+        .content {
+            position: relative;
+            z-index: 20;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+            perspective: 1200px;
+        }
+
+        /* Glassmorphic card with 3D tilt */
+        .error-card {
+            max-width: 680px;
+            width: 100%;
+            background: rgba(18, 15, 40, 0.5);
+            backdrop-filter: blur(20px);
+            border-radius: 2.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.4), inset 0 0.5px 1px rgba(255, 255, 255, 0.08);
+            padding: 3.5rem 2.5rem;
+            text-align: center;
+            transform-style: preserve-3d;
+            transition: transform 0.2s cubic-bezier(0.05, 0.5, 0.2, 1), box-shadow 0.3s ease;
+            will-change: transform;
+        }
+
+        /* Glitch effect for 404 number */
+        .glitch-wrapper {
+            margin-bottom: 1.5rem;
+        }
+
+        .error-code-glitch {
+            font-size: clamp(5rem, 15vw, 9rem);
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            position: relative;
+            display: inline-block;
+            color: #ffffff;
+            text-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+            animation: subtleFloat 3s ease-in-out infinite;
+        }
+
+        .error-code-glitch::before,
+        .error-code-glitch::after {
+            content: "404";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.3;
+        }
+
+        .error-code-glitch::before {
+            color: #c084fc;
+            z-index: -1;
+            animation: subtleShift 0.3s infinite reverse;
+            text-shadow: 1px 0 #a78bfa;
+        }
+
+        .error-code-glitch::after {
+            color: #a78bfa;
+            z-index: -2;
+            animation: subtleShift 0.35s infinite;
+            text-shadow: -1px 0 #d946ef;
+        }
+
+        @keyframes subtleShift {
+            0%, 100% { transform: translate(0); }
+            50% { transform: translate(1px, 0.5px); }
+        }
+
+        @keyframes subtleFloat {
+            0%, 100% {
+                opacity: 1;
+                text-shadow: 0 0 12px rgba(168, 85, 247, 0.3);
+            }
+            50% {
+                opacity: 0.95;
+                text-shadow: 0 0 24px rgba(196, 132, 252, 0.5);
+            }
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #FFFFFF, #E0E7FF);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            margin-bottom: 1rem;
+            letter-spacing: -0.3px;
+        }
+
+        .description {
+            color: rgba(230, 230, 255, 0.8);
+            font-weight: 400;
+            font-size: 1rem;
+            line-height: 1.6;
+            margin: 1rem 0 2rem 0;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .highlight-text {
+            background: rgba(168, 85, 247, 0.15);
+            backdrop-filter: blur(4px);
+            border-radius: 40px;
+            padding: 0.3rem 0.9rem;
+            display: inline-block;
+            font-weight: 500;
+            font-size: 0.8rem;
+            letter-spacing: 0.4px;
+            color: #e9d5ff;
+            margin-bottom: 1.2rem;
+            border: 0.5px solid rgba(196, 132, 252, 0.4);
+        }
+
+        /* Button group */
+        .button-group {
+            display: flex;
+            gap: 1.2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 2.5rem;
+        }
+
+        .btn {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.95rem 2.2rem;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.95rem;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.2, 0.85, 0.4, 1);
+            border: none;
+            background: transparent;
+            text-decoration: none;
+            backdrop-filter: blur(8px);
+            letter-spacing: 0.1px;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ffffff 0%, #f3f0ff 100%);
+            color: #2d1b4e;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-4px) scale(1.02);
+            background: #ffffff;
+            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.2);
+            gap: 0.85rem;
+        }
+
+        .btn-secondary {
+            background: rgba(30, 25, 60, 0.5);
+            border: 1px solid rgba(168, 85, 247, 0.5);
+            color: #e9d5ff;
+            backdrop-filter: blur(12px);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(88, 28, 135, 0.4);
+            border-color: rgba(196, 132, 252, 0.8);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(139, 92, 246, 0.25);
+            color: #fff;
+        }
+
+        .btn:active {
+            transform: translateY(2px);
+        }
+
+        /* floating glitchy orbs */
+        .floating-aura {
+            position: fixed;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.15), transparent 70%);
+            filter: blur(50px);
+            pointer-events: none;
+            z-index: 0;
+            animation: auraDrift 18s infinite alternate ease-in-out;
+        }
+
+        @keyframes auraDrift {
+            0% {
+                transform: translate(0%, 0%) scale(1);
+                opacity: 0.4;
+            }
+            100% {
+                transform: translate(6%, -4%) scale(1.2);
+                opacity: 0.7;
+            }
+        }
+
+        /* responsive */
+        @media (max-width: 640px) {
+            .error-card {
+                padding: 2.5rem 1.5rem;
+                border-radius: 2rem;
+            }
+            .button-group {
+                gap: 0.8rem;
+            }
+            .btn {
+                padding: 0.8rem 1.6rem;
+                font-size: 0.9rem;
+            }
+            .page-title {
+                font-size: 1.6rem;
+            }
+            .error-code-glitch {
+                font-size: clamp(4rem, 12vw, 5rem);
+            }
+        }
+
+        /* additional interactive micro-animation for icons */
+        .btn span {
+            transition: transform 0.2s ease;
+            display: inline-block;
+        }
+        .btn:hover span {
+            transform: translateX(3px);
+        }
+        .btn-primary span:first-child {
+            transform: translateX(0);
+        }
+        .btn-primary:hover span:first-child {
+            transform: translateX(-2px);
+        }
+    </style>
+</head>
+<body>
+
+<!-- Dynamic radial background that follows cursor -->
+<div class="dynamic-bg" id="dynamicBg"></div>
+
+<!-- Ambient floating orbs -->
+<div class="floating-aura" style="top: -80px; left: -60px;"></div>
+<div class="floating-aura" style="bottom: -40px; right: -80px; animation-duration: 20s; filter: blur(60px); background: radial-gradient(circle, rgba(0, 200, 255, 0.15), transparent);"></div>
+
+<!-- Interactive canvas: particle network -->
+<canvas id="networkCanvas"></canvas>
+
+<div class="content">
+    <div class="error-card" id="tiltCard">
+        <div class="glitch-wrapper">
+            <div class="error-code-glitch">404</div>
+        </div>
+        <div class="highlight-text">✦ PAGE NOT FOUND ✦</div>
+        <div class="page-title">Lost in Space</div>
+        <p class="description">
+            The page you're looking for doesn't exist or may have been moved. Let's get you back to where you need to be.
+        </p>
+        <div class="button-group">
+            <a href="/" class="btn btn-primary">
+                <span>�</span> <span>Go Home</span>
+            </a>
+            <a href="javascript:history.back()" class="btn btn-secondary">
+                <span>←</span> <span>Go Back</span>
+            </a>
+        </div>
+        <p style="font-size: 0.65rem; margin-top: 2.5rem; opacity: 0.4; letter-spacing: 0.5px;">
+            ✦ interactive environment ✦
+        </p>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ---------- DYNAMIC GRADIENT (mouse follow) ----------
+        const bgDiv = document.getElementById('dynamicBg');
+        function updateGradient(e) {
+            let x = 50, y = 50;
+            if (e) {
+                x = (e.clientX / window.innerWidth) * 100;
+                y = (e.clientY / window.innerHeight) * 100;
+            } else {
+                // fallback center
+                x = 50; y = 50;
+            }
+            bgDiv.style.setProperty('--mouseX', `${x}%`);
+            bgDiv.style.setProperty('--mouseY', `${y}%`);
+        }
+        window.addEventListener('mousemove', (e) => { updateGradient(e); });
+        updateGradient(); // initial center
+        
+        // ---------- 3D TILT EFFECT (INTERACTIVE CARD) ----------
+        const card = document.getElementById('tiltCard');
+        const bounds = card.getBoundingClientRect();
+        let tiltActive = true;
+        
+        function handleTilt(e) {
+            if (!tiltActive) return;
+            const rect = card.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const mouseX = e.clientX - centerX;
+            const mouseY = e.clientY - centerY;
+            const maxRotate = 10;
+            const rotateY = (mouseX / (rect.width / 2)) * maxRotate;
+            const rotateX = -(mouseY / (rect.height / 2)) * maxRotate;
+            card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(2px)`;
+        }
+        
+        function resetTilt() {
+            card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg)`;
+        }
+        
+        card.addEventListener('mousemove', handleTilt);
+        card.addEventListener('mouseleave', resetTilt);
+        
+        // ---------- INTERACTIVE PARTICLE NETWORK (canvas) ----------
+        const canvas = document.getElementById('networkCanvas');
+        const ctx = canvas.getContext('2d');
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        
+        // mouse coordinates for repulsion force
+        let mouseX = null, mouseY = null;
+        let mousePresent = false;
+        
+        window.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            mousePresent = true;
+        });
+        window.addEventListener('mouseleave', () => {
+            mousePresent = false;
+        });
+        
+        // particle class
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.originX = x;
+                this.originY = y;
+                this.vx = (Math.random() - 0.5) * 0.6;
+                this.vy = (Math.random() - 0.5) * 0.6;
+                this.radius = Math.random() * 2.2 + 1.2;
+                this.color = `hsl(${260 + Math.random() * 40}, 70%, 65%)`;
+                this.opacity = Math.random() * 0.5 + 0.3;
+            }
+            
+            update(particles, mouseX, mouseY, mousePresent, width, height) {
+                // Spring force back to origin
+                const springStrength = 0.025;
+                let ax = (this.originX - this.x) * springStrength;
+                let ay = (this.originY - this.y) * springStrength;
+                
+                // Mouse repulsion (if mouse is active)
+                if (mousePresent && mouseX && mouseY) {
+                    const dx = this.x - mouseX;
+                    const dy = this.y - mouseY;
+                    const dist = Math.hypot(dx, dy);
+                    const repelRadius = 130;
+                    if (dist < repelRadius) {
+                        const force = (repelRadius - dist) / repelRadius;
+                        const angle = Math.atan2(dy, dx);
+                        const repelStr = 1.6 * force;
+                        ax += Math.cos(angle) * repelStr;
+                        ay += Math.sin(angle) * repelStr;
+                    }
+                }
+                
+                // Apply acceleration
+                this.vx += ax;
+                this.vy += ay;
+                
+                // Damping
+                this.vx *= 0.94;
+                this.vy *= 0.94;
+                
+                // Update position
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                // boundary soft constraints (prevent extreme escape, but spring will pull back anyway)
+                if (this.x < 0) { this.x = 0; this.vx *= -0.5; }
+                if (this.x > width) { this.x = width; this.vx *= -0.5; }
+                if (this.y < 0) { this.y = 0; this.vy *= -0.5; }
+                if (this.y > height) { this.y = height; this.vy *= -0.5; }
+            }
+            
+            draw(ctx) {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = `rgba(168, 85, 247, 0.7)`;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+        }
+        
+        let particles = [];
+        const PARTICLE_COUNT = 135;
+        
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                const x = Math.random() * width;
+                const y = Math.random() * height;
+                const p = new Particle(x, y);
+                // add small random offset for natural variation
+                particles.push(p);
+            }
+        }
+        
+        // Connect particles with lines if distance < threshold
+        function drawConnections(ctx, particles, mouseX, mouseY, mousePresent) {
+            const maxDist = 135;
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const dist = Math.hypot(dx, dy);
+                    if (dist < maxDist) {
+                        let opacity = 0.12 * (1 - dist / maxDist);
+                        // interactive enhancement: if mouse near, increase opacity for nearby lines
+                        if (mousePresent && mouseX && mouseY) {
+                            const midX = (particles[i].x + particles[j].x) / 2;
+                            const midY = (particles[i].y + particles[j].y) / 2;
+                            const distToMouse = Math.hypot(midX - mouseX, midY - mouseY);
+                            if (distToMouse < 110) {
+                                opacity += 0.18;
+                            }
+                        }
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.strokeStyle = `rgba(165, 110, 255, ${Math.min(opacity, 0.55)})`;
+                        ctx.lineWidth = 1.2;
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+        
+        // also draw a subtle glow around cursor that interacts (visual flair)
+        function drawMouseGlow(ctx, mouseX, mouseY, present) {
+            if (present && mouseX && mouseY) {
+                ctx.beginPath();
+                const gradient = ctx.createRadialGradient(mouseX, mouseY, 5, mouseX, mouseY, 70);
+                gradient.addColorStop(0, 'rgba(200, 130, 255, 0.25)');
+                gradient.addColorStop(1, 'rgba(88, 28, 135, 0)');
+                ctx.fillStyle = gradient;
+                ctx.arc(mouseX, mouseY, 80, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function animateParticles() {
+            if (!ctx) return;
+            // clear canvas with transparency to keep gradient background visible
+            ctx.clearRect(0, 0, width, height);
+            
+            // update & draw particles
+            for (let p of particles) {
+                p.update(particles, mouseX, mouseY, mousePresent, width, height);
+                p.draw(ctx);
+            }
+            // draw connections (network)
+            drawConnections(ctx, particles, mouseX, mouseY, mousePresent);
+            // additional interactive aura around cursor
+            drawMouseGlow(ctx, mouseX, mouseY, mousePresent);
+            
+            requestAnimationFrame(animateParticles);
+        }
+        
+        function resizeCanvas() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            // reinitialize particle origins based on new dimensions
+            if (particles.length) {
+                for (let p of particles) {
+                    // remap original positions relative to new width/height? 
+                    // keep them within new boundaries to avoid clumping
+                    p.originX = Math.min(width - 10, Math.max(10, p.originX * (width / (window.oldWidth || width))));
+                    p.originY = Math.min(height - 10, Math.max(10, p.originY * (height / (window.oldHeight || height))));
+                    p.x = Math.min(width, Math.max(0, p.x));
+                    p.y = Math.min(height, Math.max(0, p.y));
+                }
+            } else {
+                initParticles();
+            }
+            window.oldWidth = width;
+            window.oldHeight = height;
+        }
+        
+        // set up initial particles and event
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+        });
+        
+        // Initialize
+        resizeCanvas();
+        initParticles();
+        animateParticles();
+        
+        // subtle extra: random micro-motion to particles by occasional impulse? not needed, but spring handles.
+        // additional mouse smooth follow for background floating orbs (just for ambient)
+        let auraElements = document.querySelectorAll('.floating-aura');
+        window.addEventListener('mousemove', (e) => {
+            // very slight parallax to floating orbs for extra immersive
+            const moveX = (e.clientX / window.innerWidth) * 15;
+            const moveY = (e.clientY / window.innerHeight) * 15;
+            if (auraElements[0]) {
+                auraElements[0].style.transform = `translate(${moveX * 0.3}px, ${moveY * 0.2}px)`;
+            }
+            if (auraElements[1]) {
+                auraElements[1].style.transform = `translate(${-moveX * 0.2}px, ${-moveY * 0.1}px)`;
+            }
+        });
+        
+        // optional: small glitch effect on card when clicking button? Not needed but elegant
+        const btns = document.querySelectorAll('.btn');
+        btns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                // small micro interaction: add quick ripple via transform scale on text
+                const spanIcon = btn.querySelector('span');
+                if (spanIcon) {
+                    spanIcon.style.transform = 'scale(1.2)';
+                    setTimeout(() => { if(spanIcon) spanIcon.style.transform = ''; }, 150);
+                }
+            });
+        });
+        
+        // for devices without mouse, the gradient and particles still look good; we ensure that
+        // on touch devices we don't break tilt: disable tilt on touch but keep design
+        let isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        if (isTouchDevice) {
+            tiltActive = false;
+            card.style.transform = 'none';
+            card.removeEventListener('mousemove', handleTilt);
+        }
+    })();
+</script>
+</body>
+</html>

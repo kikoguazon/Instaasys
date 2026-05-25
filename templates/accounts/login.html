@@ -1,0 +1,527 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block auth_content %}
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { font-family: 'Inter', system-ui, sans-serif; margin: 0; }
+
+  .auth-shell {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* Left panel */
+  .auth-panel-left {
+    background: linear-gradient(150deg, #312e81 0%, #4f46e5 50%, #6d28d9 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 4rem 3.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .auth-panel-left::before {
+    content: '';
+    position: absolute;
+    width: 500px; height: 500px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.05);
+    top: -200px; right: -150px;
+  }
+  .auth-panel-left::after {
+    content: '';
+    position: absolute;
+    width: 350px; height: 350px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.04);
+    bottom: -100px; left: -100px;
+  }
+  .auth-brand {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    margin-bottom: 3.5rem;
+    position: relative;
+    z-index: 1;
+  }
+  .auth-brand-icon {
+    width: 44px; height: 44px;
+    background: rgba(255,255,255,.15);
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem;
+    color: #fff;
+    backdrop-filter: blur(10px);
+  }
+  .auth-brand-name {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: .03em;
+  }
+  .auth-brand-sub {
+    font-size: .72rem;
+    color: rgba(255,255,255,.65);
+    font-weight: 400;
+  }
+
+  .auth-left-heading {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.2;
+    letter-spacing: -.02em;
+    margin-bottom: 1rem;
+    position: relative;
+    z-index: 1;
+  }
+  .auth-left-sub {
+    font-size: .9rem;
+    color: rgba(255,255,255,.7);
+    line-height: 1.6;
+    margin-bottom: 2.5rem;
+    position: relative;
+    z-index: 1;
+  }
+  .auth-feature-list {
+    list-style: none;
+    margin: 0; padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .875rem;
+    position: relative;
+    z-index: 1;
+  }
+  .auth-feature-list li {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    font-size: .85rem;
+    color: rgba(255,255,255,.85);
+    font-weight: 500;
+  }
+  .auth-feature-icon {
+    width: 30px; height: 30px;
+    background: rgba(255,255,255,.12);
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .85rem;
+    color: #c7d2fe;
+    flex-shrink: 0;
+  }
+
+  /* Right panel */
+  .auth-panel-right {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 2.5rem;
+    background: #f8fafc;
+  }
+  .auth-form-box {
+    width: 100%;
+    max-width: 400px;
+  }
+  .auth-form-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: .35rem;
+    letter-spacing: -.02em;
+  }
+  .auth-form-sub {
+    font-size: .85rem;
+    color: #64748b;
+    margin-bottom: 2rem;
+  }
+
+  .auth-form-box .form-label {
+    font-size: .78rem;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: .3rem;
+  }
+  .auth-form-box .form-control {
+    border-radius: 9px;
+    border: 1.5px solid #e2e8f0;
+    padding: .65rem .9rem;
+    font-size: .875rem;
+    background: #fff;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .auth-form-box .form-control:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79,70,229,.1);
+    background: #fff;
+  }
+  .password-wrapper {
+    position: relative;
+  }
+  .password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 4px 8px;
+    font-size: 1.1rem;
+    transition: color .2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+  .password-toggle:hover {
+    color: #4f46e5;
+  }
+  .password-toggle:focus {
+    outline: 2px solid #4f46e5;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  .password-wrapper input {
+    padding-right: 45px;
+  }
+  .btn-auth {
+    width: 100%;
+    padding: .75rem;
+    border-radius: 9px;
+    font-size: .875rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #4f46e5, #6d28d9);
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    transition: all .2s;
+    margin-top: 1rem;
+    letter-spacing: .01em;
+  }
+  .btn-auth:hover {
+    opacity: .92;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(79,70,229,.35);
+  }
+
+  /* Style crispy form submit buttons */
+  .auth-form-box .btn-primary {
+    width: 100%;
+    padding: .75rem;
+    border-radius: 9px;
+    font-size: .875rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #4f46e5, #6d28d9);
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    transition: all .2s;
+    margin-top: 1rem;
+    letter-spacing: .01em;
+  }
+  .auth-form-box .btn-primary:hover {
+    opacity: .92;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(79,70,229,.35);
+    color: #fff;
+  }
+
+  .auth-divider {
+    text-align: center;
+    margin: 1.5rem 0;
+    position: relative;
+  }
+  .auth-divider::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 50%;
+    width: 100%; height: 1px;
+    background: #e2e8f0;
+  }
+  .auth-divider span {
+    background: #f8fafc;
+    position: relative;
+    padding: 0 .875rem;
+    font-size: .78rem;
+    color: #94a3b8;
+  }
+
+  .auth-switch {
+    text-align: center;
+    font-size: .83rem;
+    color: #64748b;
+  }
+  .auth-switch a {
+    color: #4f46e5;
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .auth-switch a:hover { text-decoration: underline; }
+
+  .auth-back {
+    text-align: center;
+    margin-top: 1.5rem;
+  }
+  .auth-back a {
+    font-size: .78rem;
+    color: #94a3b8;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    transition: color .15s;
+  }
+  .auth-back a:hover { color: #64748b; }
+
+  @media (max-width: 768px) {
+    .auth-shell { 
+      grid-template-columns: 1fr; 
+      min-height: 100vh;
+    }
+    .auth-panel-left { display: none; }
+    .auth-panel-right { 
+      padding: 2rem 1.25rem; 
+      justify-content: flex-start; 
+      padding-top: 2rem;
+      min-height: 100vh;
+    }
+    .auth-form-box {
+      max-width: 100%;
+      width: 100%;
+    }
+    .auth-form-title {
+      font-size: 1.35rem;
+      margin-bottom: .5rem;
+    }
+    .auth-form-sub {
+      font-size: .8rem;
+      margin-bottom: 1.75rem;
+    }
+    .auth-form-box .form-label {
+      font-size: .75rem;
+    }
+    .auth-form-box .form-control {
+      padding: .6rem .85rem;
+      font-size: .85rem;
+      border-radius: 8px;
+    }
+    .btn-auth, .auth-form-box .btn-primary {
+      padding: .7rem;
+      font-size: .85rem;
+      border-radius: 8px;
+    }
+    .auth-divider {
+      margin: 1.25rem 0;
+    }
+    .auth-divider span {
+      font-size: .75rem;
+      padding: 0 .75rem;
+    }
+    .auth-switch {
+      font-size: .8rem;
+    }
+    .auth-back {
+      margin-top: 1.25rem;
+    }
+    .auth-back a {
+      font-size: .75rem;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .auth-panel-right {
+      padding: 1.5rem 1rem;
+      padding-top: 1.5rem;
+    }
+    .auth-form-title {
+      font-size: 1.25rem;
+    }
+    .auth-form-sub {
+      font-size: .78rem;
+      margin-bottom: 1.5rem;
+    }
+    .auth-form-box .form-control {
+      padding: .55rem .75rem;
+      font-size: .825rem;
+    }
+    .btn-auth, .auth-form-box .btn-primary {
+      padding: .65rem;
+      font-size: .825rem;
+    }
+  }
+
+  @media (min-width: 769px) and (max-width: 1024px) {
+    .auth-shell {
+      grid-template-columns: 45% 55%;
+    }
+    .auth-panel-left {
+      padding: 3rem 2.5rem;
+    }
+    .auth-left-heading {
+      font-size: 1.75rem;
+    }
+    .auth-left-sub {
+      font-size: .85rem;
+    }
+    .auth-feature-list li {
+      font-size: .8rem;
+    }
+  }
+
+  /* Landscape mobile optimization */
+  @media (max-width: 768px) and (orientation: landscape) {
+    .auth-panel-right {
+      padding: 1.5rem 1.25rem;
+      padding-top: 1.5rem;
+    }
+    .auth-form-title {
+      font-size: 1.25rem;
+    }
+    .auth-form-sub {
+      margin-bottom: 1.25rem;
+    }
+  }
+
+  /* Touch-friendly improvements */
+  @media (hover: none) and (pointer: coarse) {
+    .btn-auth, .auth-form-box .btn-primary {
+      min-height: 44px;
+    }
+    .auth-form-box .form-control {
+      min-height: 44px;
+    }
+    .password-toggle {
+      min-width: 44px;
+      min-height: 44px;
+      right: 4px;
+      font-size: 1.2rem;
+    }
+    .password-wrapper input {
+      padding-right: 50px;
+    }
+  }
+
+  /* Reduce motion for accessibility */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+</style>
+
+<div class="auth-shell">
+  <!-- Left -->
+  <div class="auth-panel-left">
+    <div class="auth-brand">
+      <div class="auth-brand-icon">
+        <img src="{% static 'images/favicon.png' %}" alt="INSTAASYS" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">
+      </div>
+      <div>
+        <div class="auth-brand-name">INSTAASYS</div>
+        <div class="auth-brand-sub">AI-Assisted Academic System</div>
+      </div>
+    </div>
+
+    <h1 class="auth-left-heading">Your AI-powered<br>teaching assistant</h1>
+    <p class="auth-left-sub">Everything from lesson plans to grade records — automated and ready in seconds.</p>
+
+    <ul class="auth-feature-list">
+      <li>
+        <div class="auth-feature-icon"><i class="bi bi-robot"></i></div>
+        AI-generated lesson plans & presentations
+      </li>
+      <li>
+        <div class="auth-feature-icon"><i class="bi bi-patch-question"></i></div>
+        Bloom's-aligned question bank
+      </li>
+      <li>
+        <div class="auth-feature-icon"><i class="bi bi-journal-check"></i></div>
+        CHED-standard e-Class record
+      </li>
+      <li>
+        <div class="auth-feature-icon"><i class="bi bi-table"></i></div>
+        Table of Specifications generator
+      </li>
+    </ul>
+  </div>
+
+  <!-- Right -->
+  <div class="auth-panel-right">
+    <div class="auth-form-box">
+      <h2 class="auth-form-title">Welcome back</h2>
+      <p class="auth-form-sub">Sign in to your INSTAASYS account</p>
+
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger" style="border-radius:9px;font-size:.83rem;padding:.65rem .9rem;margin-bottom:1rem;">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+        
+        {% for field in form %}
+          {% if field.name != 'csrfmiddlewaretoken' %}
+            <div class="mb-3">
+              {{ field.label_tag }}
+              {% if field.field.widget.input_type == 'password' %}
+                <div class="password-wrapper">
+                  <input type="password" name="{{ field.name }}" id="id_{{ field.name }}" class="form-control" placeholder="{{ field.label }}" required>
+                  <button type="button" class="password-toggle" onclick="togglePassword('id_{{ field.name }}', this)" aria-label="Toggle password visibility">
+                    <i class="bi bi-eye" id="eye-icon-id_{{ field.name }}"></i>
+                  </button>
+                </div>
+              {% else %}
+                <input type="{{ field.field.widget.input_type }}" name="{{ field.name }}" class="form-control" placeholder="{{ field.label }}" required>
+              {% endif %}
+              {% if field.errors %}
+                <small class="text-danger d-block mt-1">{{ field.errors.0 }}</small>
+              {% endif %}
+            </div>
+          {% endif %}
+        {% endfor %}
+        
+        <button type="submit" class="btn btn-primary w-100 mt-2">Sign In</button>
+      </form>
+
+      <div class="auth-divider">
+        <span>or</span>
+      </div>
+
+      <div class="auth-switch">
+        <a href="{% url 'accounts:password_reset' %}">Forgot your password?</a>
+      </div>
+
+      <div class="auth-back">
+        <a href="{% url 'accounts:landing' %}"><i class="bi bi-arrow-left"></i> Back to home</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function togglePassword(inputId, button) {
+    const input = document.getElementById(inputId);
+    const icon = document.getElementById('eye-icon-' + inputId);
+    
+    if (input.type === 'password') {
+      input.type = 'text';
+      icon.classList.remove('bi-eye');
+      icon.classList.add('bi-eye-slash');
+      button.setAttribute('aria-label', 'Hide password');
+    } else {
+      input.type = 'password';
+      icon.classList.remove('bi-eye-slash');
+      icon.classList.add('bi-eye');
+      button.setAttribute('aria-label', 'Show password');
+    }
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,1427 @@
+{% extends 'base.html' %}
+{% block title %}{{ plan.topic }}{% endblock %}
+{% block page_title %}Lesson Plan — Week {{ plan.week_number }}{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ─── Slideshow Overlay ─────────────────────────────────────────────── */
+.slideshow-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #111827;
+  display: none;
+  flex-direction: column;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  cursor: none;
+}
+.slideshow-overlay.active { display: flex; }
+.slideshow-overlay.show-ui { cursor: default; }
+
+/* Top bar */
+.ss-topbar {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  background: linear-gradient(180deg, rgba(10,15,30,.95) 0%, transparent 100%);
+  z-index: 20;
+  opacity: 0;
+  transition: opacity .3s;
+}
+.slideshow-overlay.show-ui .ss-topbar { opacity: 1; }
+.ss-topbar-left { display: flex; align-items: center; gap: 10px; }
+.ss-topbar-badge {
+  background: #3b82f6;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 4px;
+  letter-spacing: .5px;
+}
+.ss-topbar-title {
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 500;
+}
+.ss-close {
+  background: rgba(255,255,255,.1);
+  border: none;
+  color: #e2e8f0;
+  width: 32px; height: 32px;
+  border-radius: 6px;
+  font-size: 15px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .2s;
+}
+.ss-close:hover { background: rgba(255,255,255,.22); }
+
+/* Canvas */
+.ss-canvas {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 54px 56px 68px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Slide — 16:9 aspect ratio with smooth cross‑fade */
+.ss-slide {
+  width: 100%;
+  max-width: 1040px;
+  aspect-ratio: 16 / 9;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5), 0 4px 12px rgba(0,0,0,0.25);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  opacity: 1;
+  transform: scale(1);
+}
+.ss-slide.fade-out {
+  opacity: 0;
+  transform: scale(0.98);
+}
+
+/* ── Title Slide ────────────────────────────────────────────────────── */
+.ss-title-slide {
+  background: #1e293b;
+  display: flex;
+  align-items: stretch;
+}
+.ss-t-bar {                        /* left accent bar */
+  width: 3%;
+  background: #3b82f6;
+  flex-shrink: 0;
+}
+.ss-t-body {
+  flex: 1;
+  padding: 7% 7% 6%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  min-width: 0;
+}
+.ss-t-badge {
+  display: inline-block;
+  background: #3b82f6;
+  color: #fff;
+  font-size: clamp(9px, 1.15vw, 13px);
+  font-weight: 700;
+  padding: .3em 1em;
+  border-radius: 4px;
+  letter-spacing: .04em;
+  margin-bottom: 5%;
+  align-self: flex-start;
+}
+.ss-t-title {
+  font-size: clamp(20px, 3.3vw, 38px);
+  font-weight: 700;
+  color: #f8fafc;
+  line-height: 1.2;
+  margin-bottom: 5%;
+}
+.ss-t-course {
+  font-size: clamp(11px, 1.4vw, 17px);
+  color: #94a3b8;
+  margin-bottom: .6%;
+}
+.ss-t-semester {
+  font-size: clamp(10px, 1.1vw, 13px);
+  color: #64748b;
+}
+.ss-t-week {
+  position: absolute;
+  bottom: 6%;
+  right: 5%;
+  font-size: clamp(9px, .95vw, 12px);
+  color: #475569;
+}
+
+/* ── Content Slide ──────────────────────────────────────────────────── */
+.ss-content-slide {
+  background: #f1f5f9;
+  display: flex;
+  flex-direction: column;
+}
+.ss-c-header {
+  background: #1e293b;
+  flex-shrink: 0;
+  height: 16%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4%;
+}
+.ss-c-header-title {
+  font-size: clamp(13px, 2.1vw, 22px);
+  font-weight: 700;
+  color: #fff;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ss-c-header-code {
+  font-size: clamp(9px, 1vw, 12px);
+  color: #3b82f6;
+  font-weight: 600;
+  flex-shrink: 0;
+  margin-left: 2%;
+}
+.ss-c-middle {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+.ss-c-stripe {                     /* thin left accent */
+  width: .55%;
+  min-width: 5px;
+  background: #3b82f6;
+  flex-shrink: 0;
+}
+.ss-c-body {
+  flex: 1;
+  padding: 3% 4%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.ss-bullet-list {
+  list-style: none;
+  padding: 0; margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+.ss-bullet-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: .7em;
+  font-size: clamp(11px, 1.55vw, 17px);
+  color: #1e293b;
+  line-height: 1.55;
+  padding: 1.8% 0;
+  border-bottom: 1px solid rgba(0,0,0,.06);
+}
+.ss-bullet-list li:last-child { border-bottom: none; }
+.ss-bull-dot {
+  color: #3b82f6;
+  font-size: 1.1em;
+  font-weight: 900;
+  flex-shrink: 0;
+  margin-top: .1em;
+  line-height: 1;
+}
+.ss-c-footer {
+  background: #e2e8f0;
+  flex-shrink: 0;
+  height: 6%;
+  display: flex;
+  align-items: center;
+  padding: 0 3.5%;
+  font-size: clamp(8px, .85vw, 11px);
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* ── Objectives Slide ───────────────────────────────────────────────── */
+.ss-objectives-slide {
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+}
+.ss-o-header {
+  background: #1e40af;
+  flex-shrink: 0;
+  height: 16%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4%;
+}
+.ss-o-header-title {
+  font-size: clamp(13px, 2.1vw, 22px);
+  font-weight: 700;
+  color: #fff;
+}
+.ss-o-header-code {
+  font-size: clamp(9px, 1vw, 12px);
+  color: #bad8fd;
+  font-weight: 600;
+  flex-shrink: 0;
+  margin-left: 2%;
+}
+.ss-o-body {
+  flex: 1;
+  padding: 2.5% 5%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1.8%;
+}
+.ss-obj-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 3%;
+}
+.ss-obj-num {
+  width: clamp(22px, 2.4vw, 30px);
+  height: clamp(22px, 2.4vw, 30px);
+  background: #1e40af;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(10px, 1.1vw, 13px);
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: .15em;
+}
+.ss-obj-text {
+  font-size: clamp(11px, 1.45vw, 16px);
+  color: #1e293b;
+  line-height: 1.5;
+}
+.ss-o-footer {
+  background: #dbeafe;
+  flex-shrink: 0;
+  height: 5%;
+}
+
+/* ── Speaker Notes (refined) ───────────────────────────────────────── */
+.ss-notes-bar {
+  margin-top: auto;
+  padding: 12px 16px;
+  background: rgba(255, 251, 235, 0.95);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border-top: 1px solid #fde68a;
+  font-size: 13px;
+  color: #78350f;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex-shrink: 0;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+.ss-notes-bar i {
+  font-size: 1.2em;
+  color: #b45309;
+}
+
+/* ── Bottom controls (floating pill) ───────────────────────────────── */
+.ss-bottombar {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 60px;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  z-index: 20;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.slideshow-overlay.show-ui .ss-bottombar { opacity: 1; }
+
+.ss-nav-btn {
+  background: transparent;
+  border: none;
+  color: #f1f5f9;
+  width: 36px;
+  height: 36px;
+  border-radius: 40px;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.ss-nav-btn:hover {
+  background: rgba(255,255,255,0.15);
+  color: white;
+  transform: scale(1.05);
+}
+.ss-nav-btn:disabled {
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+.ss-counter {
+  color: #e2e8f0;
+  font-size: 14px;
+  font-weight: 500;
+  min-width: 60px;
+  text-align: center;
+  letter-spacing: 0.3px;
+}
+
+/* Dot navigation */
+.ss-dots {
+  display: flex;
+  gap: 8px;
+  margin-left: 6px;
+}
+.ss-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.4);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.ss-dot.active {
+  background: #3b82f6;
+  width: 24px;
+}
+.ss-dot:hover {
+  background: rgba(255,255,255,0.8);
+}
+
+/* Hint line */
+.ss-hint {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #94a3b8;
+  font-size: 11px;
+  opacity: 0;
+  transition: opacity .3s;
+  white-space: nowrap;
+  pointer-events: none;
+  background: rgba(0,0,0,0.2);
+  padding: 4px 12px;
+  border-radius: 30px;
+  backdrop-filter: blur(4px);
+}
+.slideshow-overlay.show-ui .ss-hint { opacity: 1; }
+
+/* Notes toggle */
+.ss-notes-toggle {
+  background: rgba(255,255,255,.1);
+  border: none;
+  color: #e2e8f0;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 5px;
+  transition: background .2s;
+}
+.ss-notes-toggle:hover { background: rgba(255,255,255,.2); }
+.ss-notes-toggle.active { background: rgba(251,191,36,.22); color: #fbbf24; }
+
+/* ─── Slide Editor ──────────────────────────────────────────────────── */
+.slide-edit-card {
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem 1.125rem;
+  background: var(--card-bg);
+  transition: box-shadow .15s, border-color .15s;
+}
+.slide-edit-card:hover { border-color: #c7d2fe; box-shadow: 0 2px 8px rgba(99,102,241,.07); }
+.slide-edit-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: .7rem;
+  margin-bottom: .7rem;
+  border-bottom: 1px solid var(--border);
+}
+.edit-field-label {
+  display: block;
+  font-size: .7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-muted);
+  margin-bottom: .3rem;
+}
+#editMode {
+  border-top: 2px solid var(--border);
+  padding-top: 1rem;
+}
+.edit-section-label {
+  font-size: .7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: #6366f1;
+  margin-bottom: .6rem;
+}
+
+/* ─── Dark Mode Overrides ────────────────────────────────────────────── */
+[data-theme="dark"] .accordion-item { border-color: var(--border) !important; background: var(--card-bg); }
+[data-theme="dark"] .accordion-button { background: var(--surface-secondary) !important; color: var(--text) !important; }
+[data-theme="dark"] .accordion-button::after { filter: invert(1); }
+[data-theme="dark"] .accordion-button:not(.collapsed) { background: var(--surface-tertiary) !important; box-shadow: none; }
+[data-theme="dark"] .accordion-body { background: var(--card-bg); color: var(--text); }
+[data-theme="dark"] .accordion-body ul { color: var(--text-muted) !important; }
+[data-theme="dark"] .slide-notes-box { background: var(--feedback-warning-bg) !important; color: var(--feedback-warning-text) !important; }
+
+/* Dark mode slideshow adjustments */
+[data-theme="dark"] .ss-title-slide { background: #0f172a; }
+[data-theme="dark"] .ss-content-slide { background: #1e293b; }
+[data-theme="dark"] .ss-objectives-slide { background: #0b1120; }
+[data-theme="dark"] .ss-c-header { background: #0f172a; }
+[data-theme="dark"] .ss-o-header { background: #1e3a8a; }
+[data-theme="dark"] .ss-bullet-list li { color: #e2e8f0; border-bottom-color: rgba(255,255,255,0.1); }
+[data-theme="dark"] .ss-obj-text { color: #cbd5e1; }
+[data-theme="dark"] .ss-notes-bar { background: rgba(30, 41, 59, 0.9); border-top-color: #334155; color: #fcd34d; }
+[data-theme="dark"] .ss-notes-bar i { color: #fbbf24; }
+
+/* Gen stats boxes */
+[data-theme="dark"] .gen-stat-box { background: var(--surface-secondary) !important; }
+[data-theme="dark"] .gen-stat-box .gs-value { color: var(--text) !important; }
+[data-theme="dark"] .gen-stat-box .gs-sub { color: var(--text-muted) !important; }
+[data-theme="dark"] #genStatsCard { color: var(--text); }
+[data-theme="dark"] #genStatsCard [style*="color:#94a3b8"] { color: var(--text-muted) !important; }
+[data-theme="dark"] #genStatsCard [style*="color:#475569"] { color: var(--text-muted) !important; }
+[data-theme="dark"] #genStatsCard [style*="color:#64748b"] { color: var(--text-muted) !important; }
+[data-theme="dark"] #genStatsCard [style*="color:#1e293b"] { color: var(--text) !important; }
+
+/* Nav tabs */
+[data-theme="dark"] .nav-tabs { border-color: var(--border); }
+[data-theme="dark"] .nav-tabs .nav-link { color: var(--text-muted); }
+[data-theme="dark"] .nav-tabs .nav-link:hover { color: var(--text); border-color: var(--border) var(--border) transparent; }
+[data-theme="dark"] .nav-tabs .nav-link.active { background: var(--card-bg); color: var(--text); border-color: var(--border) var(--border) var(--card-bg); }
+
+/* Slideshow iframe border */
+[data-theme="dark"] .ss-iframe-wrap { border-color: var(--border) !important; }
+
+/* Edit actions border */
+[data-theme="dark"] .edit-actions-row { border-color: var(--border) !important; }
+
+/* Learning objectives list */
+[data-theme="dark"] .objectives-list { color: var(--text-muted) !important; }
+
+/* Form controls in edit tab */
+[data-theme="dark"] .tab-pane .form-control,
+[data-theme="dark"] .tab-pane .form-select {
+  background: var(--surface-secondary);
+  color: var(--text);
+  border-color: var(--border);
+}
+[data-theme="dark"] .tab-pane .form-control:focus,
+[data-theme="dark"] .tab-pane .form-select:focus {
+  background: var(--surface-secondary);
+  color: var(--text);
+  border-color: #6366f1;
+  box-shadow: 0 0 0 .2rem rgba(99,102,241,.2);
+}
+[data-theme="dark"] .tab-pane .input-group-text {
+  background: var(--surface-tertiary);
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+
+/* Badge text in accordion */
+[data-theme="dark"] .accordion-button .badge { opacity: .9; }
+
+/* dl/dt/dd in lesson info */
+[data-theme="dark"] .lesson-info-dl dt { color: var(--text-muted); }
+[data-theme="dark"] .lesson-info-dl dd { color: var(--text); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex gap-2 mb-4">
+  <a href="{% url 'lessons:lesson_list' course.pk %}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> All Lessons
+  </a>
+  {% if plan.status == 'ready' %}
+  <a href="{% url 'lessons:lesson_slideshow' course.pk plan.pk %}" class="btn btn-sm btn-primary">
+    <i class="bi bi-play-circle-fill"></i> Present Slideshow
+  </a>
+  {% if plan.ai_data.manual_build %}
+  <a href="{% url 'lessons:lesson_builder_edit' course.pk plan.pk %}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-pencil-square"></i> Edit Slides
+  </a>
+  {% endif %}
+  <a href="{% url 'lessons:lesson_download' course.pk plan.pk %}" class="btn btn-sm btn-outline-primary">
+    <i class="bi bi-download"></i> Download PPTX
+  </a>
+  {% endif %}
+  <button type="button" class="btn btn-sm btn-outline-danger ms-auto" data-bs-toggle="modal" data-bs-target="#deleteLessonModal">
+    <i class="bi bi-trash"></i> Delete
+  </button>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteLessonModal" tabindex="-1" aria-labelledby="deleteLessonModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header border-0 pb-0">
+        <div class="d-flex align-items-center gap-2">
+          <div class="rounded-circle bg-danger bg-opacity-10 p-2">
+            <i class="bi bi-trash text-danger fs-5"></i>
+          </div>
+          <h5 class="modal-title fw-bold mb-0" id="deleteLessonModalLabel">Delete Lesson</h5>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body pt-3">
+        <p class="text-muted mb-1">Are you sure you want to delete <strong>{{ plan.topic }}</strong>?</p>
+        <p class="text-muted small mb-0">This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form method="post" action="{% url 'lessons:lesson_delete' course.pk plan.pk %}" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">
+            <i class="bi bi-trash me-1"></i> Delete
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if plan.status == 'pending' %}
+<div class="page-card text-center py-5" id="status-card" style="max-width:480px;margin:0 auto;">
+  <div class="mb-3">
+    <div class="spinner-border text-primary" role="status" style="width:3rem;height:3rem;">
+      <span class="visually-hidden">Loading…</span>
+    </div>
+  </div>
+  <h5 class="fw-bold mb-2">Generating Presentation</h5>
+  <p class="text-muted small mb-3" id="pendingStatusMsg">Reading your syllabus and CILOs…</p>
+  <div class="progress mb-3" style="height:8px;">
+    <div id="pendingProgressBar" class="progress-bar progress-bar-striped progress-bar-animated"
+         role="progressbar" style="width:15%"></div>
+  </div>
+  <div class="small text-muted">This usually takes 15–30 seconds.</div>
+</div>
+<script>
+(function () {
+  const bar = document.getElementById('pendingProgressBar');
+  const msg = document.getElementById('pendingStatusMsg');
+  const steps = [
+    [2000, 35, 'Building the slide structure…'],
+    [7000, 60, 'Writing slide content…'],
+    [14000, 80, 'Finalizing your presentation…'],
+  ];
+  steps.forEach(function ([delay, pct, text]) {
+    setTimeout(function () {
+      if (bar) bar.style.width = pct + '%';
+      if (msg) msg.textContent = text;
+    }, delay);
+  });
+})();
+</script>
+
+{% elif plan.status == 'blueprint_pending' %}
+<div class="page-card text-center py-5">
+  <div class="mb-3">
+    <i class="bi bi-file-earmark-text text-primary" style="font-size: 3rem;"></i>
+  </div>
+  <h6 class="fw-bold">Blueprint Ready for Review</h6>
+  <p class="text-muted mb-3" style="font-size:.875rem;">
+    Your lesson blueprint has been generated. Review and edit the content before generating the final presentation.
+  </p>
+  {% with gs=generation_stats %}
+  {% if gs.rate_limited_providers %}
+  <div class="alert alert-warning d-inline-flex align-items-center gap-2 mb-3" style="font-size:.8rem;max-width:480px;">
+    <i class="bi bi-exclamation-triangle-fill"></i>
+    <span><strong>{{ gs.rate_limited_providers|join:", "|capfirst }}</strong> hit its rate limit — blueprint was generated using the next available provider ({{ gs.provider_used|capfirst }}).</span>
+  </div>
+  {% endif %}
+  {% endwith %}
+  <a href="{% url 'lessons:lesson_blueprint_edit' course.pk plan.pk %}" class="btn btn-primary">
+    <i class="bi bi-pencil-square"></i> Edit Blueprint
+  </a>
+</div>
+
+{% elif plan.status == 'blueprint_approved' %}
+<div class="page-card text-center py-5" id="status-card" style="max-width:480px;margin:0 auto;">
+  <div class="mb-3">
+    <div class="spinner-border text-primary" role="status" style="width:3rem;height:3rem;">
+      <span class="visually-hidden">Loading…</span>
+    </div>
+  </div>
+  <h5 class="fw-bold mb-2">Generating Presentation</h5>
+  <p class="text-muted small mb-3" id="blueprintStatusMsg">Blueprint approved — building your slides…</p>
+  <div class="progress mb-3" style="height:8px;">
+    <div id="blueprintProgressBar" class="progress-bar progress-bar-striped progress-bar-animated"
+         role="progressbar" style="width:20%"></div>
+  </div>
+  <div class="small text-muted">This usually takes 10–20 seconds.</div>
+</div>
+<script>
+(function () {
+  const bar = document.getElementById('blueprintProgressBar');
+  const msg = document.getElementById('blueprintStatusMsg');
+  const steps = [
+    [1500, 40, 'Applying blueprint to slides…'],
+    [5000, 65, 'Writing slide content…'],
+    [10000, 85, 'Almost done…'],
+  ];
+  steps.forEach(function ([delay, pct, text]) {
+    setTimeout(function () {
+      if (bar) bar.style.width = pct + '%';
+      if (msg) msg.textContent = text;
+    }, delay);
+  });
+})();
+</script>
+
+{% elif plan.status == 'failed' %}
+<div class="page-card border-danger">
+  <h6 class="fw-bold text-danger"><i class="bi bi-x-circle"></i> Generation Failed</h6>
+  <p class="text-muted mb-2" style="font-size:.875rem;">{{ plan.error_msg }}</p>
+  {% with gs=generation_stats %}
+  {% if gs.rate_limited_providers %}
+  <div class="alert alert-warning d-flex align-items-center gap-2 mb-2" style="font-size:.8rem;">
+    <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+    <span>All AI providers hit their rate limits ({{ gs.rate_limited_providers|join:", " }}). Wait a minute then retry.</span>
+  </div>
+  {% endif %}
+  {% endwith %}
+  <div class="d-flex gap-2">
+    {% if plan.ai_data.blueprint %}
+    <a href="{% url 'lessons:lesson_blueprint_edit' course.pk plan.pk %}" class="btn btn-sm btn-primary">
+      <i class="bi bi-arrow-left-circle"></i> Return to Blueprint
+    </a>
+    {% endif %}
+    <a href="{% url 'lessons:lesson_create' course.pk %}" class="btn btn-sm btn-outline-primary">
+      Try again
+    </a>
+  </div>
+</div>
+
+{% else %}
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="page-card mb-3">
+      <h6 class="fw-bold mb-3">Lesson Info</h6>
+      <dl style="font-size:.875rem;" class="mb-0">
+        <dt class="text-muted">Topic</dt>
+        <dd class="fw-semibold" id="lessonTopicDisplay">{{ plan.topic }}</dd>
+        <dt class="text-muted">Week</dt>
+        <dd>{{ plan.week_number }}</dd>
+        <dt class="text-muted">Course</dt>
+        <dd>{{ course.code }} — {{ course.title }}</dd>
+        <dt class="text-muted">Slides</dt>
+        <dd id="slideCountDisplay">{{ display_slides|length|default:"—" }}</dd>
+      </dl>
+    </div>
+    {% if display_objectives %}
+    <div class="page-card">
+      <h6 class="fw-bold mb-3">Learning Objectives</h6>
+      <ol style="font-size:.875rem;color:#475569;padding-left:1.1rem;">
+        {% for obj in display_objectives %}
+        <li class="mb-1">{{ obj }}</li>
+        {% endfor %}
+      </ol>
+    </div>
+    {% endif %}
+  </div>
+  <div class="col-lg-8">
+    <div class="page-card">
+      <!-- Card header -->
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h6 class="fw-bold mb-0">Slides</h6>
+      </div>
+
+      <!-- Nav Tabs -->
+      <ul class="nav nav-tabs mb-3 border-bottom" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="view-tab" data-bs-toggle="tab" data-bs-target="#viewTab" 
+                  type="button" role="tab" aria-controls="viewTab" aria-selected="true">
+            <i class="bi bi-eye me-2"></i>View
+          </button>
+        </li>
+        {% if display_slides %}
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="slideshow-tab" data-bs-toggle="tab" data-bs-target="#slideshowTab" 
+                  type="button" role="tab" aria-controls="slideshowTab" aria-selected="false">
+            <i class="bi bi-play-circle-fill me-2"></i>Slideshow
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="edit-tab" data-bs-toggle="tab" data-bs-target="#editTab" 
+                  type="button" role="tab" aria-controls="editTab" aria-selected="false">
+            <i class="bi bi-pencil me-2"></i>Edit
+          </button>
+        </li>
+        {% endif %}
+      </ul>
+
+      <!-- Tab Content -->
+      <div class="tab-content">
+        <!-- View Tab -->
+        <div class="tab-pane fade show active" id="viewTab" role="tabpanel" aria-labelledby="view-tab">
+        {% if display_slides %}
+        <div class="accordion" id="slidesAccordion">
+          {% for slide in display_slides %}
+          <div class="accordion-item border-0 mb-2"
+            style="border:1px solid #e2e8f0 !important;border-radius:8px;overflow:hidden;">
+            <h2 class="accordion-header">
+              <button class="accordion-button {% if not forloop.first %}collapsed{% endif %} py-2" type="button"
+                data-bs-toggle="collapse" data-bs-target="#slide{{ forloop.counter }}"
+                style="font-size:.875rem;font-weight:600;background:#f8fafc;">
+                <span class="badge bg-primary me-2" style="font-size:.7rem;">{{ forloop.counter }}</span>
+                {{ slide.title }}
+              </button>
+            </h2>
+            <div id="slide{{ forloop.counter }}"
+              class="accordion-collapse collapse {% if forloop.first %}show{% endif %}">
+              <div class="accordion-body py-2" style="font-size:.85rem;">
+                {% if slide.content %}
+                <ul class="mb-1" style="color:#475569;">
+                  {% for bullet in slide.content %}<li>{{ bullet }}</li>{% endfor %}
+                </ul>
+                {% endif %}
+                {% if slide.notes %}
+                <div class="mt-2 p-2 rounded" style="background:#fffbeb;font-size:.78rem;color:#92400e;">
+                  <i class="bi bi-journal-text"></i> <strong>Notes:</strong> {{ slide.notes }}
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        </div>
+
+        <!-- Slideshow Tab -->
+        <div class="tab-pane fade" id="slideshowTab" role="tabpanel" aria-labelledby="slideshow-tab">
+          <div style="width: 100%; height: 600px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+            <iframe src="{% url 'lessons:lesson_slideshow' course.pk plan.pk %}" 
+                    style="width: 100%; height: 100%; border: none; border-radius: 8px;" 
+                    allow="fullscreen"></iframe>
+          </div>
+          <div class="mt-3">
+            <a href="{% url 'lessons:lesson_slideshow' course.pk plan.pk %}" class="btn btn-primary btn-sm">
+              <i class="bi bi-fullscreen me-2"></i>Open Fullscreen
+            </a>
+          </div>
+        </div>
+
+        <!-- Edit Tab -->
+        <div class="tab-pane fade" id="editTab" role="tabpanel" aria-labelledby="edit-tab">
+        <!-- Lesson title -->
+        <div class="mb-3">
+          <label class="edit-section-label">Lesson Title</label>
+          <input type="text" id="editLessonTitle" class="form-control form-control-sm"
+                 placeholder="Enter lesson title…">
+        </div>
+
+        <!-- Objectives -->
+        <div class="mb-3">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <span class="edit-section-label mb-0">Learning Objectives</span>
+            <button type="button" class="btn btn-outline-primary btn-sm"
+                    style="font-size:.72rem;padding:.2rem .65rem;"
+                    onclick="_lessonEdit.addObjective()">
+              <i class="bi bi-plus"></i> Add
+            </button>
+          </div>
+          <div id="editObjectives"></div>
+        </div>
+
+        <!-- Slides -->
+        <div class="mb-3">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <span class="edit-section-label mb-0">Slides</span>
+            <button type="button" class="btn btn-outline-primary btn-sm"
+                    style="font-size:.72rem;padding:.2rem .65rem;"
+                    onclick="_lessonEdit.addSlide()">
+              <i class="bi bi-plus"></i> Add Slide
+            </button>
+          </div>
+          <div id="editSlidesContainer"></div>
+        </div>
+
+        <!-- Actions -->
+        <div class="d-flex gap-2 pt-3" style="border-top:1px solid #e2e8f0;">
+          <button type="button" class="btn btn-primary btn-sm" id="btnSave" onclick="saveContent()">
+            <i class="bi bi-floppy"></i> Save &amp; Rebuild PPTX
+          </button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" onclick="cancelEdit()">
+            Cancel
+          </button>
+        </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- ─── Generation Stats Panel ──────────────────────────────────────── -->
+{% with gs=generation_stats %}
+{% if gs %}
+<div class="page-card mt-3" id="genStatsCard" style="font-size:.82rem;">
+  <div class="d-flex align-items-center justify-content-between" style="cursor:pointer;"
+       onclick="document.getElementById('genStatsBody').classList.toggle('d-none')">
+    <span class="fw-semibold" style="color:#475569;">
+      <i class="bi bi-cpu me-1" style="color:#6366f1;"></i> Generation Info
+      {% if gs.rate_limited_providers %}
+      <span class="badge ms-2" style="background:#fef3c7;color:#92400e;font-size:.7rem;">
+        <i class="bi bi-exclamation-triangle-fill"></i> Rate limit hit
+      </span>
+      {% endif %}
+    </span>
+    <i class="bi bi-chevron-down text-muted" style="font-size:.75rem;"></i>
+  </div>
+  <div id="genStatsBody" class="d-none mt-3">
+    <div class="row g-3">
+
+      <!-- AI Provider -->
+      <div class="col-sm-6 col-md-3">
+        <div style="background:#f8fafc;border-radius:8px;padding:.75rem;">
+          <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;font-weight:700;margin-bottom:.3rem;">AI Provider</div>
+          {% if gs.provider_used %}
+          <div class="fw-semibold" style="color:#1e293b;">
+            <i class="bi bi-check-circle-fill text-success me-1"></i>{{ gs.provider_used|capfirst }}
+          </div>
+          <div style="color:#64748b;font-size:.75rem;">{{ gs.model_used|default:"—" }}</div>
+          {% else %}
+          <div style="color:#94a3b8;">Unknown</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Rate Limit Status -->
+      <div class="col-sm-6 col-md-3">
+        <div style="background:#f8fafc;border-radius:8px;padding:.75rem;">
+          <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;font-weight:700;margin-bottom:.3rem;">Rate Limits</div>
+          {% if gs.rate_limited_providers %}
+          <div class="fw-semibold" style="color:#d97706;">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ gs.rate_limited_providers|join:", "|capfirst }} limited
+          </div>
+          <div style="color:#92400e;font-size:.75rem;">Fell back to next provider</div>
+          {% else %}
+          <div class="fw-semibold" style="color:#16a34a;">
+            <i class="bi bi-check-circle-fill me-1"></i>No limits hit
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Images -->
+      {% if gs.slides_total %}
+      <div class="col-sm-6 col-md-3">
+        <div style="background:#f8fafc;border-radius:8px;padding:.75rem;">
+          <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;font-weight:700;margin-bottom:.3rem;">Images</div>
+          <div class="fw-semibold" style="color:#1e293b;">
+            {{ gs.images_fetched }} / {{ gs.slides_total }} fetched
+          </div>
+          {% if gs.images_failed %}
+          <div style="color:#dc2626;font-size:.75rem;">{{ gs.images_failed }} failed (text-only fallback)</div>
+          {% else %}
+          <div style="color:#16a34a;font-size:.75rem;">All images loaded</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Image Sources -->
+      <div class="col-sm-6 col-md-3">
+        <div style="background:#f8fafc;border-radius:8px;padding:.75rem;">
+          <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;font-weight:700;margin-bottom:.3rem;">Image Sources</div>
+          {% for src, count in gs.image_sources.items %}
+          {% if src != 'none' %}
+          <div style="color:#475569;">{{ src|capfirst }}: <strong>{{ count }}</strong></div>
+          {% endif %}
+          {% empty %}
+          <div style="color:#94a3b8;">No images</div>
+          {% endfor %}
+          {% if gs.image_sources.none %}
+          <div style="color:#94a3b8;font-size:.75rem;">{{ gs.image_sources.none }} slides no image</div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+    {% if gs.generated_at %}
+    <div style="color:#94a3b8;margin-top:.75rem;font-size:.72rem;">
+      Generated {{ gs.generated_at|slice:":19"|default:"" }}
+      {% if gs.pptx_generated_at %}&nbsp;·&nbsp; PPTX built {{ gs.pptx_generated_at|slice:":19" }}{% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+{% endwith %}
+
+<!-- ─── Toast ──────────────────────────────────────────────────────────── -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:9998;">
+  <div id="editToast" class="toast align-items-center text-white border-0" role="alert" aria-live="assertive">
+    <div class="d-flex">
+      <div class="toast-body fw-semibold" id="editToastBody"></div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Slideshow Overlay ─────────────────────────────────────────────── -->
+{% if plan.status == 'ready' and display_slides %}
+{{ display_slides|json_script:"ss-slides-data" }}
+{{ display_objectives|json_script:"ss-obj-data" }}
+<div class="slideshow-overlay" id="slideshowOverlay">
+  <div class="ss-topbar">
+    <div class="ss-topbar-left">
+      <span class="ss-topbar-badge">{{ course.code }}</span>
+      <span class="ss-topbar-title">Week {{ plan.week_number }} — {{ plan.topic|truncatechars:50 }}</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button class="ss-notes-toggle" id="ssNotesToggle" onclick="toggleNotes()" title="Toggle speaker notes (N)">
+        <i class="bi bi-journal-text"></i> Notes
+      </button>
+      <button class="ss-close" onclick="exitSlideshow()" title="Exit (Esc)">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+  </div>
+
+  <div class="ss-canvas" id="ssCanvas"></div>
+
+  <div class="ss-hint">
+    <kbd>←</kbd> <kbd>→</kbd> or click · <kbd>1</kbd>‑<kbd>9</kbd> jump · <kbd>Esc</kbd> exit · <kbd>N</kbd> notes · <kbd>F</kbd> fullscreen
+  </div>
+
+  <div class="ss-bottombar">
+    <button class="ss-nav-btn" id="ssPrev" onclick="prevSlide()" title="Previous (←)">
+      <i class="bi bi-chevron-left"></i>
+    </button>
+    <span class="ss-counter" id="ssCounter">1 / 1</span>
+    <button class="ss-nav-btn" id="ssNext" onclick="nextSlide()" title="Next (→)">
+      <i class="bi bi-chevron-right"></i>
+    </button>
+    <button class="ss-nav-btn" onclick="toggleFullscreen()" title="Toggle fullscreen (F)">
+      <i class="bi bi-arrows-fullscreen"></i>
+    </button>
+    <div class="ss-dots" id="ssDots"></div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if plan.status == 'pending' or plan.status == 'blueprint_approved' %}
+<script>
+  (function poll() {
+    fetch("{% url 'lessons:lesson_status_api' plan.pk %}")
+      .then(r => r.json())
+      .then(data => {
+        if (data.status === 'ready' || data.status === 'failed' || data.status === 'blueprint_pending') location.reload();
+        else setTimeout(poll, 3000);
+      });
+  })();
+</script>
+{% endif %}
+
+{% if plan.status == 'ready' and display_slides %}
+<script>
+(function() {
+  /* ═══════════════════════════════════════════════════════════════════
+     Shared data — both slideshow and editor read/write these arrays
+  ═══════════════════════════════════════════════════════════════════ */
+  const slides      = JSON.parse(document.getElementById('ss-slides-data').textContent);
+  const objectives  = JSON.parse(document.getElementById('ss-obj-data').textContent) || [];
+  let   lessonTitle = "{{ display_title|escapejs }}";
+  const courseCode  = "{{ course.code|escapejs }}";
+  const courseTitle = "{{ course.title|escapejs }}";
+  const weekNum     = "{{ plan.week_number|escapejs }}";
+  const semInfo     = "{{ course.semester|escapejs }} Semester · S.Y. {{ course.school_year|escapejs }}";
+  const saveUrl     = "{% url 'lessons:lesson_update_content' course.pk plan.pk %}";
+  const csrfToken   = "{{ csrf_token }}";
+
+  /* ── Helpers ─────────────────────────────────────────────────────── */
+  function escHtml(str) {
+    if (typeof str !== 'string') str = String(str || '');
+    const d = document.createElement('div'); d.textContent = str; return d.innerHTML;
+  }
+  function escAttr(str) { return escHtml(str).replace(/"/g, '&quot;'); }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     SLIDESHOW (improved)
+  ═══════════════════════════════════════════════════════════════════ */
+  let current = 0, showNotes = false, uiTimeout = null;
+  const overlay  = document.getElementById('slideshowOverlay');
+  const canvas   = document.getElementById('ssCanvas');
+  const counter  = document.getElementById('ssCounter');
+  const prevBtn  = document.getElementById('ssPrev');
+  const nextBtn  = document.getElementById('ssNext');
+
+  function renderSlide(index) {
+    const slide = slides[index];
+    const layout = slide.layout || 'bullets';
+    const isFirst = index === 0;
+    const isTitle = isFirst || layout === 'title';
+    const isObj   = !isTitle && (layout === 'objectives' ||
+                    (slide.title && slide.title.toLowerCase().includes('objective')));
+    let html = '';
+
+    if (isTitle) {
+      html = `<div class="ss-slide ss-title-slide">
+        <div class="ss-t-bar"></div>
+        <div class="ss-t-body">
+          <div class="ss-t-badge">${escHtml(courseCode)}</div>
+          <div class="ss-t-title">${escHtml(isFirst ? lessonTitle : slide.title)}</div>
+          <div class="ss-t-course">${escHtml(courseTitle)}</div>
+          <div class="ss-t-semester">${escHtml(semInfo)}</div>
+          <div class="ss-t-week">Week ${escHtml(weekNum)}</div>
+          ${slide.notes && showNotes ? `<div class="ss-notes-bar" style="position:absolute;bottom:0;left:3%;right:0;"><i class="bi bi-journal-text" style="flex-shrink:0;"></i><span>${escHtml(slide.notes)}</span></div>` : ''}
+        </div></div>`;
+    } else if (isObj) {
+      const items = (slide.content && slide.content.length) ? slide.content : objectives;
+      html = `<div class="ss-slide ss-objectives-slide">
+        <div class="ss-o-header"><div class="ss-o-header-title">${escHtml(slide.title)}</div><div class="ss-o-header-code">${escHtml(courseCode)}</div></div>
+        <div class="ss-o-body">
+          ${items.map((o,i) => `<div class="ss-obj-row"><div class="ss-obj-num">${i+1}</div><div class="ss-obj-text">${escHtml(o)}</div></div>`).join('')}
+          ${slide.notes && showNotes ? `<div class="ss-notes-bar"><i class="bi bi-journal-text" style="flex-shrink:0;"></i><span>${escHtml(slide.notes)}</span></div>` : ''}
+        </div>
+        <div class="ss-o-footer"></div></div>`;
+    } else {
+      const bullets = slide.content || [];
+      html = `<div class="ss-slide ss-content-slide">
+        <div class="ss-c-header"><div class="ss-c-header-title">${escHtml(slide.title)}</div><div class="ss-c-header-code">${escHtml(courseCode)}</div></div>
+        <div class="ss-c-middle">
+          <div class="ss-c-stripe"></div>
+          <div class="ss-c-body">
+            ${bullets.length ? `<ul class="ss-bullet-list">${bullets.map(b => `<li><span class="ss-bull-dot">▪</span><span>${escHtml(b)}</span></li>`).join('')}</ul>` : ''}
+            ${slide.notes && showNotes ? `<div class="ss-notes-bar"><i class="bi bi-journal-text" style="flex-shrink:0;"></i><span>${escHtml(slide.notes)}</span></div>` : ''}
+          </div>
+        </div>
+        <div class="ss-c-footer">Week ${escHtml(weekNum)}</div></div>`;
+    }
+
+    // Cross-fade effect
+    const oldSlide = canvas.querySelector('.ss-slide');
+    if (oldSlide) oldSlide.classList.add('fade-out');
+
+    setTimeout(() => {
+      canvas.innerHTML = html;
+      const newSlide = canvas.querySelector('.ss-slide');
+      if (newSlide) newSlide.classList.remove('fade-out');
+    }, 120);
+
+    // Update counter and buttons
+    counter.textContent = `${index + 1} / ${slides.length}`;
+    prevBtn.disabled = index === 0;
+    nextBtn.disabled = index === slides.length - 1;
+
+    // Update dots
+    const dotsContainer = document.getElementById('ssDots');
+    if (dotsContainer) {
+      dotsContainer.innerHTML = slides.map((_, i) => 
+        `<div class="ss-dot ${i === index ? 'active' : ''}" onclick="goToSlide(${i})"></div>`
+      ).join('');
+    }
+  }
+
+  window.nextSlide  = () => { if (current < slides.length-1) renderSlide(++current); flashUI(); };
+  window.prevSlide  = () => { if (current > 0) renderSlide(--current); flashUI(); };
+  window.goToSlide  = (idx) => {
+    if (idx >= 0 && idx < slides.length) {
+      current = idx;
+      renderSlide(current);
+      flashUI();
+    }
+  };
+
+  function flashUI() {
+    overlay.classList.add('show-ui');
+    clearTimeout(uiTimeout);
+    uiTimeout = setTimeout(() => overlay.classList.remove('show-ui'), 3000);
+  }
+  overlay.addEventListener('mousemove', flashUI);
+
+  window.startSlideshow = () => {
+    current = 0; overlay.classList.add('active'); renderSlide(0); flashUI();
+    document.body.style.overflow = 'hidden';
+    if (overlay.requestFullscreen) overlay.requestFullscreen().catch(() => {});
+    else if (overlay.webkitRequestFullscreen) overlay.webkitRequestFullscreen();
+  };
+  window.exitSlideshow = () => {
+    overlay.classList.remove('active', 'show-ui');
+    document.body.style.overflow = '';
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  };
+  window.toggleNotes = () => {
+    showNotes = !showNotes;
+    document.getElementById('ssNotesToggle').classList.toggle('active', showNotes);
+    renderSlide(current);
+  };
+  window.toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      overlay.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
+  document.addEventListener('keydown', e => {
+    if (!overlay.classList.contains('active')) return;
+    switch(e.key) {
+      case 'ArrowRight': case ' ': case 'PageDown': e.preventDefault(); nextSlide(); break;
+      case 'ArrowLeft':  case 'PageUp':             e.preventDefault(); prevSlide(); break;
+      case 'Escape': exitSlideshow(); break;
+      case 'n': case 'N': toggleNotes(); break;
+      case 'f': case 'F': toggleFullscreen(); break;
+      case 'Home': current = 0; renderSlide(0); flashUI(); break;
+      case 'End':  current = slides.length-1; renderSlide(current); flashUI(); break;
+      case '0': case '1': case '2': case '3': case '4':
+      case '5': case '6': case '7': case '8': case '9':
+        const num = parseInt(e.key);
+        if (!isNaN(num) && num > 0 && num <= slides.length) {
+          current = num - 1;
+          renderSlide(current);
+          flashUI();
+        }
+        break;
+    }
+  });
+  canvas.addEventListener('click', e => {
+    if (e.target.closest('.ss-notes-bar') || e.target.closest('.ss-dot')) return;
+    const r = canvas.getBoundingClientRect();
+    (e.clientX - r.left < r.width / 2) ? prevSlide() : nextSlide();
+  });
+
+  /* ═══════════════════════════════════════════════════════════════════
+     EDITOR (unchanged, included for completeness)
+  ═══════════════════════════════════════════════════════════════════ */
+  let editData = null;
+
+  window.enterEditMode = () => {
+    editData = {
+      title:      lessonTitle,
+      objectives: objectives.slice(),
+      slides:     slides.map(s => ({
+        layout:  s.layout || 'bullets',
+        title:   s.title  || '',
+        content: (s.content || []).slice(),
+        notes:   s.notes  || '',
+      })),
+    };
+    buildEditUI();
+    const editTab = new bootstrap.Tab(document.getElementById('edit-tab'));
+    editTab.show();
+  };
+
+  window.cancelEdit = () => {
+    editData = null;
+    const viewTab = new bootstrap.Tab(document.getElementById('view-tab'));
+    viewTab.show();
+  };
+
+  function syncFromDom() {
+    if (!editData) return;
+    const t = document.getElementById('editLessonTitle');
+    if (t) editData.title = t.value;
+    editData.objectives = [...document.querySelectorAll('.obj-input')].map(el => el.value);
+    document.querySelectorAll('.slide-edit-card').forEach((card, i) => {
+      if (!editData.slides[i]) return;
+      editData.slides[i].layout  = card.querySelector('.slide-layout-sel').value;
+      editData.slides[i].title   = card.querySelector('.slide-title-inp').value;
+      editData.slides[i].content = [...card.querySelectorAll('.bullet-inp')].map(el => el.value);
+      editData.slides[i].notes   = card.querySelector('.slide-notes-inp').value;
+    });
+  }
+
+  function buildEditUI() {
+    document.getElementById('editLessonTitle').value = editData.title || '';
+    document.getElementById('editObjectives').innerHTML = editData.objectives.length
+      ? editData.objectives.map((obj, i) => `
+          <div class="input-group input-group-sm mb-2">
+            <span class="input-group-text"
+              style="background:#ede9fe;border-color:#ddd6fe;color:#6d28d9;font-weight:700;min-width:28px;justify-content:center;">${i+1}</span>
+            <input type="text" class="form-control obj-input" value="${escAttr(obj)}" placeholder="Objective ${i+1}…">
+            <button type="button" class="btn btn-outline-danger" onclick="_lessonEdit.removeObjective(${i})">×</button>
+          </div>`).join('')
+      : `<p class="text-muted mb-2" style="font-size:.8rem;">No objectives yet — <a href="#" onclick="_lessonEdit.addObjective();return false;">add one</a>.</p>`;
+
+    const total = editData.slides.length;
+    document.getElementById('editSlidesContainer').innerHTML = editData.slides.map((slide, i) => `
+      <div class="slide-edit-card mb-3" data-idx="${i}">
+        <div class="slide-edit-hdr">
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-primary rounded-pill" style="font-size:.7rem;">${i+1}</span>
+            <select class="form-select form-select-sm slide-layout-sel" style="width:130px;font-size:.75rem;">
+              <option value="title"${slide.layout==='title'?' selected':''}>Title Slide</option>
+              <option value="bullets"${slide.layout!=='title'&&slide.layout!=='objectives'?' selected':''}>Content</option>
+              <option value="objectives"${slide.layout==='objectives'?' selected':''}>Objectives</option>
+            </select>
+          </div>
+          <div class="d-flex gap-1">
+            <button type="button" class="btn btn-sm btn-outline-secondary" title="Move up"
+              onclick="_lessonEdit.moveSlide(${i},-1)" ${i===0?'disabled':''}><i class="bi bi-arrow-up"></i></button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" title="Move down"
+              onclick="_lessonEdit.moveSlide(${i},1)" ${i===total-1?'disabled':''}><i class="bi bi-arrow-down"></i></button>
+            <button type="button" class="btn btn-sm btn-outline-danger" title="Delete slide"
+              onclick="_lessonEdit.deleteSlide(${i})" ${total<=1?'disabled':''}><i class="bi bi-trash"></i></button>
+          </div>
+        </div>
+
+        <div class="mb-2">
+          <label class="edit-field-label">Slide Title</label>
+          <input type="text" class="form-control form-control-sm slide-title-inp"
+            value="${escAttr(slide.title)}" placeholder="Enter slide title…">
+        </div>
+
+        <div class="mb-2">
+          <div class="d-flex align-items-center justify-content-between mb-1">
+            <label class="edit-field-label mb-0">Content Bullets</label>
+            <button type="button" class="btn btn-outline-primary btn-sm"
+              style="font-size:.68rem;padding:.15rem .5rem;" onclick="_lessonEdit.addBullet(${i})">
+              <i class="bi bi-plus"></i> Add Bullet
+            </button>
+          </div>
+          ${(slide.content||[]).length === 0
+            ? `<p class="text-muted mb-1" style="font-size:.78rem;font-style:italic;">No bullets — <a href="#" onclick="_lessonEdit.addBullet(${i});return false;">add one</a>.</p>`
+            : (slide.content||[]).map((b,j) => `
+                <div class="input-group input-group-sm mb-1">
+                  <span class="input-group-text" style="background:#eff6ff;border-color:#dbeafe;color:#3b82f6;">▪</span>
+                  <input type="text" class="form-control bullet-inp" value="${escAttr(b)}" placeholder="Bullet point…">
+                  <button type="button" class="btn btn-outline-danger" onclick="_lessonEdit.removeBullet(${i},${j})">×</button>
+                </div>`).join('')}
+        </div>
+
+        <div>
+          <label class="edit-field-label">Speaker Notes <span class="text-muted fw-normal">(optional)</span></label>
+          <textarea class="form-control form-control-sm slide-notes-inp" rows="2"
+            placeholder="Notes for presenter…">${escHtml(slide.notes||'')}</textarea>
+        </div>
+      </div>`).join('');
+  }
+
+  function rebuildAccordion() {
+    const acc = document.getElementById('slidesAccordion');
+    if (!acc) return;
+    acc.innerHTML = slides.map((slide, i) => `
+      <div class="accordion-item border-0 mb-2" style="border:1px solid #e2e8f0 !important;border-radius:8px;overflow:hidden;">
+        <h2 class="accordion-header">
+          <button class="accordion-button ${i>0?'collapsed':''} py-2" type="button"
+            data-bs-toggle="collapse" data-bs-target="#slide${i+1}"
+            style="font-size:.875rem;font-weight:600;background:#f8fafc;">
+            <span class="badge bg-primary me-2" style="font-size:.7rem;">${i+1}</span>
+            ${escHtml(slide.title||'(untitled)')}
+          </button>
+        </h2>
+        <div id="slide${i+1}" class="accordion-collapse collapse ${i===0?'show':''}">
+          <div class="accordion-body py-2" style="font-size:.85rem;">
+            ${slide.content && slide.content.filter(Boolean).length
+              ? `<ul class="mb-1" style="color:#475569;">${slide.content.filter(Boolean).map(b=>`<li>${escHtml(b)}</li>`).join('')}</ul>`
+              : ''}
+            ${slide.notes ? `<div class="mt-2 p-2 rounded" style="background:#fffbeb;font-size:.78rem;color:#92400e;"><i class="bi bi-journal-text"></i> <strong>Notes:</strong> ${escHtml(slide.notes)}</div>` : ''}
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  function showToast(msg, type = 'success') {
+    const el   = document.getElementById('editToast');
+    const body = document.getElementById('editToastBody');
+    if (!el || !body) return;
+    body.textContent = msg;
+    el.className = `toast align-items-center text-white border-0 bg-${type}`;
+    bootstrap.Toast.getOrCreateInstance(el, { delay: 4000 }).show();
+  }
+
+  window.saveContent = async () => {
+    syncFromDom();
+    if (!editData.title.trim()) { showToast('Lesson title is required.', 'warning'); return; }
+
+    const btn = document.getElementById('btnSave');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving…';
+
+    try {
+      const resp = await fetch(saveUrl, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+        body:    JSON.stringify({ ai_data: editData }),
+      });
+      const result = await resp.json();
+
+      if (result.success) {
+        lessonTitle = editData.title;
+        slides.length = 0;     slides.push(...editData.slides);
+        objectives.length = 0; objectives.push(...editData.objectives);
+
+        const topicEl = document.getElementById('lessonTopicDisplay');
+        if (topicEl) topicEl.textContent = editData.title;
+        const countEl = document.getElementById('slideCountDisplay');
+        if (countEl) countEl.textContent = slides.length;
+
+        rebuildAccordion();
+        cancelEdit();
+        showToast(result.warning || 'Saved! PPTX has been rebuilt.', result.warning ? 'warning' : 'success');
+      } else {
+        showToast('Save failed: ' + (result.error || 'Unknown error'), 'danger');
+      }
+    } catch(e) {
+      showToast('Network error: ' + e.message, 'danger');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-floppy"></i> Save &amp; Rebuild PPTX';
+    }
+  };
+
+  window._lessonEdit = {
+    addSlide() {
+      syncFromDom();
+      editData.slides.push({ layout: 'bullets', title: '', content: [''], notes: '' });
+      buildEditUI();
+      document.querySelectorAll('.slide-edit-card')[editData.slides.length - 1]
+        ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    },
+    deleteSlide(idx) {
+      if (editData.slides.length <= 1) return;
+      syncFromDom(); editData.slides.splice(idx, 1); buildEditUI();
+    },
+    moveSlide(idx, dir) {
+      const ni = idx + dir;
+      if (ni < 0 || ni >= editData.slides.length) return;
+      syncFromDom();
+      [editData.slides[idx], editData.slides[ni]] = [editData.slides[ni], editData.slides[idx]];
+      buildEditUI();
+    },
+    addBullet(slideIdx) {
+      syncFromDom(); editData.slides[slideIdx].content.push(''); buildEditUI();
+      const card = document.querySelectorAll('.slide-edit-card')[slideIdx];
+      const inputs = card?.querySelectorAll('.bullet-inp');
+      if (inputs?.length) inputs[inputs.length - 1].focus();
+    },
+    removeBullet(slideIdx, bulletIdx) {
+      syncFromDom(); editData.slides[slideIdx].content.splice(bulletIdx, 1); buildEditUI();
+    },
+    addObjective() {
+      syncFromDom(); editData.objectives.push(''); buildEditUI();
+      const inputs = document.querySelectorAll('.obj-input');
+      if (inputs.length) inputs[inputs.length - 1].focus();
+    },
+    removeObjective(idx) {
+      syncFromDom(); editData.objectives.splice(idx, 1); buildEditUI();
+    },
+  };
+})();
+</script>
+{% endif %}
+
+{% endblock %}

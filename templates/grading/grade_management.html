@@ -1,0 +1,587 @@
+{% extends 'base.html' %}
+{% block title %}Grade Management — {{ course.code }}{% endblock %}
+{% block page_title %}Grade Management{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Layout ── */
+.gm-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+.gm-grid.full { grid-template-columns: 1fr; }
+
+@media (max-width: 900px) {
+  .gm-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Cards ── */
+.gm-card {
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.gm-card-header {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  background: var(--surface, #f8fafc);
+}
+.gm-card-header h5 {
+  font-size: .9rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text, #1e293b);
+}
+.gm-card-header .badge-pill {
+  font-size: .7rem;
+  font-weight: 700;
+  padding: .2rem .6rem;
+  border-radius: 20px;
+  background: #eff6ff;
+  color: #3b82f6;
+  margin-left: auto;
+}
+.gm-card-body { padding: 1.25rem; }
+
+/* ── Weight rows ── */
+.weight-row {
+  display: grid;
+  grid-template-columns: 2rem 1fr 1fr 5rem;
+  align-items: center;
+  gap: .75rem;
+  padding: .6rem 0;
+  border-bottom: 1px solid var(--border, #f1f5f9);
+}
+.weight-row:last-child { border-bottom: none; }
+.weight-color-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.weight-label {
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--text, #1e293b);
+}
+.weight-name-input {
+  font-size: .8rem;
+  padding: .3rem .6rem;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 6px;
+  background: var(--input-bg, #fff);
+  color: var(--text, #1e293b);
+  width: 100%;
+}
+.weight-pct-input {
+  font-size: .9rem;
+  font-weight: 700;
+  padding: .3rem .5rem;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 6px;
+  background: var(--input-bg, #fff);
+  color: var(--text, #1e293b);
+  text-align: center;
+  width: 100%;
+}
+.weight-pct-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.15); }
+
+/* ── Total bar ── */
+.weight-total-bar {
+  margin-top: 1rem;
+  padding: .75rem 1rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: .85rem;
+  font-weight: 700;
+  transition: background .2s;
+}
+.weight-total-bar.ok    { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+.weight-total-bar.error { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+
+/* ── Stacked bar ── */
+.weight-visual {
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+  display: flex;
+  margin-top: .75rem;
+  background: var(--border, #e2e8f0);
+}
+.weight-visual-seg { height: 100%; transition: width .3s ease; }
+
+/* ── HPS table ── */
+.hps-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+.hps-table th {
+  background: var(--surface, #f8fafc);
+  padding: .5rem .75rem;
+  text-align: left;
+  font-size: .75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--text-muted, #64748b);
+  border-bottom: 2px solid var(--border, #e2e8f0);
+}
+.hps-table td {
+  padding: .5rem .75rem;
+  border-bottom: 1px solid var(--border, #f1f5f9);
+  color: var(--text, #1e293b);
+}
+.hps-table tr:last-child td { border-bottom: none; }
+.hps-input {
+  width: 80px;
+  padding: .3rem .5rem;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 6px;
+  font-size: .85rem;
+  font-weight: 600;
+  text-align: center;
+  background: var(--input-bg, #fff);
+  color: var(--text, #1e293b);
+}
+.hps-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.15); }
+
+/* ── Transmutation table ── */
+.trans-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.trans-table th {
+  background: var(--surface, #f8fafc);
+  padding: .4rem .75rem;
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--text-muted, #64748b);
+  border-bottom: 2px solid var(--border, #e2e8f0);
+  text-align: center;
+}
+.trans-table td {
+  padding: .35rem .75rem;
+  border-bottom: 1px solid var(--border, #f1f5f9);
+  text-align: center;
+  color: var(--text, #1e293b);
+}
+.trans-table tr:last-child td { border-bottom: none; }
+.trans-table tr.pass-row td { color: #15803d; font-weight: 600; }
+.trans-table tr.fail-row td { color: #b91c1c; font-weight: 600; }
+
+/* ── Rubric textarea ── */
+.rubric-textarea {
+  width: 100%;
+  min-height: 180px;
+  padding: .75rem 1rem;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  font-size: .875rem;
+  line-height: 1.6;
+  resize: vertical;
+  background: var(--input-bg, #fff);
+  color: var(--text, #1e293b);
+  font-family: inherit;
+}
+.rubric-textarea:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.15); }
+
+/* ── Course banner ── */
+.course-banner {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  color: #fff;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.course-banner-icon {
+  width: 48px; height: 48px;
+  background: rgba(255,255,255,.15);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+.course-banner h2 { font-size: 1.1rem; font-weight: 800; margin: 0 0 .2rem; }
+.course-banner p  { font-size: .8rem; opacity: .8; margin: 0; }
+.course-banner-chips { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .4rem; }
+.course-banner-chip {
+  font-size: .7rem; font-weight: 700;
+  padding: .15rem .55rem; border-radius: 10px;
+  background: rgba(255,255,255,.2); color: #fff;
+}
+
+/* ── Section tabs ── */
+.gm-tabs {
+  display: flex; gap: .5rem; flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+.gm-tab {
+  padding: .5rem 1.1rem;
+  border-radius: 8px;
+  font-size: .85rem; font-weight: 600;
+  border: 1px solid var(--border, #e2e8f0);
+  background: var(--card-bg, #fff);
+  color: var(--text-muted, #64748b);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all .15s;
+}
+.gm-tab:hover { border-color: #3b82f6; color: #3b82f6; }
+.gm-tab.active { background: #3b82f6; border-color: #3b82f6; color: #fff; }
+
+/* ── Save button ── */
+.btn-save {
+  display: inline-flex; align-items: center; gap: .4rem;
+  padding: .55rem 1.4rem;
+  background: #3b82f6; color: #fff;
+  border: none; border-radius: 8px;
+  font-size: .875rem; font-weight: 600;
+  cursor: pointer; transition: background .15s;
+}
+.btn-save:hover { background: #2563eb; }
+
+/* ── Dark mode ── */
+[data-theme="dark"] .gm-card { background: var(--card-bg); border-color: var(--border); }
+[data-theme="dark"] .gm-card-header { background: var(--surface); border-color: var(--border); }
+[data-theme="dark"] .weight-name-input,
+[data-theme="dark"] .weight-pct-input,
+[data-theme="dark"] .hps-input,
+[data-theme="dark"] .rubric-textarea {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+}
+[data-theme="dark"] .hps-table th,
+[data-theme="dark"] .trans-table th { background: var(--surface); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:1100px;margin:0 auto;padding:1.5rem 1rem;">
+
+  <!-- Course banner -->
+  <div class="course-banner">
+    <div class="course-banner-icon"><i class="bi bi-sliders"></i></div>
+    <div>
+      <h2>{{ course.code }} — {{ course.title|truncatechars:60 }}</h2>
+      <p>{{ course.get_semester_display }} &bull; S.Y. {{ course.school_year }}</p>
+      <div class="course-banner-chips">
+        {% if course.program %}<span class="course-banner-chip">{{ course.program }}</span>{% endif %}
+        {% if course.block %}<span class="course-banner-chip">{{ course.block }}</span>{% endif %}
+        <span class="course-banner-chip">{{ course.enrollments.count }} student{{ course.enrollments.count|pluralize }}</span>
+      </div>
+    </div>
+    <div style="margin-left:auto;display:flex;gap:.5rem;flex-wrap:wrap;">
+      <a href="{% url 'grading:eclass_record' course.pk %}" class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border:none;">
+        <i class="bi bi-table me-1"></i>Prelim Record
+      </a>
+      <a href="{% url 'grading:grade_summary' course.pk %}" class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border:none;">
+        <i class="bi bi-bar-chart-line me-1"></i>Grade Summary
+      </a>
+    </div>
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} alert-dismissible fade show mb-3" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  {% if errors %}
+    <div class="alert alert-danger mb-3">
+      {% for e in errors %}<div><i class="bi bi-exclamation-triangle me-1"></i>{{ e }}</div>{% endfor %}
+    </div>
+  {% endif %}
+
+  <!-- ── Section 1: Grading Weights & Component Names ── -->
+  <div class="gm-grid mb-4">
+
+    <!-- Weights form -->
+    <div class="gm-card">
+      <div class="gm-card-header">
+        <i class="bi bi-pie-chart-fill" style="color:#3b82f6;"></i>
+        <h5>Grading Weights</h5>
+        <span class="badge-pill" id="totalBadge">Total: {{ course.cs_weight|add:course.req_weight|add:course.ao_weight|add:course.exam_weight }}%</span>
+      </div>
+      <div class="gm-card-body">
+        <form method="post" id="weightsForm">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="weights">
+
+          <div style="display:grid;grid-template-columns:2rem 1fr 1fr 5rem;gap:.5rem;padding:.4rem 0;margin-bottom:.25rem;">
+            <div></div>
+            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted,#64748b);">Component</div>
+            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted,#64748b);">Section Name</div>
+            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted,#64748b);text-align:center;">Weight %</div>
+          </div>
+
+          <!-- CS -->
+          <div class="weight-row">
+            <div class="weight-color-dot" style="background:#6366f1;"></div>
+            <div class="weight-label"><i class="bi bi-pencil-square me-1" style="color:#6366f1;"></i>Class Standing</div>
+            <input type="text" name="cs_section_name" class="weight-name-input"
+                   value="{{ course.cs_section_name }}" placeholder="e.g. Written Work">
+            <input type="number" name="cs_weight" id="cs_weight" class="weight-pct-input"
+                   value="{{ course.cs_weight }}" min="0" max="100" oninput="updateTotal()">
+          </div>
+
+          <!-- PT -->
+          <div class="weight-row">
+            <div class="weight-color-dot" style="background:#10b981;"></div>
+            <div class="weight-label"><i class="bi bi-folder-check me-1" style="color:#10b981;"></i>Performance Task</div>
+            <input type="text" name="pt_section_name" class="weight-name-input"
+                   value="{{ course.pt_section_name }}" placeholder="e.g. Performance Task">
+            <input type="number" name="req_weight" id="req_weight" class="weight-pct-input"
+                   value="{{ course.req_weight }}" min="0" max="100" oninput="updateTotal()">
+          </div>
+
+          <!-- AO -->
+          <div class="weight-row">
+            <div class="weight-color-dot" style="background:#f59e0b;"></div>
+            <div class="weight-label"><i class="bi bi-activity me-1" style="color:#f59e0b;"></i>Activity Output</div>
+            <input type="text" name="ao_section_name" class="weight-name-input"
+                   value="{{ course.ao_section_name }}" placeholder="e.g. Activity Output">
+            <input type="number" name="ao_weight" id="ao_weight" class="weight-pct-input"
+                   value="{{ course.ao_weight }}" min="0" max="100" oninput="updateTotal()">
+          </div>
+
+          <!-- Exam -->
+          <div class="weight-row">
+            <div class="weight-color-dot" style="background:#ef4444;"></div>
+            <div class="weight-label"><i class="bi bi-journal-text me-1" style="color:#ef4444;"></i>Major Exam</div>
+            <input type="text" name="exam_section_name" class="weight-name-input"
+                   value="{{ course.exam_section_name }}" placeholder="e.g. Quarterly Assessment">
+            <input type="number" name="exam_weight" id="exam_weight" class="weight-pct-input"
+                   value="{{ course.exam_weight }}" min="0" max="100" oninput="updateTotal()">
+          </div>
+
+          <!-- Total indicator -->
+          <div class="weight-total-bar ok" id="totalBar">
+            <span id="totalText"><i class="bi bi-check-circle me-1"></i>Total: {{ course.cs_weight|add:course.req_weight|add:course.ao_weight|add:course.exam_weight }}%</span>
+            <span style="font-size:.75rem;opacity:.7;">Must equal 100%</span>
+          </div>
+
+          <!-- Visual bar -->
+          <div class="weight-visual" id="weightVisual">
+            <div class="weight-visual-seg" style="background:#6366f1;width:{{ course.cs_weight }}%;"></div>
+            <div class="weight-visual-seg" style="background:#10b981;width:{{ course.req_weight }}%;"></div>
+            <div class="weight-visual-seg" style="background:#f59e0b;width:{{ course.ao_weight }}%;"></div>
+            <div class="weight-visual-seg" style="background:#ef4444;width:{{ course.exam_weight }}%;"></div>
+          </div>
+
+          <div style="margin-top:1rem;display:flex;justify-content:flex-end;">
+            <button type="submit" class="btn-save" id="saveWeightsBtn">
+              <i class="bi bi-check-lg"></i> Save Weights
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Transmutation table (read-only reference) -->
+    <div class="gm-card">
+      <div class="gm-card-header">
+        <i class="bi bi-table" style="color:#7c3aed;"></i>
+        <h5>Transmutation Table</h5>
+        <span class="badge-pill" style="background:#f5f3ff;color:#7c3aed;">CHED Standard</span>
+      </div>
+      <div class="gm-card-body">
+        <p style="font-size:.8rem;color:var(--text-muted,#64748b);margin-bottom:.75rem;">
+          Formula: <strong>Quarterly Grade = 60 + (Initial Grade × 0.4)</strong><br>
+          Final Semestral Grade = (Midterm Grade + Final Grade) ÷ 2
+        </p>
+        <table class="trans-table">
+          <thead>
+            <tr>
+              <th>Score Range</th>
+              <th>Equivalent</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for low, high, equiv in transmutation_table %}
+            <tr class="{% if low >= 75 %}pass-row{% else %}fail-row{% endif %}">
+              <td>{% if low == high %}{{ low }}{% else %}{{ low }} – {{ high }}{% endif %}</td>
+              <td><strong>{{ equiv }}</strong></td>
+              <td>
+                {% if low >= 75 %}
+                  <span style="color:#15803d;font-size:.75rem;"><i class="bi bi-check-circle-fill"></i> Passed</span>
+                {% else %}
+                  <span style="color:#b91c1c;font-size:.75rem;"><i class="bi bi-x-circle-fill"></i> Failed</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Section 2: HPS (Highest Possible Scores) ── -->
+  <div class="gm-card mb-4">
+    <div class="gm-card-header">
+      <i class="bi bi-123" style="color:#10b981;"></i>
+      <h5>Highest Possible Scores (HPS)</h5>
+      <span class="badge-pill" style="background:#f0fdf4;color:#15803d;">Per-column HPS is set directly on the e-class record sheets</span>
+    </div>
+    <div class="gm-card-body">
+      <p style="font-size:.82rem;color:var(--text-muted,#64748b);margin-bottom:1rem;">
+        Set the maximum score for the <strong>Major Exam</strong> component for each term.
+        Per-column HPS for CS, PT, and AO are managed directly on the
+        <a href="{% url 'grading:eclass_record' course.pk %}">Prelim Record</a> and
+        <a href="{% url 'grading:midterm_sheet' course.pk %}">Midterm Sheet</a>.
+      </p>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="hps">
+        <table class="hps-table">
+          <thead>
+            <tr>
+              <th>Term</th>
+              <th>Component</th>
+              <th>Max Score (HPS)</th>
+              <th style="color:var(--text-muted,#64748b);">Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span style="font-size:.75rem;font-weight:700;color:#6366f1;">PRELIM</span></td>
+              <td><i class="bi bi-journal-text me-1" style="color:#ef4444;"></i>Major Exam</td>
+              <td>
+                <input type="number" name="requirement_max" class="hps-input"
+                       value="{{ course.requirement_max|default:100 }}" min="1" max="9999">
+              </td>
+              <td style="font-size:.75rem;color:var(--text-muted,#64748b);">Quarterly Assessment max score</td>
+            </tr>
+            <tr>
+              <td><span style="font-size:.75rem;font-weight:700;color:#7c3aed;">FINAL</span></td>
+              <td><i class="bi bi-journal-check me-1" style="color:#ef4444;"></i>Major Exam</td>
+              <td>
+                <input type="number" name="final_exam_max" class="hps-input"
+                       value="{{ course.final_exam_max|default:100 }}" min="1" max="9999">
+              </td>
+              <td style="font-size:.75rem;color:var(--text-muted,#64748b);">Final Major Exam max score</td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="margin-top:1rem;display:flex;justify-content:flex-end;">
+          <button type="submit" class="btn-save">
+            <i class="bi bi-check-lg"></i> Save HPS
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── Section 3: Grading Rubric / System Description ── -->
+  <div class="gm-card mb-4">
+    <div class="gm-card-header">
+      <i class="bi bi-card-text" style="color:#f59e0b;"></i>
+      <h5>Grading Rubric &amp; System Description</h5>
+    </div>
+    <div class="gm-card-body">
+      <p style="font-size:.82rem;color:var(--text-muted,#64748b);margin-bottom:.75rem;">
+        Describe the grading criteria, rubric, or any additional grading policies for this course.
+        This is displayed as a reference on the grade summary.
+      </p>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="rubric">
+        <textarea name="grading_system" class="rubric-textarea"
+                  placeholder="e.g.&#10;Class Standing (20%): Average of all written work and quizzes&#10;Performance Task (20%): Laboratory outputs and projects&#10;Activity Output (20%): In-class activities and participation&#10;Major Exam (40%): Quarterly examination&#10;&#10;Passing grade: 75%">{{ course.grading_system }}</textarea>
+        <div style="margin-top:.75rem;display:flex;justify-content:flex-end;">
+          <button type="submit" class="btn-save">
+            <i class="bi bi-check-lg"></i> Save Rubric
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── Section 4: Quick links ── -->
+  <div class="gm-card">
+    <div class="gm-card-header">
+      <i class="bi bi-lightning-fill" style="color:#f59e0b;"></i>
+      <h5>Quick Access</h5>
+    </div>
+    <div class="gm-card-body">
+      <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+        <a href="{% url 'grading:eclass_record' course.pk %}" class="btn btn-outline-primary btn-sm">
+          <i class="bi bi-table me-1"></i>Prelim Record
+        </a>
+        <a href="{% url 'grading:midterm_sheet' course.pk %}" class="btn btn-outline-primary btn-sm">
+          <i class="bi bi-file-earmark-spreadsheet me-1"></i>Midterm Sheet
+        </a>
+        <a href="{% url 'grading:final_sheet' course.pk %}" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-file-earmark-check me-1"></i>Final Sheet
+        </a>
+        <a href="{% url 'grading:grade_summary' course.pk %}" class="btn btn-outline-success btn-sm">
+          <i class="bi bi-bar-chart-line me-1"></i>Grade Summary
+        </a>
+        <a href="{% url 'grading:export_grades' course.pk %}" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-download me-1"></i>Export Grades
+        </a>
+        <a href="{% url 'accounts:course_detail' course.pk %}" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-arrow-left me-1"></i>Back to Course
+        </a>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const csInput   = document.getElementById('cs_weight');
+const ptInput   = document.getElementById('req_weight');
+const aoInput   = document.getElementById('ao_weight');
+const examInput = document.getElementById('exam_weight');
+const totalBar  = document.getElementById('totalBar');
+const totalText = document.getElementById('totalText');
+const totalBadge = document.getElementById('totalBadge');
+const visual    = document.getElementById('weightVisual');
+const segs      = visual ? visual.querySelectorAll('.weight-visual-seg') : [];
+
+function updateTotal() {
+  const cs   = parseInt(csInput.value)   || 0;
+  const pt   = parseInt(ptInput.value)   || 0;
+  const ao   = parseInt(aoInput.value)   || 0;
+  const exam = parseInt(examInput.value) || 0;
+  const total = cs + pt + ao + exam;
+
+  totalBadge.textContent = `Total: ${total}%`;
+
+  if (total === 100) {
+    totalBar.className = 'weight-total-bar ok';
+    totalText.innerHTML = `<i class="bi bi-check-circle me-1"></i>Total: ${total}% ✓`;
+    document.getElementById('saveWeightsBtn').disabled = false;
+  } else {
+    totalBar.className = 'weight-total-bar error';
+    totalText.innerHTML = `<i class="bi bi-exclamation-triangle me-1"></i>Total: ${total}% — must be 100%`;
+    document.getElementById('saveWeightsBtn').disabled = true;
+  }
+
+  // Update visual bar
+  if (segs.length === 4) {
+    segs[0].style.width = cs   + '%';
+    segs[1].style.width = pt   + '%';
+    segs[2].style.width = ao   + '%';
+    segs[3].style.width = exam + '%';
+  }
+}
+
+// Run on load to set initial state
+updateTotal();
+</script>
+{% endblock %}

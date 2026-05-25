@@ -1,0 +1,526 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard — INSTAASYS{% endblock %}
+{% block page_title %}Admin Dashboard{% endblock %}
+{% block content %}
+<style>
+/* ── Banner ──────────────────────────────────────────── */
+.admin-banner {
+  background: linear-gradient(135deg,#0f172a 0%,#1e293b 50%,#0f172a 100%);
+  border-radius:16px;padding:1.75rem 2rem;color:#fff;
+  margin-bottom:1.5rem;position:relative;overflow:hidden;
+}
+.admin-banner::before {
+  content:'';position:absolute;width:300px;height:300px;border-radius:50%;
+  background:linear-gradient(135deg,rgba(99,102,241,.15),rgba(139,92,246,.1));
+  top:-100px;right:-60px;
+}
+.admin-banner::after {
+  content:'';position:absolute;width:200px;height:200px;border-radius:50%;
+  background:rgba(6,182,212,.06);bottom:-60px;left:25%;
+}
+.admin-banner-inner {
+  position:relative;z-index:1;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;
+}
+.admin-banner h2 { font-size:1.4rem;font-weight:800;margin:0 0 .3rem; }
+.admin-banner p  { font-size:.85rem;opacity:.65;margin:0; }
+
+/* ── Stat cards ──────────────────────────────────────── */
+.admin-stats { display:grid;grid-template-columns:repeat(5,1fr);gap:.875rem;margin-bottom:1.5rem; }
+.a-stat {
+  background:#fff;border:1px solid #e2e8f0;border-radius:12px;
+  padding:1rem 1.25rem;position:relative;overflow:hidden;
+}
+.a-stat-accent { height:3px;border-radius:3px 3px 0 0;position:absolute;top:0;left:0;right:0; }
+.a-stat-icon {
+  width:40px;height:40px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;margin-bottom:.75rem;
+}
+.a-stat-val { font-size:1.75rem;font-weight:900;color:#0f172a;line-height:1;margin-bottom:2px; }
+.a-stat-lbl { font-size:.68rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.05em; }
+
+/* ── Chart cards ─────────────────────────────────────── */
+.chart-grid { display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem; }
+.chart-card {
+  background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:1.5rem;
+}
+.chart-card-title {
+  font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  color:#64748b;margin-bottom:1.25rem;display:flex;align-items:center;gap:.5rem;
+}
+
+/* ── Tables ──────────────────────────────────────────── */
+.portal-table { width:100%;border-collapse:collapse;font-size:.83rem; }
+.portal-table th {
+  background:#f8fafc;border-bottom:2px solid #e2e8f0;
+  padding:.6rem 1rem;font-size:.7rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:.06em;color:#64748b;text-align:left;
+}
+.portal-table td { padding:.7rem 1rem;border-bottom:1px solid #f1f5f9;vertical-align:middle; }
+.portal-table tr:last-child td { border-bottom:none; }
+.portal-table tr:hover td { background:#f8fafc; }
+
+/* ── Log items ───────────────────────────────────────── */
+.log-item {
+  display:flex;align-items:flex-start;gap:.875rem;
+  padding:.6rem 0;border-bottom:1px solid #f1f5f9;
+}
+.log-item:last-child { border-bottom:none; }
+.log-dot {
+  width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px;
+}
+.log-body { flex:1;min-width:0; }
+.log-action { font-size:.8rem;font-weight:600;color:#0f172a; }
+.log-target { font-size:.75rem;color:#64748b;margin-top:1px; }
+.log-time   { font-size:.7rem;color:#94a3b8;white-space:nowrap;flex-shrink:0; }
+
+@media(max-width:900px){
+  .admin-stats { grid-template-columns:1fr 1fr; }
+  .chart-grid  { grid-template-columns:1fr; }
+}
+</style>
+
+<!-- ── Banner ──────────────────────────────────────────────────── -->
+<div class="admin-banner">
+  <div class="admin-banner-inner">
+    <div>
+      <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#64748b;margin-bottom:.4rem;">
+        <i class="bi bi-shield-check me-1"></i> System Administration
+      </div>
+      <h2>Welcome, {{ user.first_name }}!</h2>
+      <p>Real-time overview of the INSTAASYS platform — users, courses, and activity.</p>
+    </div>
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+      <a href="{% url 'accounts:portal_create_user' %}" class="btn btn-sm"
+         style="background:#4f46e5;color:#fff;border:none;">
+        <i class="bi bi-person-plus me-1"></i> Add User
+      </a>
+      <a href="{% url 'accounts:portal_logs' %}" class="btn btn-sm"
+         style="background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);">
+        <i class="bi bi-activity me-1"></i> View Logs
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ── Stat row ─────────────────────────────────────────────────── -->
+<div class="admin-stats">
+  <div class="a-stat">
+    <div class="a-stat-accent" style="background:#4f46e5;"></div>
+    <div class="a-stat-icon" style="background:#eef2ff;color:#4f46e5;"><i class="bi bi-mortarboard-fill"></i></div>
+    <div class="a-stat-val">{{ total_students }}</div>
+    <div class="a-stat-lbl">Students</div>
+  </div>
+  <div class="a-stat">
+    <div class="a-stat-accent" style="background:#7c3aed;"></div>
+    <div class="a-stat-icon" style="background:#fdf4ff;color:#7c3aed;"><i class="bi bi-person-workspace"></i></div>
+    <div class="a-stat-val">{{ total_instructors }}</div>
+    <div class="a-stat-lbl">Instructors</div>
+  </div>
+  <div class="a-stat">
+    <div class="a-stat-accent" style="background:#d97706;"></div>
+    <div class="a-stat-icon" style="background:#fef3c7;color:#d97706;"><i class="bi bi-shield-lock-fill"></i></div>
+    <div class="a-stat-val">{{ total_admins }}</div>
+    <div class="a-stat-lbl">Admins</div>
+  </div>
+  <div class="a-stat">
+    <div class="a-stat-accent" style="background:#0891b2;"></div>
+    <div class="a-stat-icon" style="background:#ecfeff;color:#0891b2;"><i class="bi bi-book-fill"></i></div>
+    <div class="a-stat-val">{{ total_courses }}</div>
+    <div class="a-stat-lbl">Courses</div>
+  </div>
+  <div class="a-stat">
+    <div class="a-stat-accent" style="background:#059669;"></div>
+    <div class="a-stat-icon" style="background:#f0fdf4;color:#059669;"><i class="bi bi-person-check-fill"></i></div>
+    <div class="a-stat-val">{{ total_enrollments }}</div>
+    <div class="a-stat-lbl">Enrollments</div>
+  </div>
+</div>
+
+<!-- ── API Quota Status Card ────────────────────────────────────── -->
+<div class="page-card mb-4" id="apiQuotaCard">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+    <p style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#64748b;margin:0;">
+      <i class="bi bi-cpu me-1"></i> API Quota Status
+    </p>
+    <button onclick="refreshQuotaStatus()" class="btn btn-sm btn-outline-secondary" id="refreshQuotaBtn">
+      <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+    </button>
+  </div>
+  
+  <!-- Overall Status Badge -->
+  <div class="mb-3" id="quotaOverallStatus">
+    <div class="d-flex align-items-center gap-2">
+      <div class="spinner-border spinner-border-sm text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <span class="text-muted small">Checking API status...</span>
+    </div>
+  </div>
+  
+  <!-- Provider Details -->
+  <div class="row g-3">
+    <!-- AI Providers -->
+    <div class="col-md-6">
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:1rem;">
+        <h6 style="font-size:.8rem;font-weight:700;color:#0f172a;margin-bottom:.75rem;">
+          <i class="bi bi-robot me-1"></i> AI Text Generation
+        </h6>
+        <div id="aiProvidersList" style="font-size:.8rem;">
+          <div class="text-muted small">Loading...</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Image Providers -->
+    <div class="col-md-6">
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:1rem;">
+        <h6 style="font-size:.8rem;font-weight:700;color:#0f172a;margin-bottom:.75rem;">
+          <i class="bi bi-image me-1"></i> Image Generation
+        </h6>
+        <div id="imageProvidersList" style="font-size:.8rem;">
+          <div class="text-muted small">Loading...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Warnings -->
+  <div id="quotaWarnings" class="mt-3" style="display:none;">
+    <div class="alert alert-warning mb-0" style="font-size:.85rem;">
+      <strong><i class="bi bi-exclamation-triangle me-1"></i> Warnings:</strong>
+      <ul id="quotaWarningsList" class="mb-0 mt-2"></ul>
+    </div>
+  </div>
+</div>
+
+<!-- ── Charts row ───────────────────────────────────────────────── -->
+<div class="chart-grid">
+
+  <!-- User growth line chart -->
+  <div class="chart-card">
+    <div class="chart-card-title"><i class="bi bi-graph-up"></i> User Growth (Last 6 Months)</div>
+    <canvas id="userGrowthChart" height="200"></canvas>
+  </div>
+
+  <!-- Grade distribution doughnut -->
+  <div class="chart-card">
+    <div class="chart-card-title"><i class="bi bi-pie-chart"></i> Grade Distribution</div>
+    <canvas id="gradeChart" height="200"></canvas>
+    <div style="display:flex;justify-content:center;gap:1.5rem;margin-top:.875rem;font-size:.75rem;">
+      <div style="display:flex;align-items:center;gap:.4rem;">
+        <span style="width:10px;height:10px;border-radius:50%;background:#10b981;display:inline-block;"></span>
+        Passed ({{ passed_count }})
+      </div>
+      <div style="display:flex;align-items:center;gap:.4rem;">
+        <span style="width:10px;height:10px;border-radius:50%;background:#ef4444;display:inline-block;"></span>
+        Failed ({{ failed_count }})
+      </div>
+      <div style="display:flex;align-items:center;gap:.4rem;">
+        <span style="width:10px;height:10px;border-radius:50%;background:#94a3b8;display:inline-block;"></span>
+        Pending ({{ pending_count }})
+      </div>
+    </div>
+  </div>
+
+  <!-- Courses by program bar chart -->
+  <div class="chart-card">
+    <div class="chart-card-title"><i class="bi bi-bar-chart"></i> Courses by Program</div>
+    <canvas id="programChart" height="200"></canvas>
+  </div>
+
+  <!-- Top courses by enrollment -->
+  <div class="chart-card">
+    <div class="chart-card-title"><i class="bi bi-trophy"></i> Top Courses by Enrollment</div>
+    {% if top_courses %}
+    <div style="display:flex;flex-direction:column;gap:.6rem;">
+      {% for c in top_courses %}
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:3px;">
+          <span style="font-weight:600;color:#0f172a;">{{ c.code|default:c.title|truncatechars:28 }}</span>
+          <span style="font-weight:700;color:#4f46e5;">{{ c.enroll_count }}</span>
+        </div>
+        <div style="height:5px;background:#f1f5f9;border-radius:3px;overflow:hidden;">
+          {% if top_courses.0.enroll_count %}
+          <div style="height:100%;background:linear-gradient(90deg,#4f46e5,#7c3aed);border-radius:3px;
+                      width:{% widthratio c.enroll_count top_courses.0.enroll_count 100 %}%;"></div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p style="font-size:.82rem;color:#94a3b8;text-align:center;padding:2rem 0;margin:0;">No courses yet.</p>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- ── Recent Activity Log ──────────────────────────────────────── -->
+<div class="page-card">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+    <p style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#64748b;margin:0;">
+      <i class="bi bi-clock-history me-1"></i> Recent Activity
+    </p>
+    <a href="{% url 'accounts:portal_logs' %}" class="btn btn-sm btn-outline-secondary">View All</a>
+  </div>
+  {% if recent_logs %}
+  <div>
+    {% for log in recent_logs %}
+    {% with a=log.action %}
+    <div class="log-item">
+      <div class="log-dot" style="background:
+        {% if 'login' == a %}#10b981
+        {% elif 'logout' == a %}#94a3b8
+        {% elif 'failed' in a %}#ef4444
+        {% elif 'create' in a %}#4f46e5
+        {% elif 'delete' in a %}#dc2626
+        {% elif 'grade' in a %}#7c3aed
+        {% elif 'attendance' in a %}#0891b2
+        {% else %}#f59e0b{% endif %};"></div>
+      <div class="log-body">
+        <div class="log-action">{{ log.get_action_display }}</div>
+        <div class="log-target">
+          {% if log.actor %}<strong>{{ log.actor.get_full_name|default:log.actor.username }}</strong>{% else %}System{% endif %}
+          {% if log.target %} → {{ log.target }}{% endif %}
+          {% if log.detail %}<span style="color:#94a3b8;"> · {{ log.detail }}</span>{% endif %}
+        </div>
+      </div>
+      <div class="log-time"><i class="bi bi-clock me-1"></i>{{ log.timestamp|timesince }} ago</div>
+    </div>
+    {% endwith %}
+    {% endfor %}
+  </div>
+  {% else %}
+  <p style="font-size:.83rem;color:#94a3b8;text-align:center;padding:2rem 0;margin:0;">No activity yet.</p>
+  {% endif %}
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const chartDefaults = {
+  font: { family: 'Inter, system-ui, sans-serif', size: 12 },
+  color: '#64748b',
+};
+Chart.defaults.font.family = chartDefaults.font.family;
+Chart.defaults.color       = chartDefaults.color;
+
+// 1. User growth
+new Chart(document.getElementById('userGrowthChart'), {
+  type: 'line',
+  data: {
+    labels: {{ chart_month_labels|safe }},
+    datasets: [
+      {
+        label: 'Students',
+        data: {{ chart_student_data|safe }},
+        borderColor: '#4f46e5',
+        backgroundColor: 'rgba(79,70,229,.08)',
+        tension: .4, fill: true, pointRadius: 4,
+        pointBackgroundColor: '#4f46e5',
+      },
+      {
+        label: 'Instructors',
+        data: {{ chart_instructor_data|safe }},
+        borderColor: '#7c3aed',
+        backgroundColor: 'rgba(124,58,237,.06)',
+        tension: .4, fill: true, pointRadius: 4,
+        pointBackgroundColor: '#7c3aed',
+      },
+    ],
+  },
+  options: {
+    responsive: true, maintainAspectRatio: true,
+    plugins: { legend: { position: 'top', labels: { boxWidth: 10, padding: 15 } } },
+    scales: {
+      x: { grid: { display: false } },
+      y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#f1f5f9' } },
+    },
+  },
+});
+
+// 2. Grade distribution doughnut
+new Chart(document.getElementById('gradeChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Passed', 'Failed', 'Pending'],
+    datasets: [{
+      data: {{ chart_grade_values|safe }},
+      backgroundColor: ['#10b981','#ef4444','#94a3b8'],
+      borderWidth: 2, borderColor: '#fff',
+      hoverOffset: 6,
+    }],
+  },
+  options: {
+    responsive: true, maintainAspectRatio: true,
+    cutout: '65%',
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: {
+        label: ctx => ` ${ctx.label}: ${ctx.parsed} records`,
+      }},
+    },
+  },
+});
+
+// 3. Courses by program
+new Chart(document.getElementById('programChart'), {
+  type: 'bar',
+  data: {
+    labels: {{ chart_prog_labels|safe }},
+    datasets: [{
+      label: 'Courses',
+      data: {{ chart_prog_values|safe }},
+      backgroundColor: ['#4f46e5','#7c3aed','#0891b2','#94a3b8'],
+      borderRadius: 6,
+      borderSkipped: false,
+    }],
+  },
+  options: {
+    responsive: true, maintainAspectRatio: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false } },
+      y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#f1f5f9' } },
+    },
+  },
+});
+</script>
+
+<!-- API Quota Status Script -->
+<script>
+async function refreshQuotaStatus() {
+  const refreshBtn = document.getElementById('refreshQuotaBtn');
+  const overallStatus = document.getElementById('quotaOverallStatus');
+  const aiProvidersList = document.getElementById('aiProvidersList');
+  const imageProvidersList = document.getElementById('imageProvidersList');
+  const quotaWarnings = document.getElementById('quotaWarnings');
+  const quotaWarningsList = document.getElementById('quotaWarningsList');
+  
+  // Disable refresh button
+  refreshBtn.disabled = true;
+  refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i> Refreshing...';
+  
+  // Show loading state
+  overallStatus.innerHTML = `
+    <div class="d-flex align-items-center gap-2">
+      <div class="spinner-border spinner-border-sm text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <span class="text-muted small">Checking API status...</span>
+    </div>
+  `;
+  
+  try {
+    // Note: We need a course_pk for the URL, but for admin we can use any course or create a dedicated endpoint
+    // For now, let's create a dedicated admin endpoint
+    const response = await fetch('/api/quota-status/', {
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch quota status');
+    }
+    
+    const data = await response.json();
+    
+    // Update overall status
+    let statusBadge = '';
+    let statusClass = '';
+    let statusIcon = '';
+    
+    if (data.status === 'ok') {
+      statusClass = 'success';
+      statusIcon = '✅';
+      statusBadge = 'All Systems Operational';
+    } else if (data.status === 'warning') {
+      statusClass = 'warning';
+      statusIcon = '⚠️';
+      statusBadge = 'Limited Availability';
+    } else if (data.status === 'critical') {
+      statusClass = 'danger';
+      statusIcon = '❌';
+      statusBadge = 'Service Unavailable';
+    }
+    
+    overallStatus.innerHTML = `
+      <span class="badge bg-${statusClass}" style="font-size:.85rem;padding:.5rem 1rem;">
+        ${statusIcon} ${statusBadge}
+      </span>
+      ${!data.can_generate ? '<span class="badge bg-danger ms-2" style="font-size:.85rem;padding:.5rem 1rem;">Generation Blocked</span>' : ''}
+    `;
+    
+    // Update AI providers
+    if (data.ai_providers && data.ai_providers.length > 0) {
+      aiProvidersList.innerHTML = data.ai_providers.map(provider => `
+        <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom">
+          <div>
+            <div style="font-weight:600;color:${provider.available ? '#059669' : '#94a3b8'};">
+              ${provider.icon} ${provider.name}
+            </div>
+            <div style="font-size:.72rem;color:#64748b;">
+              ${provider.model}
+            </div>
+          </div>
+          <span class="badge ${provider.available ? 'bg-success' : 'bg-secondary'}" style="font-size:.7rem;">
+            ${provider.status_text}
+          </span>
+        </div>
+      `).join('');
+    } else {
+      aiProvidersList.innerHTML = '<div class="text-muted small">No AI providers configured</div>';
+    }
+    
+    // Update image providers
+    if (data.image_providers && data.image_providers.length > 0) {
+      imageProvidersList.innerHTML = data.image_providers.map(provider => `
+        <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom">
+          <div style="font-weight:600;color:${provider.available ? '#059669' : '#94a3b8'};">
+            ${provider.icon} ${provider.name}
+          </div>
+          <span class="badge ${provider.available ? 'bg-success' : 'bg-secondary'}" style="font-size:.7rem;">
+            ${provider.status_text}
+          </span>
+        </div>
+      `).join('');
+    } else {
+      imageProvidersList.innerHTML = '<div class="text-muted small">No image providers configured</div>';
+    }
+    
+    // Update warnings
+    if (data.warnings && data.warnings.length > 0) {
+      quotaWarningsList.innerHTML = data.warnings.map(warning => `
+        <li>${warning.message}</li>
+      `).join('');
+      quotaWarnings.style.display = 'block';
+    } else {
+      quotaWarnings.style.display = 'none';
+    }
+    
+  } catch (error) {
+    console.error('Error fetching quota status:', error);
+    overallStatus.innerHTML = `
+      <span class="badge bg-secondary" style="font-size:.85rem;padding:.5rem 1rem;">
+        ⚠️ Unable to check status
+      </span>
+    `;
+    aiProvidersList.innerHTML = '<div class="text-danger small">Error loading providers</div>';
+    imageProvidersList.innerHTML = '<div class="text-danger small">Error loading providers</div>';
+  } finally {
+    // Re-enable refresh button
+    refreshBtn.disabled = false;
+    refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i> Refresh';
+  }
+}
+
+// Load quota status on page load
+document.addEventListener('DOMContentLoaded', function() {
+  refreshQuotaStatus();
+  
+  // Auto-refresh every 60 seconds
+  setInterval(refreshQuotaStatus, 60000);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends 'accounts/course_base.html' %}
+{% block course_content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h5 class="fw-bold mb-1">
+      <i class="bi bi-calendar-check me-2"></i>{{ session.date|date:"M d, Y (l)" }}
+    </h5>
+    <p class="text-muted mb-0" style="font-size:.85rem;">
+      {{ records.count }} student{{ records.count|pluralize }}
+      {% if session.notes %} · {{ session.notes }}{% endif %}
+    </p>
+  </div>
+  <a href="{% url 'attendance:attendance_list' course.pk %}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i> Back
+  </a>
+</div>
+
+<form method="post">
+  {% csrf_token %}
+  <div class="page-card">
+    <div class="d-flex gap-2 mb-3">
+      <button type="button" class="btn btn-sm btn-outline-success" onclick="markAll('present')">
+        <i class="bi bi-check-all me-1"></i> All Present
+      </button>
+      <button type="button" class="btn btn-sm btn-outline-danger" onclick="markAll('absent')">
+        <i class="bi bi-x-lg me-1"></i> All Absent
+      </button>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-hover mb-0" style="font-size:.875rem;">
+        <thead>
+          <tr>
+            <th style="width:50px;">#</th>
+            <th>Student Name</th>
+            <th>Student ID</th>
+            <th class="text-center" style="width:280px;">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for record in records %}
+          <tr>
+            <td class="text-muted">{{ forloop.counter }}</td>
+            <td class="fw-semibold">{{ record.enrollment.student.get_full_name }}</td>
+            <td class="text-muted">{{ record.enrollment.student.student_id|default:"—" }}</td>
+            <td>
+              <div class="btn-group w-100" role="group">
+                {% for value, label in status_choices %}
+                <input type="radio" class="btn-check attendance-radio"
+                       name="status_{{ record.pk }}" id="status_{{ record.pk }}_{{ value }}"
+                       value="{{ value }}" data-row="{{ record.pk }}"
+                       {% if record.status == value %}checked{% endif %}>
+                <label class="btn btn-sm btn-outline-{% if value == 'present' %}success{% elif value == 'absent' %}danger{% elif value == 'late' %}warning{% else %}info{% endif %}"
+                       for="status_{{ record.pk }}_{{ value }}" style="font-size:.78rem;">
+                  {{ label }}
+                </label>
+                {% endfor %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-end mt-3 gap-2">
+    <a href="{% url 'attendance:attendance_list' course.pk %}"
+       class="btn btn-outline-secondary">Cancel</a>
+    <button type="submit" class="btn btn-primary">
+      <i class="bi bi-check-lg me-1"></i> Save Attendance
+    </button>
+  </div>
+</form>
+
+<script>
+function markAll(status) {
+  document.querySelectorAll('.attendance-radio[value="' + status + '"]')
+    .forEach(r => r.checked = true);
+}
+</script>
+
+{% endblock %}

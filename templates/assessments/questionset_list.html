@@ -1,0 +1,214 @@
+{% extends 'accounts/course_base.html' %}
+{% block course_content %}
+<style>
+.qs-search-bar {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: .75rem 1.25rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+}
+[data-theme="dark"] .qs-search-bar { background: var(--card-bg); border-color: var(--border); }
+[data-theme="dark"] .table thead { background: var(--bg) !important; color: var(--text-muted) !important; }
+</style>
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h5 class="fw-bold mb-0">Generated Question Sets</h5>
+  <a href="{% url 'assessments:question_generate' course.pk %}" class="btn btn-primary btn-sm">
+    <i class="bi bi-robot"></i> Generate AI Questions
+  </a>
+</div>
+
+{% if debug_info %}
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+  <div class="card-header bg-white border-0 px-4 py-3" data-bs-toggle="collapse" data-bs-target="#debugCollapse" style="cursor: pointer;">
+    <div class="d-flex align-items-center justify-content-between">
+      <h6 class="mb-0 fw-semibold text-danger">
+        <i class="bi bi-bug me-2"></i>Generation Failed: Debug Information
+      </h6>
+      <i class="bi bi-chevron-down text-muted"></i>
+    </div>
+  </div>
+  <div id="debugCollapse" class="collapse show">
+    <div class="card-body p-4 bg-light rounded-bottom">
+      {% if debug_info.system_prompt %}
+        <div class="mb-3">
+          <strong>System Prompt:</strong>
+          <pre class="bg-white p-2 rounded border small overflow-auto" style="max-height:150px;">{{ debug_info.system_prompt }}</pre>
+        </div>
+      {% endif %}
+      {% if debug_info.user_prompt %}
+        <div class="mb-3">
+          <strong>User Prompt:</strong>
+          <pre class="bg-white p-2 rounded border small overflow-auto" style="max-height:150px;">{{ debug_info.user_prompt }}</pre>
+        </div>
+      {% endif %}
+      {% if debug_info.raw_ai_response %}
+        <div class="mb-3">
+          <strong>Raw AI Response:</strong>
+          <pre class="bg-white p-2 rounded border small overflow-auto" style="max-height:200px;">{{ debug_info.raw_ai_response }}</pre>
+        </div>
+      {% endif %}
+      <div>
+        <strong>Error:</strong>
+        <pre class="bg-white p-2 rounded border small">{{ debug_info.error_message }}</pre>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Search bar for question sets -->
+<div class="qs-search-bar">
+  <div class="search-wrap" style="flex:1;min-width:180px;position:relative;">
+    <i class="bi bi-search" style="position:absolute;left:.75rem;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:.85rem;pointer-events:none;z-index:1;"></i>
+    <input id="qsSearch" type="text" placeholder="Search question sets…"
+           class="form-control form-control-sm" style="padding-left:2.2rem;padding-right:2rem;">
+    <div class="search-spinner"></div>
+  </div>
+  <span id="qsCount" style="font-size:.75rem;color:#94a3b8;white-space:nowrap;"></span>
+</div>
+
+<div class="page-card p-0 overflow-hidden">
+  <table class="table table-hover mb-0 questionset-table" style="font-size: .875rem;">
+    <thead>
+      <tr>
+        <th class="ps-4">Title / Topic</th>
+        <th>Status</th>
+        <th>Questions</th>
+        <th>Created</th>
+        <th class="text-end pe-4">Actions</th>
+      </tr>
+    </thead>
+    <tbody id="qsTbody">
+      <!-- Populated by InfiniteScroll -->
+    </tbody>
+  </table>
+  <div class="insta-no-results" id="qsEmpty">
+    <i class="bi bi-patch-question"></i>
+    No question sets found.
+    <br>
+    <a href="{% url 'assessments:question_generate' course.pk %}" class="btn btn-primary btn-sm mt-3">
+      <i class="bi bi-robot"></i> Generate AI Questions
+    </a>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteQsModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0">
+      <div class="modal-header bg-danger text-white border-0 py-3">
+        <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i>Delete Question Set</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <p class="mb-2">Are you sure you want to delete the question set <strong id="qsModalTitle"></strong>?</p>
+        <p class="text-danger small mb-0">
+          This will permanently delete all <strong id="qsModalCount"></strong> questions inside it.
+        </p>
+      </div>
+      <div class="modal-footer border-0 gap-2">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form id="deleteQsForm" method="post" style="display: inline;">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Yes, Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const QS_LIST_URL = '{% url "assessments:questionset_list" course.pk %}';
+
+document.addEventListener('DOMContentLoaded', function () {
+  // ── Infinite Scroll ──────────────────────────────────────
+  const scroller = new InstaUI.InfiniteScroll({
+    container:     document.getElementById('qsTbody'),
+    url:           QS_LIST_URL,
+    skeletonType:  'table',
+    skeletonCount: 5,
+    onEmpty: function () {
+      document.getElementById('qsEmpty').classList.add('visible');
+    },
+  });
+
+  // ── Debounced Search ─────────────────────────────────────
+  new InstaUI.DebouncedSearch({
+    input:        '#qsSearch',
+    url:          QS_LIST_URL,
+    container:    '#qsTbody',
+    countEl:      '#qsCount',
+    highlight:    true,
+    onResults: function (data, q) {
+      document.getElementById('qsTbody').innerHTML = data.html || '';
+      document.getElementById('qsEmpty').classList.toggle('visible', !data.html?.trim());
+      if (data.total !== undefined) {
+        const el = document.getElementById('qsCount');
+        if (el) el.textContent = data.total + ' set' + (data.total !== 1 ? 's' : '');
+      }
+      scroller.reset({ q });
+      _initPopovers();
+      _pollPending();
+    },
+  });
+
+  _initPopovers();
+  _pollPending();
+});
+
+function _initPopovers () {
+  document.querySelectorAll('[data-bs-toggle="popover"]:not([data-popped])').forEach(el => {
+    el.dataset.popped = '1';
+    new bootstrap.Popover(el);
+  });
+}
+
+function _pollPending () {
+  const badges = document.querySelectorAll('.pending-status');
+  if (!badges.length) return;
+  function check () {
+    let allDone = true;
+    badges.forEach(badge => {
+      const id = badge.dataset.qsId;
+      fetch(`/assessments/${id}/status/`)
+        .then(r => r.json())
+        .then(d => {
+          if (d.status === 'ready' || d.status === 'failed') {
+            window.location.reload();
+          } else { allDone = false; }
+        });
+    });
+    if (!allDone) setTimeout(check, 3000);
+  }
+  setTimeout(check, 3000);
+}
+
+// Delete modal handler
+document.addEventListener('DOMContentLoaded', function () {
+  const deleteModal = new bootstrap.Modal(document.getElementById('deleteQsModal'));
+  const deleteForm = document.getElementById('deleteQsForm');
+  const courseId = '{{ course.pk }}';
+
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('.delete-qs-btn')) {
+      const btn = e.target.closest('.delete-qs-btn');
+      const qsId = btn.dataset.qsId;
+      const qsTitle = btn.dataset.qsTitle;
+      const qsCount = btn.dataset.qsCount;
+
+      document.getElementById('qsModalTitle').textContent = '"' + qsTitle + '"';
+      document.getElementById('qsModalCount').textContent = qsCount;
+      deleteForm.action = `/assessments/course/${courseId}/assessments/${qsId}/delete/`;
+
+      deleteModal.show();
+    }
+  });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Delete {{ target_user.username }} — Admin Portal{% endblock %}
+{% block page_title %}Delete User{% endblock %}
+{% block content %}
+
+<div class="d-flex gap-2 mb-4">
+  <a href="{% url 'accounts:portal_users' %}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i> Cancel
+  </a>
+</div>
+
+<div class="page-card text-center" style="max-width:480px;margin:0 auto;padding:3rem 2rem;">
+  <div style="width:64px;height:64px;border-radius:16px;background:#fee2e2;
+              display:flex;align-items:center;justify-content:center;
+              margin:0 auto 1.25rem;font-size:1.75rem;color:#dc2626;">
+    <i class="bi bi-person-x-fill"></i>
+  </div>
+  <h5 style="font-weight:800;color:#0f172a;margin-bottom:.5rem;">Delete User Account?</h5>
+  <p style="font-size:.875rem;color:#64748b;margin-bottom:.25rem;">
+    You are about to permanently delete:
+  </p>
+  <p style="font-size:1rem;font-weight:700;color:#0f172a;margin-bottom:1.5rem;">
+    {{ target_user.get_full_name|default:target_user.username }}
+    <span style="font-size:.8rem;color:#94a3b8;">(@{{ target_user.username }})</span>
+  </p>
+  <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;
+              padding:.875rem 1.25rem;font-size:.83rem;color:#991b1b;
+              text-align:left;margin-bottom:1.5rem;">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    <strong>This cannot be undone.</strong> All enrollments, grade records, and attendance records
+    associated with this user will also be deleted.
+  </div>
+  <form method="post" style="display:flex;gap:.75rem;justify-content:center;">
+    {% csrf_token %}
+    <a href="{% url 'accounts:portal_users' %}" class="btn btn-outline-secondary">
+      <i class="bi bi-x me-1"></i> Cancel
+    </a>
+    <button type="submit" class="btn btn-danger">
+      <i class="bi bi-trash me-1"></i> Delete Permanently
+    </button>
+  </form>
+</div>
+{% endblock %}

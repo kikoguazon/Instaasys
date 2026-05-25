@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block page_title %}Grade Summary — {{ course.code }}{% endblock %}
+{% block content %}
+
+<div class="d-flex gap-2 mb-4">
+  <a href="{% url 'grading:eclass_record' course.pk %}"
+     class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> Back to e-Class Record
+  </a>
+  <a href="{% url 'grading:export_grades' course.pk %}"
+     class="btn btn-sm btn-outline-secondary ms-auto">
+    <i class="bi bi-download"></i> Export .txt
+  </a>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-sm-4">
+    <div class="stat-card">
+      <div class="stat-value">{{ total }}</div>
+      <div class="stat-label">Total Students</div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="stat-card">
+      <div class="stat-value text-success">{{ passed }}</div>
+      <div class="stat-label">Passed</div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="stat-card">
+      <div class="stat-value text-danger">{{ failed }}</div>
+      <div class="stat-label">Failed</div>
+    </div>
+  </div>
+</div>
+
+<div class="page-card">
+  <table class="table table-hover mb-0" style="font-size:.875rem;">
+    <thead style="background:#1e293b;color:#fff;">
+      <tr>
+        <th>#</th>
+        <th>Student</th>
+        <th class="text-center">Class Standing</th>
+        <th class="text-center">Requirements</th>
+        <th class="text-center">Midterm</th>
+        <th class="text-center">Final Exam</th>
+        <th class="text-center">Final Grade</th>
+        <th class="text-center">Equivalent</th>
+        <th class="text-center">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for enrollment in enrollments %}
+      {% with rec=enrollment.grade_record %}
+      <tr>
+        <td class="text-muted">{{ forloop.counter }}</td>
+        <td class="fw-semibold">{{ enrollment.student.get_full_name }}</td>
+        <td class="text-center">{{ rec.class_standing|default:"—" }}</td>
+        <td class="text-center">{{ rec.requirement_score|default:"—" }}</td>
+        <td class="text-center">{{ rec.midterm_score|default:"—" }}</td>
+        <td class="text-center">{{ rec.final_score|default:"—" }}</td>
+        <td class="text-center fw-bold">
+          <span style="color:{% if rec.passed %}#15803d{% elif rec.final_grade %}#b91c1c{% else %}#94a3b8{% endif %};">
+            {% if rec.final_grade %}{{ rec.final_grade }}{% else %}—{% endif %}
+          </span>
+        </td>
+        <td class="text-center">{{ rec.equivalent_grade }}</td>
+        <td class="text-center">
+          {% if rec.final_grade %}
+            {% if rec.passed %}
+            <span class="badge bg-success bg-opacity-10 text-success">Passed</span>
+            {% else %}
+            <span class="badge bg-danger bg-opacity-10 text-danger">Failed</span>
+            {% endif %}
+          {% else %}
+          <span class="badge bg-light text-secondary">Incomplete</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endwith %}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

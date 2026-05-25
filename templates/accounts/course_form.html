@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% block title %}{{ action }} Subject — INSTAASYS{% endblock %}
+{% block page_title %}{{ action }} Subject{% endblock %}
+{% block content %}
+<div style="max-width:720px;">
+  <div class="page-card">
+    <form method="post">{% csrf_token %}
+      {% crispy form %}
+    </form>
+  </div>
+</div>
+{% endblock %}

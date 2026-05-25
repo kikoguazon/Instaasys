@@ -1,0 +1,42 @@
+{% for qs in question_sets %}
+<tr>
+  <td class="ps-4 align-middle">
+    <div class="fw-semibold">{{ qs.title }}</div>
+  </td>
+  <td class="align-middle">
+    {% if qs.status == 'ready' %}
+      <span class="badge bg-success bg-opacity-10 text-success"><i class="bi bi-check-circle me-1"></i>Ready</span>
+    {% elif qs.status == 'failed' %}
+      <span class="badge bg-danger bg-opacity-10 text-danger"><i class="bi bi-exclamation-triangle me-1"></i>Failed</span>
+    {% else %}
+      <span class="badge bg-warning bg-opacity-10 text-warning pending-status" data-qs-id="{{ qs.pk }}">
+        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+        Generating...
+      </span>
+    {% endif %}
+  </td>
+  <td class="align-middle text-muted">{{ qs.questions.count }} items</td>
+  <td class="align-middle text-muted" style="font-size:.8rem;">{{ qs.created_at|date:"M d, Y h:i A" }}</td>
+  <td class="text-end pe-4 align-middle">
+    {% if qs.status == 'ready' %}
+      <a href="{% url 'assessments:questionset_preview' course.pk qs.pk %}" class="btn btn-sm btn-outline-success">
+        <i class="bi bi-file-earmark-text"></i> Preview
+      </a>
+      <a href="{% url 'assessments:questionset_detail' course.pk qs.pk %}" class="btn btn-sm btn-outline-primary">
+        <i class="bi bi-eye"></i> View
+      </a>
+      <button type="button" class="btn btn-sm btn-outline-danger delete-qs-btn"
+              data-qs-id="{{ qs.pk }}" data-qs-title="{{ qs.title }}" data-qs-count="{{ qs.questions.count }}">
+        <i class="bi bi-trash"></i>
+      </button>
+    {% elif qs.status == 'failed' %}
+      <span class="text-danger small me-2" title="{{ qs.error_msg }}">
+        <i class="bi bi-info-circle"></i> Error
+      </span>
+      <a href="{% url 'assessments:questionset_delete' course.pk qs.pk %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-trash"></i>
+      </a>
+    {% endif %}
+  </td>
+</tr>
+{% endfor %}

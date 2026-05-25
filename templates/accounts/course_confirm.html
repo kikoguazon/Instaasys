@@ -1,0 +1,453 @@
+{% extends 'base.html' %}
+{% block title %}Confirm Subject — INSTAASYS{% endblock %}
+{% block page_title %}Confirm Subject{% endblock %}
+{% block content %}
+
+<style>
+  .confirm-container {
+    max-width: 900px;
+    margin: 0 auto;
+    animation: fadeInUp 0.6s ease-out;
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .confirm-card {
+    background: white;
+    border-radius: 16px;
+    padding: 2.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border: 2px solid #e2e8f0;
+    margin-bottom: 2rem;
+  }
+
+  .confirm-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    padding-bottom: 2rem;
+    border-bottom: 2px solid #f1f5f9;
+  }
+
+  .confirm-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+
+  .confirm-icon i {
+    font-size: 2.5rem;
+    color: white;
+  }
+
+  .confirm-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #1e293b;
+    margin-bottom: 0.75rem;
+  }
+
+  .confirm-subtitle {
+    color: #64748b;
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  .info-section {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .info-section-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+  }
+
+  .info-section-title i {
+    margin-right: 0.75rem;
+    color: #6366f1;
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+  }
+
+  .info-item {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .info-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+  }
+
+  .info-value {
+    font-size: 1rem;
+    color: #1e293b;
+    font-weight: 600;
+  }
+
+  .completion-section {
+    background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+    border: 2px solid #bae6fd;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .completion-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #0369a1;
+    margin-bottom: 1rem;
+  }
+
+  .completion-bar {
+    height: 12px;
+    background: #e0f2fe;
+    border-radius: 20px;
+    overflow: hidden;
+    margin-bottom: 0.75rem;
+  }
+
+  .completion-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #0ea5e9, #0284c7);
+    border-radius: 20px;
+    transition: width 1s ease-out;
+  }
+
+  .completion-text {
+    font-size: 0.875rem;
+    color: #0369a1;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  .checklist {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .checklist-item {
+    display: flex;
+    align-items: center;
+    padding: 0.875rem 0;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .checklist-item:last-child {
+    border-bottom: none;
+  }
+
+  .checklist-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    flex-shrink: 0;
+  }
+
+  .checklist-icon.complete {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  .checklist-icon.incomplete {
+    background: #fef2f2;
+    color: #dc2626;
+  }
+
+  .checklist-text {
+    font-size: 0.9rem;
+    color: #374151;
+    font-weight: 500;
+  }
+
+  .alert-box {
+    background: #fffbeb;
+    border: 1px solid #fed7aa;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 2rem;
+  }
+
+  .alert-box-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #92400e;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+  }
+
+  .alert-box-title i {
+    margin-right: 0.5rem;
+  }
+
+  .alert-box-text {
+    font-size: 0.875rem;
+    color: #78350f;
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 2rem;
+  }
+
+  .btn {
+    padding: 0.875rem 2rem;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .btn-confirm {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+  }
+
+  .btn-confirm:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+    color: white;
+  }
+
+  .btn-secondary {
+    background: #f8fafc;
+    color: #64748b;
+    border: 2px solid #e2e8f0;
+  }
+
+  .btn-secondary:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #475569;
+  }
+
+  @media (max-width: 768px) {
+    .confirm-card {
+      padding: 1.5rem;
+    }
+
+    .info-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .action-buttons {
+      flex-direction: column;
+    }
+
+    .btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+</style>
+
+<div class="confirm-container">
+  <div class="confirm-card">
+    <div class="confirm-header">
+      <div class="confirm-icon">
+        <i class="bi bi-check-circle"></i>
+      </div>
+      <h2 class="confirm-title">Confirm Subject Information</h2>
+      <p class="confirm-subtitle">
+        Review the subject details below and confirm that all information is correct.
+        Once confirmed, the subject will be ready for lesson planning and assessment generation.
+      </p>
+    </div>
+
+    <!-- Course Information -->
+    <div class="info-section">
+      <h3 class="info-section-title">
+        <i class="bi bi-book"></i>
+        Subject Information
+      </h3>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-label">Subject Code</span>
+          <span class="info-value">{{ course.code|default:"—" }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Credit Units</span>
+          <span class="info-value">{{ course.credit_units|default:"—" }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Subject Title</span>
+          <span class="info-value">{{ course.title|default:"—" }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Contact Hours</span>
+          <span class="info-value">{{ course.hours|default:"—" }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Semester</span>
+          <span class="info-value">{{ course.get_semester_display }} {{ course.school_year }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Pre-Requisite</span>
+          <span class="info-value">{{ course.prerequisite|default:"None" }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Completion Status -->
+    <div class="completion-section">
+      <div class="completion-title">
+        <i class="bi bi-graph-up me-2"></i>Subject Data Completion
+      </div>
+      <div class="completion-bar">
+        <div class="completion-fill" style="width: {{ course.get_completion_percentage }}%"></div>
+      </div>
+      <div class="completion-text">{{ course.get_completion_percentage }}% Complete</div>
+    </div>
+
+    <!-- Checklist -->
+    <div class="info-section">
+      <h3 class="info-section-title">
+        <i class="bi bi-list-check"></i>
+        Data Verification Checklist
+      </h3>
+      <ul class="checklist">
+        <li class="checklist-item">
+          <div class="checklist-icon {% if course.code %}complete{% else %}incomplete{% endif %}">
+            <i class="bi bi-{% if course.code %}check{% else %}x{% endif %}"></i>
+          </div>
+          <span class="checklist-text">Subject code is present</span>
+        </li>
+        <li class="checklist-item">
+          <div class="checklist-icon {% if course.title %}complete{% else %}incomplete{% endif %}">
+            <i class="bi bi-{% if course.title %}check{% else %}x{% endif %}"></i>
+          </div>
+          <span class="checklist-text">Subject title is present</span>
+        </li>
+        <li class="checklist-item">
+          <div class="checklist-icon {% if course.description %}complete{% else %}incomplete{% endif %}">
+            <i class="bi bi-{% if course.description %}check{% else %}x{% endif %}"></i>
+          </div>
+          <span class="checklist-text">Subject description is present</span>
+        </li>
+        <li class="checklist-item">
+          <div class="checklist-icon {% if course.clos %}complete{% else %}incomplete{% endif %}">
+            <i class="bi bi-{% if course.clos %}check{% else %}x{% endif %}"></i>
+          </div>
+          <span class="checklist-text">Subject learning outcomes (CLOs) are defined</span>
+        </li>
+        <li class="checklist-item">
+          <div class="checklist-icon {% if course.weekly_plan %}complete{% else %}incomplete{% endif %}">
+            <i class="bi bi-{% if course.weekly_plan %}check{% else %}x{% endif %}"></i>
+          </div>
+          <span class="checklist-text">Weekly subject plan is available</span>
+        </li>
+        <li class="checklist-item">
+          <div class="checklist-icon {% if course.grading_system %}complete{% else %}incomplete{% endif %}">
+            <i class="bi bi-{% if course.grading_system %}check{% else %}x{% endif %}"></i>
+          </div>
+          <span class="checklist-text">Grading system is defined</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Warning if incomplete -->
+    {% if not course.can_be_confirmed %}
+    <div class="alert-box">
+      <h4 class="alert-box-title">
+        <i class="bi bi-exclamation-triangle"></i>
+        Missing Required Information
+      </h4>
+      <p class="alert-box-text">
+        Some required fields are missing. Please edit the subject to add the missing information before confirming.
+        Required fields: Subject Code, Subject Title, and Subject Description.
+      </p>
+    </div>
+    {% endif %}
+
+    <!-- Action Buttons -->
+    <form method="post" class="action-buttons">
+      {% csrf_token %}
+      {% if course.can_be_confirmed %}
+        <button type="submit" class="btn btn-confirm">
+          <i class="bi bi-check-circle"></i>
+          Confirm & Activate Subject
+        </button>
+      {% else %}
+        <a href="{% url 'accounts:course_edit' course.pk %}" class="btn btn-confirm">
+          <i class="bi bi-pencil"></i>
+          Edit Subject Information
+        </a>
+      {% endif %}
+      <a href="{% url 'accounts:course_detail' course.pk %}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i>
+        Back to Subject
+      </a>
+    </form>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Animate completion bar
+  const completionFill = document.querySelector('.completion-fill');
+  if (completionFill) {
+    const targetWidth = completionFill.style.width;
+    completionFill.style.width = '0%';
+    setTimeout(() => {
+      completionFill.style.width = targetWidth;
+    }, 100);
+  }
+
+  // Confirmation dialog
+  const confirmButton = document.querySelector('.btn-confirm[type="submit"]');
+  if (confirmButton) {
+    confirmButton.addEventListener('click', function(e) {
+      if (!confirm('Are you sure you want to confirm this subject? Once confirmed, the subject will be marked as ready for use.')) {
+        e.preventDefault();
+      }
+    });
+  }
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,724 @@
+/*
+ * ══════════════════════════════════════════════════════════
+ *  INSTAASYS  ·  Mobile Feature Optimizations
+ *  Assessments, Presentations, TOS, E-Class Record, Grading
+ *  Depends on: tokens.css, mobile.css
+ * ══════════════════════════════════════════════════════════
+ */
+
+/* ─── ASSESSMENTS - Question List ───────────────────────── */
+@media (max-width: 768px) {
+  /* Stats row */
+  .question-stats-row .col-sm-3 {
+    flex: 0 0 50%;
+    max-width: 50%;
+  }
+  
+  .question-stats-row .col-sm-3:last-child {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+  
+  /* Filter form */
+  .filter-form .col-md-3 {
+    flex: 0 0 100%;
+    max-width: 100%;
+    margin-bottom: .5rem;
+  }
+  
+  .filter-form .d-flex.gap-2 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+  
+  .filter-form .btn {
+    flex: 1;
+  }
+  
+  /* Accordion items */
+  .accordion-button {
+    font-size: .8rem !important;
+    padding: .65rem .75rem !important;
+    padding-right: 4.5rem !important;
+  }
+  
+  .accordion-button .badge {
+    font-size: .65rem !important;
+    padding: .15rem .35rem !important;
+  }
+  
+  .accordion-body {
+    padding: .75rem !important;
+    font-size: .8rem !important;
+  }
+  
+  /* Choice items */
+  .choice-item {
+    padding: .5rem !important;
+    font-size: .8rem !important;
+  }
+  
+  .choice-item .col-12.col-sm-6 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+  
+  /* Action buttons in accordion */
+  .accordion-body .d-flex.gap-2 {
+    flex-wrap: wrap;
+  }
+  
+  .accordion-body .btn-sm {
+    font-size: .75rem;
+    padding: .3rem .6rem;
+  }
+  
+  /* Delete button in header */
+  .accordion-header .btn {
+    right: 2rem !important;
+    font-size: .75rem !important;
+    padding: .25rem .4rem !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .question-stats-row .col-sm-3 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+  
+  .accordion-button {
+    font-size: .75rem !important;
+    padding: .55rem .65rem !important;
+  }
+  
+  .accordion-button span {
+    font-size: .75rem !important;
+  }
+}
+
+/* ─── ASSESSMENTS - Question Set List ───────────────────── */
+@media (max-width: 768px) {
+  .qs-search-bar {
+    flex-direction: column;
+    padding: .65rem 1rem;
+    gap: .5rem;
+  }
+  
+  .search-wrap {
+    width: 100% !important;
+    min-width: 100% !important;
+  }
+  
+  /* Table */
+  .questionset-table thead th:nth-child(3),
+  .questionset-table tbody td:nth-child(3),
+  .questionset-table thead th:nth-child(4),
+  .questionset-table tbody td:nth-child(4) {
+    display: none;
+  }
+  
+  .questionset-table {
+    font-size: .75rem;
+  }
+  
+  .questionset-table thead th {
+    padding: .6rem .5rem;
+    font-size: .7rem;
+  }
+  
+  .questionset-table tbody td {
+    padding: .65rem .5rem;
+  }
+  
+  .questionset-table .btn-sm {
+    font-size: .7rem;
+    padding: .25rem .5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .questionset-table thead th:nth-child(2),
+  .questionset-table tbody td:nth-child(2) {
+    display: none;
+  }
+}
+
+/* ─── PRESENTATIONS - Lesson List ───────────────────────── */
+@media (max-width: 768px) {
+  /* Header */
+  .lesson-header h5 {
+    font-size: 1.25rem;
+  }
+  
+  .lesson-header .d-flex.gap-2 {
+    width: 100%;
+    margin-top: .75rem;
+  }
+  
+  .lesson-header .btn {
+    flex: 1;
+    font-size: .8rem;
+    padding: .5rem .75rem;
+  }
+  
+  /* Search & Filter */
+  .lesson-search-card .row.g-3 {
+    gap: .75rem !important;
+  }
+  
+  .lesson-search-card .col-md-7,
+  .lesson-search-card .col-md-5 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+  
+  /* Lesson cards */
+  .lesson-card {
+    margin-bottom: .75rem;
+  }
+  
+  .lesson-card .card-body {
+    padding: 1rem;
+  }
+  
+  .lesson-card .card-title {
+    font-size: .95rem;
+  }
+  
+  .lesson-card .card-text {
+    font-size: .8rem;
+  }
+  
+  .lesson-card .badge {
+    font-size: .7rem;
+    padding: .25rem .6rem;
+  }
+  
+  .lesson-card .d-flex.gap-2 {
+    flex-direction: column;
+    gap: .5rem !important;
+  }
+  
+  .lesson-card .btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 576px) {
+  .lesson-header h5 {
+    font-size: 1.1rem;
+  }
+  
+  .lesson-card .card-title {
+    font-size: .9rem;
+  }
+}
+
+/* ─── TOS - Table of Specifications ─────────────────────── */
+@media (max-width: 768px) {
+  /* TOS List */
+  .tos-list-table {
+    font-size: .75rem;
+  }
+  
+  .tos-list-table thead th {
+    padding: .6rem .5rem;
+    font-size: .7rem;
+  }
+  
+  .tos-list-table tbody td {
+    padding: .65rem .5rem;
+  }
+  
+  .tos-list-table thead th:nth-child(2),
+  .tos-list-table tbody td:nth-child(2) {
+    display: none;
+  }
+  
+  .tos-list-table .btn-sm {
+    font-size: .7rem;
+    padding: .25rem .5rem;
+    margin: .15rem;
+  }
+  
+  .tos-list-table .btn-sm i {
+    margin-right: 0;
+  }
+  
+  .tos-list-table .btn-sm:not(.btn-outline-danger) span {
+    display: none;
+  }
+  
+  /* TOS Detail */
+  .tos-detail-table {
+    font-size: .7rem;
+  }
+  
+  .tos-detail-table thead th {
+    padding: .4rem .3rem;
+    font-size: .65rem;
+  }
+  
+  .tos-detail-table tbody td {
+    padding: .4rem .3rem;
+  }
+  
+  /* Hide some columns on mobile */
+  .tos-detail-table thead th:nth-child(2),
+  .tos-detail-table tbody td:nth-child(2),
+  .tos-detail-table thead th:nth-child(7),
+  .tos-detail-table tbody td:nth-child(7),
+  .tos-detail-table thead th:nth-child(8),
+  .tos-detail-table tbody td:nth-child(8) {
+    display: none;
+  }
+}
+
+@media (max-width: 576px) {
+  .tos-detail-table thead th:nth-child(4),
+  .tos-detail-table tbody td:nth-child(4),
+  .tos-detail-table thead th:nth-child(5),
+  .tos-detail-table tbody td:nth-child(5),
+  .tos-detail-table thead th:nth-child(6),
+  .tos-detail-table tbody td:nth-child(6) {
+    display: none;
+  }
+}
+
+/* ─── E-CLASS RECORD ─────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Tabs */
+  .ec-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    margin-bottom: .75rem;
+  }
+  
+  .ec-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .ec-tab {
+    font-size: .7rem;
+    padding: .4rem .75rem;
+    white-space: nowrap;
+  }
+  
+  /* Toolbar */
+  .ec-toolbar {
+    flex-direction: column;
+    gap: .5rem;
+    margin-bottom: .75rem;
+  }
+  
+  .ec-toolbar .btn-group-left,
+  .ec-toolbar .btn-group-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .ec-toolbar .btn-sm {
+    font-size: .75rem;
+    padding: .4rem .65rem;
+  }
+  
+  /* Layout */
+  .eclass-layout {
+    gap: 1rem;
+  }
+  
+  /* Main table */
+  .eclass-main {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .ec-table {
+    font-size: .65rem;
+    min-width: 800px;
+  }
+  
+  .ec-table th,
+  .ec-table td {
+    padding: 1px 2px;
+  }
+  
+  .ec-table .row-section th {
+    font-size: .65rem;
+    padding: 3px 4px;
+  }
+  
+  .ec-table .row-subhdr th {
+    font-size: .6rem;
+    padding: 1px 2px;
+  }
+  
+  .ec-table .row-hps td {
+    font-size: .6rem;
+  }
+  
+  .ec-table input[type=number],
+  .ec-table input[type=text] {
+    font-size: .65rem;
+    min-width: 28px;
+  }
+  
+  .ec-table tbody.students td.td-name {
+    min-width: 140px;
+    font-size: .7rem;
+  }
+  
+  /* Stats panel */
+  .eclass-stats {
+    grid-template-columns: 1fr;
+    gap: .75rem;
+  }
+  
+  .stat-box {
+    font-size: .7rem;
+  }
+  
+  .stat-box .stat-header {
+    font-size: .7rem;
+    padding: .25rem .65rem;
+  }
+  
+  .stat-box table td {
+    padding: .25rem .5rem;
+    font-size: .7rem;
+  }
+  
+  /* Column editor overlay */
+  #colEditorOverlay {
+    left: 0 !important;
+  }
+  
+  #colEditorOverlay .editor-panels {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  #colEditorOverlay .editor-body {
+    padding: 1rem;
+  }
+  
+  #colEditorOverlay .editor-col-table {
+    font-size: .75rem;
+  }
+  
+  #colEditorOverlay .editor-col-table th,
+  #colEditorOverlay .editor-col-table td {
+    padding: .4rem .5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .ec-table {
+    font-size: .6rem;
+  }
+  
+  .ec-table tbody.students td.td-name {
+    min-width: 120px;
+    font-size: .65rem;
+  }
+  
+  .stat-box {
+    font-size: .65rem;
+  }
+}
+
+/* ─── STUDENT GRADES - Course Grades ────────────────────── */
+@media (max-width: 768px) {
+  /* Back buttons */
+  .back-btn {
+    margin-bottom: 1rem;
+  }
+  
+  .back-btn .btn {
+    font-size: .8rem;
+    padding: .4rem .75rem;
+  }
+  
+  /* Course banner */
+  .course-banner {
+    padding: 1.25rem 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 1.25rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .75rem;
+  }
+  
+  .course-banner-info h3 {
+    font-size: 1rem;
+  }
+  
+  .course-banner-info p {
+    font-size: .75rem;
+  }
+  
+  .final-bubble {
+    width: 75px;
+    height: 75px;
+  }
+  
+  .final-bubble-num {
+    font-size: 1.25rem;
+  }
+  
+  .final-bubble-lbl {
+    font-size: .55rem;
+  }
+  
+  /* Weights row */
+  .weights-row {
+    padding: .65rem .875rem;
+    font-size: .72rem;
+    gap: .5rem;
+  }
+  
+  .wt-item {
+    font-size: .72rem;
+  }
+  
+  .wt-dot {
+    width: 8px;
+    height: 8px;
+  }
+  
+  /* Progress bars */
+  .prog-row {
+    margin-bottom: .75rem;
+  }
+  
+  .prog-label {
+    font-size: .75rem;
+  }
+  
+  .prog-bar-bg {
+    height: 8px;
+  }
+  
+  /* Standing card */
+  .standing-card {
+    padding: 1rem 1.25rem;
+    border-radius: 10px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .75rem;
+  }
+  
+  .standing-left h5 {
+    font-size: .75rem;
+  }
+  
+  .standing-grade {
+    font-size: 2.25rem;
+  }
+  
+  .standing-note {
+    font-size: .68rem;
+  }
+  
+  .standing-chips {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .st-chip {
+    padding: .4rem .65rem;
+    min-width: 60px;
+  }
+  
+  .st-chip-val {
+    font-size: .85rem;
+  }
+  
+  .st-chip-lbl {
+    font-size: .55rem;
+  }
+  
+  /* Breakdown grid */
+  .breakdown-grid {
+    grid-template-columns: 1fr;
+    gap: .75rem;
+  }
+  
+  .bd-card-hdr {
+    padding: .6rem 1rem;
+    font-size: .7rem;
+  }
+  
+  .bd-card-body {
+    padding: 1rem;
+  }
+  
+  /* Quiz chips */
+  .quiz-chip {
+    padding: .4rem .6rem;
+    min-width: 50px;
+  }
+  
+  .quiz-chip-val {
+    font-size: .9rem;
+  }
+  
+  .quiz-chip-lbl {
+    font-size: .6rem;
+  }
+  
+  /* Score big */
+  .score-big {
+    padding: 1.25rem;
+  }
+  
+  .score-big-num {
+    font-size: 2rem;
+  }
+  
+  .score-big-sub {
+    font-size: .75rem;
+  }
+  
+  /* Final grade card */
+  .final-card-inner {
+    padding: 1.5rem;
+  }
+  
+  .fg-number {
+    font-size: 2.75rem;
+  }
+  
+  .fg-equiv {
+    font-size: 1rem;
+  }
+  
+  .fg-status {
+    padding: .35rem 1rem;
+    font-size: .8rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .course-banner {
+    padding: 1rem 1.25rem;
+  }
+  
+  .course-banner-info h3 {
+    font-size: .95rem;
+  }
+  
+  .course-banner-info p {
+    font-size: .7rem;
+  }
+  
+  .final-bubble {
+    width: 65px;
+    height: 65px;
+  }
+  
+  .final-bubble-num {
+    font-size: 1.1rem;
+  }
+  
+  .standing-grade {
+    font-size: 2rem;
+  }
+  
+  .standing-chips {
+    gap: .4rem;
+  }
+  
+  .st-chip {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .quiz-chips {
+    gap: .4rem;
+  }
+  
+  .score-big-num {
+    font-size: 1.75rem;
+  }
+  
+  .fg-number {
+    font-size: 2.5rem;
+  }
+}
+
+/* ─── Touch-Friendly Improvements ───────────────────────── */
+@media (hover: none) and (pointer: coarse) {
+  /* Ensure all interactive elements in features are touch-friendly */
+  .accordion-button,
+  .ec-tab,
+  .lesson-card .btn,
+  .tos-list-table .btn,
+  .ec-toolbar .btn {
+    min-height: 44px;
+  }
+  
+  /* Table inputs */
+  .ec-table input[type=number],
+  .ec-table input[type=text] {
+    min-height: 32px;
+  }
+  
+  /* Filter selects */
+  .form-select,
+  .form-control {
+    min-height: 44px;
+    font-size: 16px;
+  }
+}
+
+/* ─── Landscape Mobile Optimizations ────────────────────── */
+@media (max-width: 768px) and (orientation: landscape) {
+  .course-banner {
+    padding: 1rem 1.25rem;
+  }
+  
+  .standing-card {
+    padding: .875rem 1rem;
+  }
+  
+  .bd-card-body {
+    padding: .875rem;
+  }
+  
+  .final-card-inner {
+    padding: 1.25rem;
+  }
+  
+  .fg-number {
+    font-size: 2.5rem;
+  }
+}
+
+/* ─── Print Styles for Grading ──────────────────────────── */
+@media print {
+  .back-btn,
+  .ec-toolbar,
+  .btn,
+  .badge {
+    display: none !important;
+  }
+  
+  .ec-table {
+    font-size: .6rem;
+  }
+  
+  .course-banner {
+    background: #f8f9fa !important;
+    color: #000 !important;
+    border: 1px solid #dee2e6;
+  }
+  
+  .page-card {
+    border: 1px solid #dee2e6;
+    box-shadow: none;
+  }
+}

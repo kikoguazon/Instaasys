@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% block title %}Users — Admin Portal{% endblock %}
+{% block page_title %}User Management{% endblock %}
+{% block content %}
+<style>
+.filter-bar {
+  background:#fff;border:1px solid #e2e8f0;border-radius:12px;
+  padding:1rem 1.25rem;margin-bottom:1.25rem;
+  display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;
+}
+.user-table { width:100%;border-collapse:collapse;font-size:.83rem; }
+.user-table th {
+  background:#f8fafc;border-bottom:2px solid #e2e8f0;
+  padding:.65rem 1rem;font-size:.7rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:.06em;color:#64748b;text-align:left;
+}
+.user-table td { padding:.75rem 1rem;border-bottom:1px solid #f1f5f9;vertical-align:middle; }
+.user-table tr:last-child td { border-bottom:none; }
+.user-table tr:hover td { background:#f8fafc; }
+
+.role-pill {
+  display:inline-flex;align-items:center;gap:.3rem;
+  padding:.25rem .65rem;border-radius:20px;font-size:.7rem;font-weight:700;
+}
+.r-admin      { background:#fef3c7;color:#92400e; }
+.r-instructor { background:#ede9fe;color:#5b21b6; }
+.r-student    { background:#dcfce7;color:#166534; }
+
+.avatar-sm {
+  width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.75rem;font-weight:800;color:#fff;flex-shrink:0;
+}
+.status-dot {
+  width:8px;height:8px;border-radius:50%;display:inline-block;
+}
+</style>
+
+<div class="d-flex gap-2 mb-4" style="flex-wrap:wrap;">
+  <a href="{% url 'accounts:portal_create_user' %}" class="btn btn-primary btn-sm">
+    <i class="bi bi-person-plus me-1"></i> Add User
+  </a>
+  <a href="{% url 'accounts:portal_dashboard' %}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i> Dashboard
+  </a>
+</div>
+
+<!-- Filter bar -->
+<form method="get" class="filter-bar">
+  <div style="position:relative;flex:1;min-width:180px;">
+    <i class="bi bi-search" style="position:absolute;left:.75rem;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:.85rem;"></i>
+    <input type="text" name="q" value="{{ search }}" placeholder="Search name, username, ID…"
+           class="form-control form-control-sm" style="padding-left:2.2rem;">
+  </div>
+  <select name="role" class="form-select form-select-sm" style="width:auto;">
+    <option value="">All Roles</option>
+    <option value="student"    {% if role_filter == 'student'    %}selected{% endif %}>Students</option>
+    <option value="instructor" {% if role_filter == 'instructor' %}selected{% endif %}>Instructors</option>
+    <option value="admin"      {% if role_filter == 'admin'      %}selected{% endif %}>Admins</option>
+  </select>
+  <button type="submit" class="btn btn-sm btn-primary">Filter</button>
+  {% if role_filter or search %}
+  <a href="{% url 'accounts:portal_users' %}" class="btn btn-sm btn-outline-secondary">Clear</a>
+  {% endif %}
+  <span style="margin-left:auto;font-size:.75rem;color:#94a3b8;white-space:nowrap;">
+    {{ total_count }} user{{ total_count|pluralize }}
+  </span>
+</form>
+
+<div class="page-card" style="padding:0;overflow:hidden;">
+  <div style="overflow-x:auto;">
+    <table class="user-table">
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Role</th>
+          <th>Department</th>
+          <th>ID</th>
+          <th>Email</th>
+          <th>Status</th>
+          <th>Joined</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:.75rem;">
+              <div class="avatar-sm" style="background:
+                {% if u.is_superuser %}linear-gradient(135deg,#d97706,#f59e0b)
+                {% elif u.is_instructor %}linear-gradient(135deg,#7c3aed,#a855f7)
+                {% else %}linear-gradient(135deg,#4f46e5,#6366f1){% endif %};">
+                {{ u.first_name|slice:":1"|upper }}{{ u.last_name|slice:":1"|upper }}
+              </div>
+              <div>
+                <div style="font-weight:700;color:#0f172a;">{{ u.get_full_name|default:u.username }}</div>
+                <div style="font-size:.72rem;color:#94a3b8;">@{{ u.username }}</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            {% if u.is_superuser %}
+            <span class="role-pill r-admin"><i class="bi bi-shield-lock-fill"></i> Admin</span>
+            {% elif u.is_instructor %}
+            <span class="role-pill r-instructor"><i class="bi bi-person-workspace"></i> Instructor</span>
+            {% else %}
+            <span class="role-pill r-student"><i class="bi bi-mortarboard-fill"></i> Student</span>
+            {% endif %}
+          </td>
+          <td><span style="font-size:.78rem;color:#475569;">{{ u.department|default:"—" }}</span></td>
+          <td>
+            <span style="font-size:.75rem;font-family:monospace;color:#64748b;">
+              {{ u.student_id|default:u.employee_id|default:"—" }}
+            </span>
+          </td>
+          <td><span style="font-size:.78rem;color:#64748b;">{{ u.email|default:"—" }}</span></td>
+          <td>
+            {% if u.is_active %}
+            <span class="status-dot" style="background:#10b981;"></span>
+            <span style="font-size:.75rem;color:#059669;font-weight:600;"> Active</span>
+            {% else %}
+            <span class="status-dot" style="background:#94a3b8;"></span>
+            <span style="font-size:.75rem;color:#94a3b8;font-weight:600;"> Inactive</span>
+            {% endif %}
+          </td>
+          <td><span style="font-size:.75rem;color:#94a3b8;">{{ u.date_joined|date:"M d, Y" }}</span></td>
+          <td>
+            <div style="display:flex;gap:.4rem;">
+              <a href="{% url 'accounts:portal_edit_user' u.pk %}"
+                 class="btn btn-sm btn-outline-primary" title="Edit">
+                <i class="bi bi-pencil"></i>
+              </a>
+              {% if u != request.user %}
+              <a href="{% url 'accounts:portal_delete_user' u.pk %}"
+                 class="btn btn-sm btn-outline-danger" title="Delete">
+                <i class="bi bi-trash"></i>
+              </a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" style="text-align:center;padding:3rem;color:#94a3b8;font-size:.85rem;">
+            <i class="bi bi-people" style="font-size:2rem;display:block;margin-bottom:.5rem;opacity:.4;"></i>
+            No users found.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% include 'includes/pagination.html' %}
+{% endblock %}

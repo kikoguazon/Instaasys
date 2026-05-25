@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ course.title|default:"Course" }} — INSTAASYS{% endblock %}
+{% block page_title %}{{ course.code }} — {{ course.title }}{% endblock %}
+
+{% block content %}
+<!-- Course tab nav -->
+<div style="margin-bottom:1.5rem;">
+  <ul class="nav nav-tabs">
+    <li class="nav-item">
+      <a class="nav-link {% if request.resolver_match.url_name == 'course_detail' %}active{% endif %}"
+         href="{% url 'accounts:course_detail' course.pk %}">
+        <i class="bi bi-info-circle me-1"></i> Overview
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if request.resolver_match.url_name == 'enroll_students' %}active{% endif %}"
+         href="{% url 'accounts:enroll_students' course.pk %}">
+        <i class="bi bi-people me-1"></i> Students
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if 'eclass_record' in request.resolver_match.url_name or 'midterm_sheet' in request.resolver_match.url_name or 'final_sheet' in request.resolver_match.url_name or 'grade_summary' in request.resolver_match.url_name %}active{% endif %}"
+         href="{% url 'grading:eclass_record' course.pk %}">
+        <i class="bi bi-journal-text me-1"></i> Grades
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if 'attendance' in request.resolver_match.url_name %}active{% endif %}"
+         href="{% url 'attendance:attendance_list' course.pk %}">
+        <i class="bi bi-calendar-check me-1"></i> Attendance
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if 'assessment' in request.resolver_match.url_name or 'question' in request.resolver_match.url_name %}active{% endif %}"
+         href="{% url 'assessments:questionset_list' course.pk %}">
+        <i class="bi bi-patch-question me-1"></i> Assessments
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if 'lesson' in request.resolver_match.url_name %}active{% endif %}"
+         href="{% url 'lessons:lesson_list' course.pk %}">
+        <i class="bi bi-file-slides me-1"></i> Presentations
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if 'tos_' in request.resolver_match.url_name %}active{% endif %}"
+         href="{% url 'tos:tos_list' course.pk %}">
+        <i class="bi bi-table me-1"></i> TOS
+      </a>
+    </li>
+  </ul>
+</div>
+
+<div class="course-content">
+  {% block course_content %}{% endblock %}
+</div>
+{% endblock %}

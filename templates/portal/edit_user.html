@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% block title %}Edit {{ target_user.username }} — Admin Portal{% endblock %}
+{% block page_title %}Edit User{% endblock %}
+{% block content %}
+<style>
+.form-section {
+  background:#fff;border:1px solid #e2e8f0;border-radius:14px;
+  padding:1.5rem;margin-bottom:1rem;
+}
+.form-section-title {
+  font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  color:#64748b;margin-bottom:1.25rem;display:flex;align-items:center;gap:.5rem;
+}
+.danger-zone {
+  background:#fef2f2;border:1px solid #fecaca;border-radius:14px;padding:1.5rem;
+}
+</style>
+
+<div class="d-flex gap-2 mb-4">
+  <a href="{% url 'accounts:portal_users' %}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i> Back to Users
+  </a>
+</div>
+
+<!-- User identity banner -->
+<div style="background:linear-gradient(135deg,#0f172a,#1e293b);border-radius:14px;
+            padding:1.25rem 2rem;color:#fff;margin-bottom:1.5rem;
+            display:flex;align-items:center;gap:1rem;">
+  <div style="width:52px;height:52px;border-radius:50%;
+              display:flex;align-items:center;justify-content:center;font-size:1.15rem;font-weight:800;
+              background:{% if target_user.is_superuser %}linear-gradient(135deg,#d97706,#f59e0b){% elif target_user.is_instructor %}linear-gradient(135deg,#7c3aed,#a855f7){% else %}linear-gradient(135deg,#4f46e5,#6366f1){% endif %};
+              color:#fff;flex-shrink:0;">
+    {{ target_user.first_name|slice:":1"|upper }}{{ target_user.last_name|slice:":1"|upper }}
+  </div>
+  <div>
+    <div style="font-weight:800;font-size:1.05rem;">{{ target_user.get_full_name|default:target_user.username }}</div>
+    <div style="font-size:.8rem;opacity:.65;">
+      @{{ target_user.username }}
+      &nbsp;·&nbsp;
+      {% if target_user.is_superuser %}Administrator
+      {% elif target_user.is_instructor %}Instructor
+      {% else %}Student{% endif %}
+      &nbsp;·&nbsp;Joined {{ target_user.date_joined|date:"M d, Y" }}
+    </div>
+  </div>
+</div>
+
+<form method="post" novalidate>
+  {% csrf_token %}
+
+  <!-- Profile info -->
+  <div class="form-section">
+    <div class="form-section-title"><i class="bi bi-person"></i> Profile Information</div>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">First Name</label>
+        <input type="text" name="first_name" class="form-control"
+               value="{{ target_user.first_name }}">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Last Name</label>
+        <input type="text" name="last_name" class="form-control"
+               value="{{ target_user.last_name }}">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Email</label>
+        <input type="email" name="email" class="form-control"
+               value="{{ target_user.email }}">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Department / Section</label>
+        <input type="text" name="department" class="form-control"
+               value="{{ target_user.department }}">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Employee ID</label>
+        <input type="text" name="employee_id" class="form-control"
+               value="{{ target_user.employee_id }}">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Student ID</label>
+        <input type="text" name="student_id" class="form-control"
+               value="{{ target_user.student_id }}">
+      </div>
+    </div>
+  </div>
+
+  <!-- Role & status (not editable for the current superuser) -->
+  {% if target_user != request.user %}
+  <div class="form-section">
+    <div class="form-section-title"><i class="bi bi-person-badge"></i> Role &amp; Status</div>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">Role</label>
+        <select name="role_choice" class="form-select">
+          <option value="student"    {% if not target_user.is_superuser and target_user.role == 'student'    %}selected{% endif %}>Student</option>
+          <option value="instructor" {% if not target_user.is_superuser and target_user.role == 'instructor' %}selected{% endif %}>Instructor</option>
+          <option value="admin"      {% if target_user.is_superuser %}selected{% endif %}>Administrator (superuser)</option>
+        </select>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Account Status</label>
+        <select name="is_active" class="form-select">
+          <option value="1" {% if target_user.is_active %}selected{% endif %}>Active</option>
+          <option value="0" {% if not target_user.is_active %}selected{% endif %}>Inactive (blocked)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Password reset -->
+  <div class="form-section">
+    <div class="form-section-title"><i class="bi bi-key"></i> Reset Password</div>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">New Password <span style="font-size:.7rem;color:#94a3b8;">(leave blank to keep current)</span></label>
+        <input type="password" name="new_password" class="form-control"
+               placeholder="Enter new password…">
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:.75rem;justify-content:space-between;flex-wrap:wrap;">
+    <a href="{% url 'accounts:portal_delete_user' target_user.pk %}"
+       class="btn btn-outline-danger btn-sm">
+      <i class="bi bi-trash me-1"></i> Delete Account
+    </a>
+    <div style="display:flex;gap:.75rem;">
+      <a href="{% url 'accounts:portal_users' %}" class="btn btn-outline-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">
+        <i class="bi bi-check-lg me-1"></i> Save Changes
+      </button>
+    </div>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,301 @@
+{% extends 'base.html' %}
+{% block title %}Upload Syllabus{% endblock %}
+{% block page_title %}Upload Subject Syllabus{% endblock %}
+{% block content %}
+<style>
+  .upload-container {
+    max-width: 1000px;
+    animation: fadeInUp 0.6s ease-out;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .upload-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2.5rem;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    border: 2px solid #e2e8f0;
+    transition: all 0.3s ease;
+  }
+
+  .upload-card:hover {
+    border-color: #667eea;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.15);
+  }
+
+  .icon-box {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    animation: bounce 2s infinite;
+  }
+
+  @keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-10px); }
+    60% { transform: translateY(-5px); }
+  }
+
+  .icon-box i {
+    font-size: 1.8rem;
+    color: white;
+  }
+
+  .upload-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #1e293b;
+    margin-bottom: 0.75rem;
+  }
+
+  .upload-description {
+    color: #64748b;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+  }
+
+  .info-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2.5rem;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    border: 2px solid #e2e8f0;
+    height: 100%;
+  }
+
+  .info-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .feature-item {
+    display: flex;
+    align-items: start;
+    gap: 0.75rem;
+    padding: 0.75rem 0;
+    font-size: 0.9rem;
+    color: #475569;
+    transition: all 0.2s ease;
+  }
+
+  .feature-item:hover {
+    transform: translateX(5px);
+    color: #1e293b;
+  }
+
+  .feature-item i {
+    color: #10b981;
+    font-size: 1rem;
+    flex-shrink: 0;
+    margin-top: 0.15rem;
+  }
+
+  .format-box {
+    background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+    border: 2px solid #bae6fd;
+    border-radius: 12px;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+
+  .format-box i {
+    font-size: 1.8rem;
+    color: #0284c7;
+  }
+
+  .format-info {
+    flex: 1;
+  }
+
+  .format-title {
+    font-weight: 700;
+    color: #0c4a6e;
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .format-description {
+    color: #475569;
+    font-size: 0.8rem;
+    margin: 0;
+  }
+
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
+    margin: 1.5rem 0;
+  }
+
+  .btn-upload {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border: none;
+    color: white;
+    padding: 0.875rem 2rem;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  .btn-upload:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+    color: white;
+  }
+
+  /* Style crispy form submit button */
+  .btn-primary {
+    background: linear-gradient(135deg, #667eea, #764ba2) !important;
+    border: none !important;
+    color: white !important;
+    padding: 0.875rem 2rem !important;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease !important;
+    width: 100% !important;
+    margin-top: 1rem !important;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4) !important;
+    color: white !important;
+  }
+
+  @media (max-width: 992px) {
+    .upload-card, .info-card {
+      padding: 1.5rem;
+    }
+  }
+</style>
+
+<div class="upload-container">
+  <div class="row g-4">
+    <div class="col-lg-6">
+      <div class="upload-card">
+        <div class="icon-box">
+          <i class="bi bi-file-earmark-word"></i>
+        </div>
+        <h5 class="upload-title">Upload Your Syllabus</h5>
+        <p class="upload-description">
+          Upload your .docx syllabus file and let our AI automatically extract all subject information.
+          No manual data entry required — just upload and go!
+        </p>
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          {% for field in form %}
+            <div class="mb-3">
+              <label for="{{ field.id_for_label }}" class="form-label fw-semibold">{{ field.label }}</label>
+              {{ field }}
+              {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+              {% for error in field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+            </div>
+          {% endfor %}
+          <div class="alert alert-info py-2 mt-2" style="font-size:.825rem;">
+            <i class="bi bi-robot"></i>
+            The data will automatically extract the <strong>subject code, title, prerequisites,
+            credit units, hours, description, CLOs, and full weekly plan</strong>
+            directly from your syllabus file.
+          </div>
+          <button type="submit" class="btn btn-primary mt-2 w-100">Upload Syllabus</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="info-card">
+        <h6 class="info-title">
+          <i class="bi bi-magic text-primary"></i>
+          What Gets Extracted
+        </h6>
+        <ul class="feature-list">
+          <li class="feature-item">
+            <i class="bi bi-check-circle-fill"></i>
+            <span>Subject Code & Title</span>
+          </li>
+          <li class="feature-item">
+            <i class="bi bi-check-circle-fill"></i>
+            <span>Pre-Requisite Subjects</span>
+          </li>
+          <li class="feature-item">
+            <i class="bi bi-check-circle-fill"></i>
+            <span>Credit Units & Hours</span>
+          </li>
+          <li class="feature-item">
+            <i class="bi bi-check-circle-fill"></i>
+            <span>Subject Description</span>
+          </li>
+          <li class="feature-item">
+            <i class="bi bi-check-circle-fill"></i>
+            <span>Subject Learning Outcomes (CLOs)</span>
+          </li>
+          <li class="feature-item">
+            <i class="bi bi-check-circle-fill"></i>
+            <span>Weekly Subject Plan with CILOs</span>
+          </li>
+          <li class="feature-item">
+            <i class="bi bi-check-circle-fill"></i>
+            <span>Topics per Week</span>
+          </li>
+          <li class="feature-item">
+            <i class="bi bi-check-circle-fill"></i>
+            <span>Assessment Methods per Week</span>
+          </li>
+        </ul>
+
+        <div class="divider"></div>
+
+        <h6 style="font-size: 0.95rem; font-weight: 700; color: #1e293b; margin-bottom: 1rem;">
+          <i class="bi bi-info-circle text-info"></i> Supported Format
+        </h6>
+        
+        <div class="format-box">
+          <i class="bi bi-file-earmark-word"></i>
+          <div class="format-info">
+            <div class="format-title">Outcomes-Based Syllabus (.docx)</div>
+            <p class="format-description">
+              Compatible with NEMSU and standard CHED OBE syllabus formats
+            </p>
+          </div>
+        </div>
+
+        <div class="alert alert-info mt-3 mb-0" style="border-radius: 10px; border: none; background: #f0f9ff;">
+          <i class="bi bi-lightbulb text-info"></i>
+          <small>
+            <strong>Tip:</strong> Make sure your syllabus follows the standard OBE format for best results.
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

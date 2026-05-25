@@ -1,0 +1,452 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Settings{% endblock %}
+
+{% block content %}
+{% with tab=active_tab|default:'profile' %}
+<style>
+  .settings-wrap {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  /* ── Side nav ── */
+  .settings-sidenav {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: .5rem;
+    position: sticky;
+    top: 1.5rem;
+  }
+  .settings-sidenav-title {
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: .6rem .75rem .4rem;
+  }
+  .settings-tab {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    width: 100%;
+    padding: .6rem .85rem;
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-lg);
+    font-family: inherit;
+    font-size: .875rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    text-align: left;
+    transition: background .15s, color .15s;
+    text-decoration: none;
+  }
+  .settings-tab:hover {
+    background: var(--bg);
+    color: var(--text);
+    text-decoration: none;
+  }
+  .settings-tab.active {
+    background: var(--primary-light);
+    color: var(--primary);
+    font-weight: 600;
+  }
+  .settings-tab i { font-size: 1rem; flex-shrink: 0; }
+
+  /* ── Content panes ── */
+  .settings-pane { display: none; }
+  .settings-pane.active { display: block; }
+
+  .settings-section-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: .25rem;
+  }
+  .settings-section-sub {
+    font-size: .85rem;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+  }
+
+  /* ── Theme cards ── */
+  .theme-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+  .theme-card {
+    border: 2px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: 1rem;
+    cursor: pointer;
+    transition: border-color .2s, box-shadow .2s, transform .15s;
+    position: relative;
+    background: var(--card-bg);
+    user-select: none;
+  }
+  .theme-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(79,70,229,.12);
+  }
+  .theme-card.active {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79,70,229,.12);
+  }
+  .theme-card-check {
+    position: absolute;
+    top: .6rem;
+    right: .6rem;
+    color: var(--primary);
+    font-size: 1rem;
+    display: none;
+  }
+  .theme-card.active .theme-card-check { display: block; }
+
+  .theme-preview {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: .75rem;
+    height: 68px;
+    display: flex;
+    border: 1px solid rgba(0,0,0,.06);
+  }
+  .theme-preview-sidebar { width: 28%; height: 100%; }
+  .theme-preview-content {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 8px;
+  }
+  .theme-preview-bar { border-radius: 3px; height: 7px; }
+  .theme-preview-bar.short { width: 55%; }
+
+  .preview-light .theme-preview-sidebar  { background: #4f46e5; }
+  .preview-light .theme-preview-content  { background: #f8fafc; }
+  .preview-light .theme-preview-bar      { background: #e2e8f0; }
+
+  .preview-dark .theme-preview-sidebar   { background: #1e1b4b; }
+  .preview-dark .theme-preview-content   { background: #0f172a; }
+  .preview-dark .theme-preview-bar       { background: #1e293b; }
+
+  .theme-card-label  { font-size: .875rem; font-weight: 600; color: var(--text); margin-bottom: .2rem; }
+  .theme-card-desc   { font-size: .75rem; color: var(--text-muted); line-height: 1.4; }
+
+  /* ── Account info list ── */
+  .account-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: .875rem;
+    padding: .55rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .account-info-row:last-child { border-bottom: none; }
+  .account-info-label { color: var(--text-muted); font-weight: 500; }
+  .account-info-value { color: var(--text); font-weight: 600; }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .settings-wrap { grid-template-columns: 1fr; }
+    .settings-sidenav {
+      display: flex;
+      gap: .25rem;
+      padding: .4rem;
+      position: static;
+      overflow-x: auto;
+    }
+    .settings-sidenav-title { display: none; }
+    .settings-tab { white-space: nowrap; flex-shrink: 0; }
+    .theme-cards { grid-template-columns: 1fr; }
+  }
+</style>
+
+<div class="mb-4">
+  <h1 class="h4 fw-bold mb-1" style="display:flex;align-items:center;gap:.5rem;">
+    <i class="bi bi-gear" style="color:var(--primary);"></i> Settings
+  </h1>
+  <p class="text-muted" style="font-size:.875rem;margin:0;">Manage your profile, security, and appearance preferences.</p>
+</div>
+
+<div class="settings-wrap">
+
+  <!-- Side nav -->
+  <nav class="settings-sidenav">
+    <div class="settings-sidenav-title">Settings</div>
+    <a href="{% url 'accounts:profile' %}?tab=profile"
+       class="settings-tab {% if tab == 'profile' %}active{% endif %}">
+      <i class="bi bi-person"></i> Profile
+    </a>
+    <a href="{% url 'accounts:profile' %}?tab=security"
+       class="settings-tab {% if tab == 'security' %}active{% endif %}">
+      <i class="bi bi-shield-lock"></i> Security
+    </a>
+    <a href="{% url 'accounts:profile' %}?tab=appearance"
+       class="settings-tab {% if tab == 'appearance' %}active{% endif %}">
+      <i class="bi bi-palette"></i> Appearance
+    </a>
+  </nav>
+
+  <!-- Content panes -->
+  <div>
+
+    <!-- ── Profile ── -->
+    <div class="settings-pane {% if tab == 'profile' %}active{% endif %}">
+      <div class="page-card">
+        <div class="settings-section-title">Profile Information</div>
+        <div class="settings-section-sub">Update your name, email address, and department.</div>
+
+        <form method="post" action="{% url 'accounts:profile' %}?tab=profile">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="update_profile">
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-medium">First Name</label>
+              <input type="text" class="form-control" name="first_name"
+                     value="{{ user.first_name }}" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-medium">Last Name</label>
+              <input type="text" class="form-control" name="last_name"
+                     value="{{ user.last_name }}" required>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-medium">Email Address</label>
+            <input type="email" class="form-control" name="email"
+                   value="{{ user.email }}" required>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-medium">Department</label>
+            <input type="text" class="form-control" name="department"
+                   value="{{ user.department }}" placeholder="e.g. College of Engineering">
+          </div>
+
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label fw-medium">Role</label>
+              <input type="text" class="form-control" value="{{ user.get_role_display }}" readonly
+                     style="background:var(--bg);cursor:default;">
+            </div>
+            <div class="col-md-6">
+              {% if user.is_instructor %}
+              <label class="form-label fw-medium">Employee ID</label>
+              <input type="text" class="form-control" value="{{ user.employee_id|default:'—' }}" readonly
+                     style="background:var(--bg);cursor:default;">
+              {% else %}
+              <label class="form-label fw-medium">Student ID</label>
+              <input type="text" class="form-control" value="{{ user.student_id|default:'—' }}" readonly
+                     style="background:var(--bg);cursor:default;">
+              {% endif %}
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check2 me-1"></i> Save Changes
+          </button>
+        </form>
+      </div>
+
+      <div class="page-card mt-3">
+        <div class="settings-section-title" style="font-size:1rem;">Account Information</div>
+        <div class="settings-section-sub" style="margin-bottom:1rem;">Read-only details about your account.</div>
+        <div>
+          <div class="account-info-row">
+            <span class="account-info-label"><i class="bi bi-at me-2"></i>Username</span>
+            <span class="account-info-value">{{ user.username }}</span>
+          </div>
+          <div class="account-info-row">
+            <span class="account-info-label"><i class="bi bi-person-badge me-2"></i>Role</span>
+            <span class="account-info-value">{{ user.get_role_display }}</span>
+          </div>
+          <div class="account-info-row">
+            <span class="account-info-label"><i class="bi bi-calendar3 me-2"></i>Member Since</span>
+            <span class="account-info-value">{{ user.date_joined|date:"F d, Y" }}</span>
+          </div>
+          <div class="account-info-row">
+            <span class="account-info-label"><i class="bi bi-clock me-2"></i>Last Login</span>
+            <span class="account-info-value">{{ user.last_login|date:"F d, Y g:i A"|default:"Never" }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Security ── -->
+    <div class="settings-pane {% if tab == 'security' %}active{% endif %}">
+      <div class="page-card">
+        <div class="settings-section-title">Change Password</div>
+        <div class="settings-section-sub">Choose a strong password you don't use anywhere else.</div>
+
+        <form method="post" action="{% url 'accounts:profile' %}?tab=security"
+              style="max-width:420px;">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="change_password">
+
+          {% if password_form.non_field_errors %}
+            <div class="alert alert-danger py-2 mb-3">
+              {% for error in password_form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+            </div>
+          {% endif %}
+
+          <div class="mb-3">
+            <label class="form-label fw-medium">Current Password</label>
+            <input type="password"
+                   class="form-control {% if password_form.old_password.errors %}is-invalid{% endif %}"
+                   name="old_password" required autocomplete="current-password">
+            {% if password_form.old_password.errors %}
+              <div class="invalid-feedback">
+                {% for e in password_form.old_password.errors %}{{ e }}{% endfor %}
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-medium">New Password</label>
+            <input type="password"
+                   class="form-control {% if password_form.new_password1.errors %}is-invalid{% endif %}"
+                   name="new_password1" required autocomplete="new-password">
+            {% if password_form.new_password1.errors %}
+              <div class="invalid-feedback">
+                {% for e in password_form.new_password1.errors %}{{ e }}{% endfor %}
+              </div>
+            {% endif %}
+            <div class="form-text">Min. 8 characters. Mix letters, numbers, and symbols.</div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-medium">Confirm New Password</label>
+            <input type="password"
+                   class="form-control {% if password_form.new_password2.errors %}is-invalid{% endif %}"
+                   name="new_password2" required autocomplete="new-password">
+            {% if password_form.new_password2.errors %}
+              <div class="invalid-feedback">
+                {% for e in password_form.new_password2.errors %}{{ e }}{% endfor %}
+              </div>
+            {% endif %}
+          </div>
+
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-shield-check me-1"></i> Update Password
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ── Appearance ── -->
+    <div class="settings-pane {% if tab == 'appearance' %}active{% endif %}">
+      <div class="page-card">
+        <div class="settings-section-title">Appearance</div>
+        <div class="settings-section-sub">
+          Choose how INSTAASYS looks for you. Your preference is saved to your account.
+        </div>
+
+        <div class="theme-cards">
+
+          <!-- Light -->
+          <div class="theme-card {% if user.theme_preference == 'light' %}active{% endif %}"
+               data-theme="light" onclick="applyThemePref('light')">
+            <i class="bi bi-check-circle-fill theme-card-check"></i>
+            <div class="theme-preview preview-light">
+              <div class="theme-preview-sidebar"></div>
+              <div class="theme-preview-content">
+                <div class="theme-preview-bar"></div>
+                <div class="theme-preview-bar short"></div>
+                <div class="theme-preview-bar"></div>
+              </div>
+            </div>
+            <div class="theme-card-label">Light</div>
+            <div class="theme-card-desc">Clean white interface, best for bright environments.</div>
+          </div>
+
+          <!-- Dark -->
+          <div class="theme-card {% if user.theme_preference == 'dark' %}active{% endif %}"
+               data-theme="dark" onclick="applyThemePref('dark')">
+            <i class="bi bi-check-circle-fill theme-card-check"></i>
+            <div class="theme-preview preview-dark">
+              <div class="theme-preview-sidebar"></div>
+              <div class="theme-preview-content">
+                <div class="theme-preview-bar"></div>
+                <div class="theme-preview-bar short"></div>
+                <div class="theme-preview-bar"></div>
+              </div>
+            </div>
+            <div class="theme-card-label">Dark</div>
+            <div class="theme-card-desc">Easy on the eyes for low-light sessions.</div>
+          </div>
+
+          <!-- System -->
+          <div class="theme-card {% if user.theme_preference == 'system' %}active{% endif %}"
+               data-theme="system" onclick="applyThemePref('system')">
+            <i class="bi bi-check-circle-fill theme-card-check"></i>
+            <div class="theme-preview" style="overflow:hidden;">
+              <div style="display:flex;width:100%;height:100%;">
+                <div style="width:50%;height:100%;background:#f8fafc;"></div>
+                <div style="width:50%;height:100%;background:#0f172a;"></div>
+              </div>
+            </div>
+            <div class="theme-card-label">System</div>
+            <div class="theme-card-desc">Follows your OS dark/light mode setting automatically.</div>
+          </div>
+
+        </div>
+
+        <p class="text-muted" style="font-size:.8rem;margin:0;">
+          <i class="bi bi-info-circle me-1"></i>
+          You can also use the theme button in the topbar to quickly toggle.
+        </p>
+      </div>
+    </div>
+
+  </div><!-- /panes -->
+</div><!-- /settings-wrap -->
+
+<script>
+function applyThemePref(pref) {
+  // Update card selection UI
+  document.querySelectorAll('.theme-card').forEach(c => {
+    c.classList.toggle('active', c.dataset.theme === pref);
+  });
+
+  // Resolve actual DOM theme
+  let resolved = pref;
+  if (pref === 'system') {
+    resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  document.documentElement.setAttribute('data-theme', resolved);
+  localStorage.setItem('theme', resolved);
+
+  // Sync topbar icon
+  const themeIcon = document.getElementById('themeIcon');
+  if (themeIcon) {
+    themeIcon.className = resolved === 'light' ? 'bi bi-moon-fill' : 'bi bi-sun-fill';
+  }
+
+  // Save to backend — reuse base.html's saveThemePreference if available, else inline
+  if (typeof saveThemePreference === 'function') {
+    saveThemePreference(pref);
+  } else {
+    const csrf = document.cookie.split('; ').find(r => r.startsWith('csrftoken='))?.split('=')[1];
+    fetch('/api/user/theme-preference/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+      body: JSON.stringify({ theme_preference: pref })
+    }).then(() => InstaUI?.toast?.success('Appearance saved.'));
+  }
+}
+</script>
+
+{% endwith %}
+{% endblock %}

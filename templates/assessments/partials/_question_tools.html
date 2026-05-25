@@ -1,0 +1,17 @@
+{# Per-question tools (regenerate + inline answer-key edit). Expects `q` and `course` in context. #}
+<div class="q-tools no-print" data-qid="{{ q.pk }}"
+     data-update-url="{% url 'assessments:question_inline_update' course.pk q.pk %}"
+     data-regen-url="{% url 'assessments:question_regenerate_item' course.pk q.pk %}">
+  <button type="button" class="q-tool-btn regen-btn" data-qid="{{ q.pk }}"
+          title="Regenerate this question with AI">
+    <i class="bi bi-magic"></i><span class="q-tool-label">Regenerate</span>
+  </button>
+  <div class="q-tool-edit">
+    <label class="q-tool-edit-label">Answer:</label>
+    <input type="text" class="q-answer-edit"
+           data-qid="{{ q.pk }}" data-field="answer_key"
+           value="{{ q.answer_key|default:'' }}"
+           placeholder="—">
+    <span class="q-save-status" data-qid="{{ q.pk }}-answer_key"></span>
+  </div>
+</div>

@@ -1,0 +1,485 @@
+{
+  "meta": {
+    "version": "1.0",
+    "lastUpdated": "2026-04-19",
+    "wcagCompliance": "WCAG 2.1 Level AA",
+    "description": "AI-ready semantic design token definitions for INSTAASYS"
+  },
+  "themes": {
+    "light": {
+      "name": "Light Mode",
+      "description": "High-contrast light theme for daytime use",
+      "colors": {
+        "surface": {
+          "primary": {
+            "hex": "#ffffff",
+            "rgb": "255, 255, 255",
+            "usage": "Main content area backgrounds, cards"
+          },
+          "secondary": {
+            "hex": "#f1f5f9",
+            "rgb": "241, 245, 249",
+            "usage": "Secondary/grouped surfaces, table headers"
+          },
+          "tertiary": {
+            "hex": "#f8fafc",
+            "rgb": "248, 250, 252",
+            "usage": "Subtle backgrounds, secondary content areas"
+          },
+          "elevated": {
+            "hex": "#f8fafc",
+            "rgb": "248, 250, 252",
+            "usage": "Cards, modals, elevated content containers"
+          },
+          "brand": {
+            "hex": "#eef2ff",
+            "rgb": "238, 242, 255",
+            "usage": "Brand-colored backgrounds (primary accent)"
+          },
+          "inverted": {
+            "hex": "#0f172a",
+            "rgb": "15, 23, 42",
+            "usage": "Dark inverted backgrounds (sidebar, dark areas)"
+          }
+        },
+        "text": {
+          "body": {
+            "hex": "#1e293b",
+            "rgb": "30, 41, 59",
+            "usage": "Primary body text, main content",
+            "contrastRatio": 12.6
+          },
+          "body_muted": {
+            "hex": "#64748b",
+            "rgb": "100, 116, 139",
+            "usage": "Secondary text, captions, timestamps",
+            "contrastRatio": 5.2
+          },
+          "on_brand": {
+            "hex": "#4f46e5",
+            "rgb": "79, 70, 229",
+            "usage": "Text on brand backgrounds",
+            "contrastRatio": 6.8
+          },
+          "on_primary": {
+            "hex": "#ffffff",
+            "rgb": "255, 255, 255",
+            "usage": "Text on primary interactive elements",
+            "contrastRatio": 13.8
+          },
+          "interactive": {
+            "hex": "#4f46e5",
+            "rgb": "79, 70, 229",
+            "usage": "Links, interactive text elements",
+            "contrastRatio": 6.8
+          },
+          "disabled": {
+            "hex": "#cbd5e1",
+            "rgb": "203, 213, 225",
+            "usage": "Disabled state text",
+            "contrastRatio": 2.8
+          },
+          "inverse": {
+            "hex": "#ffffff",
+            "rgb": "255, 255, 255",
+            "usage": "Text on dark backgrounds"
+          }
+        },
+        "interactive": {
+          "primary": {
+            "hex": "#4f46e5",
+            "rgb": "79, 70, 229",
+            "usage": "Main CTA buttons, primary interactive elements"
+          },
+          "primary_hover": {
+            "hex": "#3730a3",
+            "rgb": "55, 48, 163",
+            "usage": "Primary button hover state"
+          },
+          "primary_active": {
+            "hex": "#2d1b69",
+            "rgb": "45, 27, 105",
+            "usage": "Primary button active/pressed state"
+          },
+          "primary_disabled": {
+            "hex": "#e2e8f0",
+            "rgb": "226, 232, 240",
+            "usage": "Disabled button state"
+          },
+          "secondary": {
+            "hex": "#06b6d4",
+            "rgb": "6, 182, 212",
+            "usage": "Secondary interactive elements (accent color)"
+          },
+          "secondary_hover": {
+            "hex": "#0891b2",
+            "rgb": "8, 145, 178",
+            "usage": "Secondary button hover state"
+          },
+          "danger": {
+            "hex": "#ef4444",
+            "rgb": "239, 68, 68",
+            "usage": "Destructive actions, delete buttons"
+          },
+          "danger_hover": {
+            "hex": "#dc2626",
+            "rgb": "220, 38, 38",
+            "usage": "Destructive action hover state"
+          }
+        },
+        "feedback": {
+          "success": {
+            "hex": "#10b981",
+            "rgb": "16, 185, 129",
+            "usage": "Success status indicator"
+          },
+          "success_text": {
+            "hex": "#166534",
+            "rgb": "22, 101, 52",
+            "usage": "Text on success backgrounds"
+          },
+          "success_bg": {
+            "hex": "#dcfce7",
+            "rgb": "220, 252, 231",
+            "usage": "Success background/alert"
+          },
+          "error": {
+            "hex": "#ef4444",
+            "rgb": "239, 68, 68",
+            "usage": "Error status indicator"
+          },
+          "error_text": {
+            "hex": "#991b1b",
+            "rgb": "153, 27, 27",
+            "usage": "Text on error backgrounds"
+          },
+          "error_bg": {
+            "hex": "#fef2f2",
+            "rgb": "254, 242, 242",
+            "usage": "Error background/alert"
+          },
+          "warning": {
+            "hex": "#f59e0b",
+            "rgb": "245, 158, 11",
+            "usage": "Warning status indicator"
+          },
+          "warning_text": {
+            "hex": "#92400e",
+            "rgb": "146, 64, 14",
+            "usage": "Text on warning backgrounds"
+          },
+          "warning_bg": {
+            "hex": "#fef3c7",
+            "rgb": "254, 243, 199",
+            "usage": "Warning background/alert"
+          },
+          "info": {
+            "hex": "#3b82f6",
+            "rgb": "59, 130, 246",
+            "usage": "Information status indicator"
+          },
+          "info_text": {
+            "hex": "#1e40af",
+            "rgb": "30, 64, 175",
+            "usage": "Text on info backgrounds"
+          },
+          "info_bg": {
+            "hex": "#dbeafe",
+            "rgb": "219, 234, 254",
+            "usage": "Info background/alert"
+          }
+        },
+        "borders": {
+          "subtle": {
+            "hex": "#e2e8f0",
+            "rgb": "226, 232, 240",
+            "usage": "Subtle borders, dividers between sections"
+          },
+          "muted": {
+            "hex": "#cbd5e1",
+            "rgb": "203, 213, 225",
+            "usage": "Standard form borders, section dividers"
+          },
+          "strong": {
+            "hex": "#94a3b8",
+            "rgb": "148, 163, 184",
+            "usage": "Prominent borders, form focus states"
+          }
+        },
+        "shadows": {
+          "low": {
+            "value": "0 1px 2px rgba(0,0,0,.04)",
+            "usage": "Minimal elevation, subtle depth"
+          },
+          "medium": {
+            "value": "0 4px 12px rgba(0,0,0,.08)",
+            "usage": "Standard elevation for cards and containers"
+          },
+          "high": {
+            "value": "0 8px 24px rgba(0,0,0,.12)",
+            "usage": "High elevation for modals and overlays"
+          },
+          "brand_low": {
+            "value": "0 4px 12px rgba(79,70,229,.25)",
+            "usage": "Brand accent shadows, low intensity"
+          },
+          "brand_medium": {
+            "value": "0 8px 24px rgba(79,70,229,.35)",
+            "usage": "Brand accent shadows, medium intensity"
+          },
+          "brand_high": {
+            "value": "0 12px 32px rgba(79,70,229,.50)",
+            "usage": "Brand accent shadows, high intensity"
+          }
+        }
+      }
+    },
+    "dark": {
+      "name": "Dark Mode",
+      "description": "Low-contrast dark theme for nighttime use, reduced eye strain",
+      "colors": {
+        "surface": {
+          "primary": {
+            "hex": "#0f172a",
+            "rgb": "15, 23, 42",
+            "usage": "Main content area backgrounds, cards in dark"
+          },
+          "secondary": {
+            "hex": "#1e293b",
+            "rgb": "30, 41, 59",
+            "usage": "Slightly lighter backgrounds in dark mode"
+          },
+          "tertiary": {
+            "hex": "#334155",
+            "rgb": "51, 65, 85",
+            "usage": "Even lighter backgrounds for tertiary content"
+          },
+          "elevated": {
+            "hex": "#1e293b",
+            "rgb": "30, 41, 59",
+            "usage": "Elevated cards in dark mode"
+          },
+          "brand": {
+            "hex": "#1e1b4b",
+            "rgb": "30, 27, 75",
+            "usage": "Dark indigo for brand areas"
+          },
+          "inverted": {
+            "hex": "#e2e8f0",
+            "rgb": "226, 232, 240",
+            "usage": "Light text on dark backgrounds"
+          }
+        },
+        "text": {
+          "body": {
+            "hex": "#e2e8f0",
+            "rgb": "226, 232, 240",
+            "usage": "Primary body text in dark mode",
+            "contrastRatio": 12.6
+          },
+          "body_muted": {
+            "hex": "#94a3b8",
+            "rgb": "148, 163, 184",
+            "usage": "Secondary text, captions in dark mode",
+            "contrastRatio": 5.2
+          },
+          "on_brand": {
+            "hex": "#e0e7ff",
+            "rgb": "224, 231, 255",
+            "usage": "Light text on dark brand backgrounds",
+            "contrastRatio": 9.4
+          },
+          "on_primary": {
+            "hex": "#ffffff",
+            "rgb": "255, 255, 255",
+            "usage": "White text on primary interactive in dark",
+            "contrastRatio": 13.8
+          },
+          "interactive": {
+            "hex": "#818cf8",
+            "rgb": "129, 140, 248",
+            "usage": "Links, interactive text in dark mode",
+            "contrastRatio": 7.2
+          },
+          "disabled": {
+            "hex": "#64748b",
+            "rgb": "100, 116, 139",
+            "usage": "Disabled text in dark mode",
+            "contrastRatio": 2.6
+          },
+          "inverse": {
+            "hex": "#0f172a",
+            "rgb": "15, 23, 42",
+            "usage": "Dark text on light backgrounds"
+          }
+        },
+        "interactive": {
+          "primary": {
+            "hex": "#818cf8",
+            "rgb": "129, 140, 248",
+            "usage": "Main buttons in dark mode (light indigo)"
+          },
+          "primary_hover": {
+            "hex": "#a5b4fc",
+            "rgb": "165, 180, 252",
+            "usage": "Button hover state in dark"
+          },
+          "primary_active": {
+            "hex": "#6366f1",
+            "rgb": "99, 102, 241",
+            "usage": "Button active state in dark"
+          },
+          "primary_disabled": {
+            "hex": "#334155",
+            "rgb": "51, 65, 85",
+            "usage": "Disabled button in dark mode"
+          },
+          "secondary": {
+            "hex": "#22d3ee",
+            "rgb": "34, 211, 238",
+            "usage": "Bright cyan secondary in dark mode"
+          },
+          "secondary_hover": {
+            "hex": "#06b6d4",
+            "rgb": "6, 182, 212",
+            "usage": "Secondary hover in dark"
+          },
+          "danger": {
+            "hex": "#f87171",
+            "rgb": "248, 113, 113",
+            "usage": "Light red for destructive actions in dark"
+          },
+          "danger_hover": {
+            "hex": "#ef4444",
+            "rgb": "239, 68, 68",
+            "usage": "Destructive hover in dark"
+          }
+        },
+        "feedback": {
+          "success": {
+            "hex": "#10b981",
+            "rgb": "16, 185, 129",
+            "usage": "Success in dark (adjusted for contrast)"
+          },
+          "success_text": {
+            "hex": "#a7f3d0",
+            "rgb": "167, 243, 208",
+            "usage": "Light text on dark success backgrounds"
+          },
+          "success_bg": {
+            "hex": "#064e3b",
+            "rgb": "6, 78, 59",
+            "usage": "Dark green background for success"
+          },
+          "error": {
+            "hex": "#f87171",
+            "rgb": "248, 113, 113",
+            "usage": "Light red error indicator in dark"
+          },
+          "error_text": {
+            "hex": "#fecaca",
+            "rgb": "254, 202, 202",
+            "usage": "Light text on dark error backgrounds"
+          },
+          "error_bg": {
+            "hex": "#7f1d1d",
+            "rgb": "127, 29, 29",
+            "usage": "Dark red background for errors"
+          },
+          "warning": {
+            "hex": "#fbbf24",
+            "rgb": "251, 191, 36",
+            "usage": "Adjusted yellow warning in dark"
+          },
+          "warning_text": {
+            "hex": "#fde68a",
+            "rgb": "253, 230, 138",
+            "usage": "Light text on dark warning backgrounds"
+          },
+          "warning_bg": {
+            "hex": "#78350f",
+            "rgb": "120, 53, 15",
+            "usage": "Dark amber background for warnings"
+          },
+          "info": {
+            "hex": "#60a5fa",
+            "rgb": "96, 165, 250",
+            "usage": "Light blue info in dark"
+          },
+          "info_text": {
+            "hex": "#bfdbfe",
+            "rgb": "191, 219, 254",
+            "usage": "Light text on dark info backgrounds"
+          },
+          "info_bg": {
+            "hex": "#1e3a8a",
+            "rgb": "30, 58, 138",
+            "usage": "Dark blue background for info"
+          }
+        },
+        "borders": {
+          "subtle": {
+            "hex": "#334155",
+            "rgb": "51, 65, 85",
+            "usage": "Subtle borders in dark mode"
+          },
+          "muted": {
+            "hex": "#475569",
+            "rgb": "71, 85, 105",
+            "usage": "Standard borders in dark mode"
+          },
+          "strong": {
+            "hex": "#64748b",
+            "rgb": "100, 116, 139",
+            "usage": "Prominent borders in dark mode"
+          }
+        },
+        "shadows": {
+          "low": {
+            "value": "0 1px 3px rgba(0,0,0,.3), 0 1px 2px rgba(0,0,0,.2)",
+            "usage": "Minimal elevation in dark"
+          },
+          "medium": {
+            "value": "0 4px 12px rgba(0,0,0,.5)",
+            "usage": "Standard elevation in dark"
+          },
+          "high": {
+            "value": "0 8px 24px rgba(0,0,0,.5)",
+            "usage": "High elevation in dark"
+          },
+          "brand_low": {
+            "value": "0 4px 12px rgba(99,102,241,.25)",
+            "usage": "Brand shadows adjusted for dark"
+          },
+          "brand_medium": {
+            "value": "0 8px 24px rgba(99,102,241,.35)",
+            "usage": "Brand medium shadows in dark"
+          },
+          "brand_high": {
+            "value": "0 12px 32px rgba(99,102,241,.50)",
+            "usage": "Brand high shadows in dark"
+          }
+        }
+      }
+    }
+  },
+  "guidelines": {
+    "wcag_compliance": {
+      "text_contrast_minimum": 4.5,
+      "graphics_contrast_minimum": 3.0,
+      "large_text_threshold": "18pt or 14pt bold"
+    },
+    "accessibility": {
+      "semantic_html": "Use proper semantic tags: <main>, <section>, <article>, <nav>",
+      "aria_labels": "Always provide aria-labels for regions and custom controls",
+      "keyboard_navigation": "Ensure all interactive elements are keyboard accessible",
+      "color_not_only_indicator": "Do not rely on color alone to convey meaning"
+    },
+    "ai_guidance": {
+      "when_generating_ui": "AI systems should use --surface-primary, --text-body, --interactive-primary, and --feedback-* tokens instead of hardcoding colors",
+      "semantic_token_usage": "Always use semantic tokens (e.g., --text-body not --text-muted) unless a specific visual hierarchy requires otherwise",
+      "theme_switching": "Generated HTML/CSS must work in both light and dark modes by using CSS variables",
+      "contrast_checking": "For critical content, verify contrast ratios match WCAG AA standards before generating"
+    }
+  }
+}

@@ -1,0 +1,1410 @@
+{% extends 'accounts/course_base.html' %}
+{% block course_content %}
+<style>
+/* ── Layout ─────────────────────────────────────────────────────────── */
+.eclass-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.eclass-main  { flex: 1; min-width: 0; overflow-x: auto; }
+.eclass-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+/* ── Toolbar ─────────────────────────────────────────────────────────── */
+.ec-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ec-toolbar .btn-group-left,
+.ec-toolbar .btn-group-right { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* ── Table ───────────────────────────────────────────────────────────── */
+.ec-table {
+  border-collapse: collapse;
+  font-size: .72rem;
+  font-family: 'Calibri', 'Segoe UI', sans-serif;
+  white-space: nowrap;
+  background: #fff;
+}
+.ec-table th, .ec-table td {
+  border: 1px solid #9e9e9e;
+  padding: 2px 4px;
+  text-align: center;
+  vertical-align: middle;
+}
+/* Section header rows */
+.ec-table .row-section th {
+  background: #1565c0;
+  color: #fff;
+  font-weight: 700;
+  font-size: .73rem;
+  letter-spacing: .02em;
+  padding: 4px 6px;
+}
+.ec-table .row-section th.th-name  { background: #0d47a1; text-align: left; min-width: 160px; }
+.ec-table .row-section th.th-ww    { background: #00897b; }
+.ec-table .row-section th.th-pt    { background: #1976d2; }
+.ec-table .row-section th.th-qa    { background: #f57c00; }
+.ec-table .row-section th.th-grade { background: #283593; }
+
+/* Sub-header (column numbers) */
+.ec-table .row-subhdr th {
+  background: #e3f2fd;
+  color: #0d47a1;
+  font-weight: 700;
+  font-size: .68rem;
+  padding: 2px 3px;
+}
+.ec-table .row-subhdr th.th-name { background: #bbdefb; text-align: left; }
+
+/* HPS row */
+.ec-table .row-hps td {
+  background: #fff9c4;
+  font-weight: 700;
+  font-size: .68rem;
+  color: #333;
+}
+.ec-table .row-hps td.hps-label {
+  background: #fff176;
+  font-weight: 800;
+  text-align: left;
+  font-size: .68rem;
+  color: #555;
+  padding-left: 4px;
+}
+.ec-table .row-hps td.hps-computed {
+  background: #f9fbe7;
+  color: #666;
+  font-style: italic;
+}
+
+/* Student rows */
+.ec-table tbody.students tr:nth-child(odd) td  { background: #fff; }
+.ec-table tbody.students tr:nth-child(even) td { background: #f8f9fb; }
+.ec-table tbody.students tr:hover td           { background: #e3f2fd !important; }
+.ec-table tbody.students td.td-name {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  text-align: left;
+  font-weight: 600;
+  background: #fafafa !important;
+  border-right: 2px solid #9e9e9e;
+  min-width: 160px;
+  padding-left: 5px;
+}
+.ec-table tbody.students tr:nth-child(even) td.td-name {
+  background: #f0f2f7 !important;
+}
+.ec-table tbody.students tr:hover td.td-name {
+  background: #d4e3f7 !important;
+}
+.ec-table tbody.students td.td-num {
+  background: #f0f0f0 !important;
+  color: #888;
+  font-size: .68rem;
+  width: 22px;
+  border-right: 1px solid #bbb;
+}
+
+/* Computed cells */
+.ec-table td.c-total { background: #e8eaf6 !important; color: #283593; font-weight: 700; }
+.ec-table td.c-ps    { background: #e0f7fa !important; color: #006064; font-weight: 700; }
+.ec-table td.c-ws    { background: #e8f5e9 !important; color: #1b5e20; font-weight: 700; }
+.ec-table td.c-ig    { background: #fff3e0 !important; color: #e65100; font-weight: 800; }
+.ec-table td.c-qg    { font-weight: 800; }
+.ec-table td.c-qg.pass { background: #c8e6c9 !important; color: #1b5e20; }
+.ec-table td.c-qg.fail { background: #ffcdd2 !important; color: #b71c1c; }
+.ec-table td.c-qg.blank{ background: #f5f5f5 !important; color: #aaa; }
+
+/* Editable inputs in table */
+.ec-table input[type=number],
+.ec-table input[type=text] {
+  border: none;
+  background: transparent;
+  width: 100%;
+  min-width: 36px;
+  padding: 1px 2px;
+  font-size: .72rem;
+  font-family: inherit;
+  text-align: center;
+  outline: none;
+}
+.ec-table input[type=number]:focus,
+.ec-table input[type=text]:focus {
+  background: #fff9c4;
+  outline: 2px solid #1565c0;
+  border-radius: 2px;
+}
+/* Name inputs inside sub-header */
+.ec-table .row-subhdr input[type=text] {
+  color: #0d47a1;
+  font-weight: 700;
+  width: 100%;
+  min-width: 28px;
+  font-size: .65rem;
+}
+
+/* HPS inputs */
+.ec-table .row-hps input[type=number] {
+  background: transparent;
+  font-weight: 700;
+  color: #333;
+  min-width: 28px;
+}
+
+
+/* ── Column editor modal ─────────────────────────────────────────────── */
+.col-editor-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: #f8faff;
+  border: 1px solid #e3e8f0;
+  border-radius: 7px;
+  margin-bottom: 6px;
+  transition: background .12s;
+}
+.col-editor-row:hover { background: #eef3ff; }
+.col-editor-row.deleted { opacity: .45; pointer-events: none; }
+.col-num-badge {
+  width: 34px; height: 34px;
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: .72rem;
+  flex-shrink: 0;
+}
+.col-num-badge.cs { background: #eef2ff; color: #4338ca; }
+.col-num-badge.pt { background: #ecfdf5; color: #059669; }
+.col-num-badge.ex { background: #fff7ed; color: #ea580c; }
+.col-editor-row input[type=text]   { flex: 1; font-size: .85rem; }
+.col-editor-row input[type=number] { width: 68px; font-size: .85rem; text-align: center; }
+.col-add-btn {
+  width: 100%;
+  border: 2px dashed #cbd5e1;
+  background: transparent;
+  color: #64748b;
+  border-radius: 7px;
+  padding: 7px;
+  font-size: .8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+  margin-top: 4px;
+}
+.col-add-btn:hover { border-color: #4f46e5; color: #4f46e5; background: #eef2ff; }
+.col-add-btn.pt:hover { border-color: #059669; color: #059669; background: #ecfdf5; }
+
+/* ── Quarter tabs ────────────────────────────────────────────────────── */
+.ec-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 10px;
+  border-bottom: 2px solid #1565c0;
+}
+.ec-tab {
+  padding: 5px 18px;
+  font-size: .78rem;
+  font-weight: 700;
+  border: 1px solid #ccc;
+  border-bottom: none;
+  background: #f5f5f5;
+  color: #555;
+  cursor: pointer;
+  text-decoration: none;
+  border-radius: 4px 4px 0 0;
+  margin-right: 2px;
+}
+.ec-tab.active {
+  background: #1565c0;
+  color: #fff;
+  border-color: #1565c0;
+}
+.ec-tab:hover:not(.active) { background: #e3f2fd; color: #1565c0; }
+
+/* ── Remove number input spinners ────────────────────────────────── */
+.ec-table input[type=number]::-webkit-outer-spin-button,
+.ec-table input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.ec-table input[type=number] { -moz-appearance: textfield; }
+
+/* ── Column editor overlay ────────────────────────────────────────── */
+#colEditorOverlay {
+  display: none;
+  position: fixed;
+  left: var(--sidebar-w, 256px);
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 300;
+  background: #f1f5f9;
+  flex-direction: column;
+  overflow: hidden;
+}
+#colEditorOverlay.show { display: flex; }
+#colEditorOverlay .editor-header {
+  background: #1565c0;
+  color: #fff;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  border-bottom: 1px solid #0d47a1;
+}
+#colEditorOverlay .editor-title {
+  font-weight: 700;
+  font-size: .95rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+#colEditorOverlay .editor-close {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.3rem;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#colEditorOverlay .editor-close:hover { background: rgba(255,255,255,.1); border-radius: 4px; }
+#colEditorOverlay .editor-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+}
+#colEditorOverlay .editor-panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+#colEditorOverlay .editor-panel {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+}
+#colEditorOverlay .editor-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+#colEditorOverlay .section-label-input {
+  flex: 1;
+  font-size: .85rem;
+  padding: 4px 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+}
+#colEditorOverlay .section-weight-input {
+  width: 50px;
+  font-size: .85rem;
+  padding: 4px 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  text-align: center;
+}
+#colEditorOverlay .section-weight-input::-webkit-outer-spin-button,
+#colEditorOverlay .section-weight-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+#colEditorOverlay .section-weight-input { -moz-appearance: textfield; }
+#colEditorOverlay .section-weight-label { font-weight: 600; color: #64748b; font-size: .8rem; }
+#colEditorOverlay .editor-col-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .8rem;
+  margin-bottom: 10px;
+}
+#colEditorOverlay .editor-col-table th {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  padding: 6px 8px;
+  text-align: left;
+  font-weight: 600;
+  color: #334155;
+}
+#colEditorOverlay .editor-col-table td {
+  border: 1px solid #cbd5e1;
+  padding: 6px 8px;
+  background: #fff;
+}
+#colEditorOverlay .editor-col-table input {
+  border: none;
+  background: transparent;
+  font-size: .8rem;
+  width: 100%;
+  padding: 2px;
+}
+#colEditorOverlay .editor-col-table input:focus { outline: 2px solid #1565c0; background: #fef9c3; }
+#colEditorOverlay .editor-del-btn {
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  color: #991b1b;
+  padding: 4px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: .75rem;
+  font-weight: 600;
+}
+#colEditorOverlay .editor-del-btn:hover { background: #f87171; color: #fff; }
+#colEditorOverlay .editor-add-btn {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px dashed #cbd5e1;
+  background: transparent;
+  color: #64748b;
+  font-size: .8rem;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all .15s;
+}
+#colEditorOverlay .editor-add-btn:hover { border-color: #1565c0; color: #1565c0; background: #e3f2fd; }
+#colEditorOverlay .editor-exam-panel {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  grid-column: 1 / -1;
+}
+#colEditorOverlay .weight-warning {
+  padding: 12px;
+  margin: 16px 0;
+  border-radius: 6px;
+  font-size: .8rem;
+  font-weight: 600;
+}
+#colEditorOverlay .weight-warning.valid { background: #d1fae5; color: #065f46; }
+#colEditorOverlay .weight-warning.invalid { background: #fee2e2; color: #991b1b; }
+#colEditorOverlay .editor-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #fff;
+  border-top: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+#colEditorOverlay .editor-status {
+  font-size: .75rem;
+  color: #64748b;
+  flex: 1;
+}
+
+/* Column editor — section divider */
+.col-section-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: 6px 4px 4px;
+  margin-top: 12px;
+  border-top: 1px solid #e2e8f0;
+  color: #475569;
+}
+.col-section-label:first-child { margin-top: 0; border-top: none; }
+.col-section-label .col-section-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+/* Column list header row */
+.col-list-header {
+  display: flex;
+  gap: 8px;
+  padding: 3px 10px 5px;
+  font-size: .67rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+/* ── Dark mode overrides ──────────────────────────────────── */
+[data-theme="dark"] .col-editor-row { background: var(--bg); border-color: var(--border); }
+[data-theme="dark"] .col-editor-row:hover { background: var(--surface-tertiary); }
+[data-theme="dark"] .col-section-label { color: var(--text-muted); border-color: var(--border); }
+[data-theme="dark"] .col-list-header { color: var(--text-muted); }
+[data-theme="dark"] .ec-tab { background: var(--bg); color: var(--text-muted); border-color: var(--border); }
+[data-theme="dark"] .ec-tab:hover:not(.active) { background: var(--surface-tertiary); color: #93c5fd; }
+[data-theme="dark"] .ec-tabs { border-color: #1565c0; }
+[data-theme="dark"] .ec-table { background: var(--card-bg); }
+[data-theme="dark"] .ec-table th,
+[data-theme="dark"] .ec-table td { border-color: rgba(255,255,255,.12) !important; }
+[data-theme="dark"] .ec-table tbody.students tr:nth-child(odd) td  { background: var(--card-bg) !important; color: var(--text) !important; }
+[data-theme="dark"] .ec-table tbody.students tr:nth-child(even) td { background: var(--bg) !important; color: var(--text) !important; }
+[data-theme="dark"] .ec-table tbody.students tr:hover td           { background: var(--surface-tertiary) !important; }
+[data-theme="dark"] .ec-table tbody.students td.td-name  { background: var(--card-bg) !important; color: var(--text) !important; }
+[data-theme="dark"] .ec-table tbody.students tr:nth-child(even) td.td-name { background: var(--bg) !important; }
+[data-theme="dark"] .ec-table tbody.students tr:hover td.td-name   { background: var(--surface-tertiary) !important; }
+[data-theme="dark"] .ec-table tbody.students td.td-num   { background: var(--bg) !important; color: var(--text-muted) !important; }
+[data-theme="dark"] .ec-table .row-hps td { background: rgba(255,249,196,.08) !important; color: var(--text) !important; }
+[data-theme="dark"] .ec-table .row-hps td.hps-label { background: rgba(255,241,118,.08) !important; color: var(--text-muted) !important; }
+[data-theme="dark"] .ec-table .row-hps td.hps-computed { background: rgba(249,251,231,.05) !important; color: var(--text-muted) !important; }
+[data-theme="dark"] .ec-table .row-subhdr th { background: #1e3a5f !important; color: #93c5fd !important; }
+[data-theme="dark"] .ec-table .row-subhdr th.th-name { background: #1a3557 !important; }
+[data-theme="dark"] .ec-table input[type=number]:focus,
+[data-theme="dark"] .ec-table input[type=text]:focus { background: rgba(255,249,196,.12); outline-color: #93c5fd; }
+</style>
+
+{% if enrollments %}
+<!-- Term tabs -->
+<div class="ec-tabs">
+  <a href="{% url 'grading:eclass_record' course.pk %}" class="ec-tab active">Midterm</a>
+  <a href="{% url 'grading:midterm_sheet' course.pk %}" class="ec-tab">Final</a>
+  <a href="{% url 'grading:grade_summary' course.pk %}" class="ec-tab">Final Semestral Grade</a>
+</div>
+
+<!-- Toolbar -->
+<div class="ec-toolbar">
+  <div class="btn-group-left">
+    <button type="button" class="btn btn-sm btn-outline-primary" onclick="openColumnEditor()">
+      <i class="bi bi-pencil-square"></i> Edit Columns
+    </button>
+  </div>
+  <div class="btn-group-right">
+    <a href="{% url 'grading:export_grades' course.pk %}" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-download"></i> Export
+    </a>
+    <button type="submit" form="eclass-form" class="btn btn-sm btn-primary px-3">
+      <i class="bi bi-floppy"></i> Save Grades
+    </button>
+  </div>
+</div>
+
+<form method="post" id="eclass-form">{% csrf_token %}
+
+<div class="eclass-layout">
+  <!-- ── Main spreadsheet ─────────────────────────────────────────── -->
+  <div class="eclass-main">
+    <table class="ec-table" id="ec-table">
+      <thead>
+        <!-- Row 1: Section headers -->
+        <tr class="row-section">
+          <th class="th-name" rowspan="3">LEARNERS' NAMES</th>
+          <th class="th-ww" colspan="{{ ww_col_data|length|add:2 }}">CLASS STANDING (CS) — 20%</th>
+          <th class="th-pt" colspan="{{ pt_col_data|length|add:2 }}">PERFORMANCE TASK (PT) — 20%</th>
+          <th style="background: #7cb342;" colspan="{{ ao_col_data|length|add:2 }}">ACTIVITY OUTPUT (AO) — 20%</th>
+          <th class="th-qa" colspan="2">MAJOR EXAMS — 40%</th>
+          <th class="th-grade" rowspan="3" style="min-width:58px;">Initial<br>Grade</th>
+          <th class="th-grade" rowspan="3" style="min-width:58px;">Midterm<br>Grade</th>
+        </tr>
+
+        <!-- Row 2: Column numbers + computed labels -->
+        <tr class="row-subhdr">
+          {% for col in ww_col_data %}
+          <th style="min-width:30px;">
+            <input type="text" name="ww_name_{{ col.n }}" value="{{ col.name }}" style="min-width:26px;" readonly>
+          </th>
+          {% endfor %}
+          <th>Total</th><th>PS</th>
+
+          {% for col in pt_col_data %}
+          <th style="min-width:30px;">
+            <input type="text" name="pt_name_{{ col.n }}" value="{{ col.name }}" style="min-width:26px;" readonly>
+          </th>
+          {% endfor %}
+          <th>Total</th><th>PS</th>
+
+          {% for col in ao_col_data %}
+          <th style="min-width:30px;">
+            <input type="text" name="ao_name_{{ col.n }}" value="{{ col.name }}" style="min-width:26px;" readonly>
+          </th>
+          {% endfor %}
+          <th>Total</th><th>PS</th>
+
+          <th>1</th><th>PS</th>
+        </tr>
+
+        <!-- Row 3: Highest Possible Score row -->
+        <tr class="row-hps">
+          {% for col in ww_col_data %}
+          <td><input type="number" name="ww_max_{{ col.n }}" value="{{ col.max }}" min="1" class="hps-input" data-type="ww-max" data-idx="{{ forloop.counter0 }}"></td>
+          {% endfor %}
+          <td class="hps-computed" id="ww-hps-total">—</td>
+          <td class="hps-computed">100</td>
+
+          {% for col in pt_col_data %}
+          <td><input type="number" name="pt_max_{{ col.n }}" value="{{ col.max }}" min="1" class="hps-input" data-type="pt-max" data-idx="{{ forloop.counter0 }}"></td>
+          {% endfor %}
+          <td class="hps-computed" id="pt-hps-total">—</td>
+          <td class="hps-computed">100</td>
+
+          {% for col in ao_col_data %}
+          <td><input type="number" name="ao_max_{{ col.n }}" value="{{ col.max }}" min="1" class="hps-input" data-type="ao-max" data-idx="{{ forloop.counter0 }}"></td>
+          {% endfor %}
+          <td class="hps-computed" id="ao-hps-total">—</td>
+          <td class="hps-computed">100</td>
+
+          <td><input type="number" name="qa_max" id="qa-max" value="{{ course.requirement_max }}" min="1" class="hps-input" data-type="qa-max"></td>
+          <td class="hps-computed">100</td>
+        </tr>
+      </thead>
+
+      <tbody class="students">
+        {% for e in enrollments %}
+        {% with rec=e.grade_record %}
+        <tr data-epk="{{ e.pk }}">
+          <td class="td-name">
+            {{ e.student.get_full_name }}
+            {% if e.student.student_id %}
+            <span style="font-size:.62rem;color:#999;font-weight:400;"> · {{ e.student.student_id }}</span>
+            {% endif %}
+          </td>
+
+          <!-- WW scores -->
+          {% for col in ww_col_data %}
+          <td style="padding:1px;"><input type="number" step="0.01" min="0"
+               name="ww_{{ e.pk }}_{{ col.n }}"
+               class="ww-score" data-epk="{{ e.pk }}"></td>
+          {% endfor %}
+          <td class="c-total" data-ww-total="{{ e.pk }}">—</td>
+          <td class="c-ps"    data-ww-ps="{{ e.pk }}">—</td>
+
+          <!-- PT scores -->
+          {% for col in pt_col_data %}
+          <td style="padding:1px;"><input type="number" step="0.01" min="0"
+               name="pt_{{ e.pk }}_{{ col.n }}"
+               class="pt-score" data-epk="{{ e.pk }}"></td>
+          {% endfor %}
+          <td class="c-total" data-pt-total="{{ e.pk }}">—</td>
+          <td class="c-ps"    data-pt-ps="{{ e.pk }}">—</td>
+
+          <!-- AO scores -->
+          {% for col in ao_col_data %}
+          <td style="padding:1px;"><input type="number" step="0.01" min="0"
+               name="ao_{{ e.pk }}_{{ col.n }}"
+               class="ao-score" data-epk="{{ e.pk }}"></td>
+          {% endfor %}
+          <td class="c-total" data-ao-total="{{ e.pk }}">—</td>
+          <td class="c-ps"    data-ao-ps="{{ e.pk }}">—</td>
+
+          <!-- QA score -->
+          <td style="padding:1px;"><input type="number" step="0.01" min="0"
+               name="qa_{{ e.pk }}"
+               value="{{ rec.requirement_score|default_if_none:'' }}"
+               class="qa-score" data-epk="{{ e.pk }}"></td>
+          <td class="c-ps" data-qa-ps="{{ e.pk }}">—</td>
+
+          <!-- Grades -->
+          <td class="c-ig"          data-ig="{{ e.pk }}">—</td>
+          <td class="c-qg blank"    data-qg="{{ e.pk }}">—</td>
+        </tr>
+        {% endwith %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div><!-- /eclass-main -->
+</div><!-- /eclass-layout -->
+
+</form>
+
+{% else %}
+<div class="page-card text-center py-5">
+  <i class="bi bi-people" style="font-size:2.5rem;color:#cbd5e1;"></i>
+  <p class="mt-3 text-muted">No students enrolled yet.</p>
+  <a href="{% url 'accounts:enroll_students' course.pk %}" class="btn btn-primary btn-sm">Enroll Students</a>
+</div>
+{% endif %}
+
+<!-- ── Column Editor Modal ──────────────────────────────────────────── -->
+<!-- ── Column Editor Overlay ─────────────────────────────────────────── -->
+<div id="colEditorOverlay">
+  <div class="editor-header">
+    <div class="editor-title">
+      <i class="bi bi-pencil-square"></i>
+      Edit Columns — Midterm Term
+    </div>
+    <button type="button" class="editor-close" onclick="closeColumnEditor()">×</button>
+  </div>
+
+  <div class="editor-body">
+    <div id="weightWarning" class="weight-warning valid">
+      <i class="bi bi-check-circle-fill me-1"></i>
+      <span id="weightSumText">Weights: 20+20+20+40 = 100 ✓</span>
+    </div>
+
+    <div class="editor-panels">
+      <!-- ══ CLASS STANDING (CS) ══ -->
+      <div class="editor-panel">
+        <div class="editor-section-header">
+          <input type="text" class="section-label-input" id="csLabel"
+                 placeholder="e.g., Class Standing (CS)"
+                 value="{{ course.cs_section_name|default:'' }}"
+                 data-original="{{ course.cs_section_name|default:'' }}"
+                 oninput="markLabelChanged(this, 'cs_section_name')">
+          <input type="number" class="section-weight-input" id="csWeight" min="1" max="98"
+                 value="{{ course.cs_weight }}"
+                 oninput="markWeightChanged(this, 'cs_weight')">
+          <span class="section-weight-label">%</span>
+        </div>
+        <table class="editor-col-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>HPS</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="csColsList">
+            {% for col in ww_col_data %}
+            <tr id="cs-row-{{ col.n }}" data-type="cs" data-col="{{ col.n }}">
+              <td><input type="text" value="{{ col.name }}" data-original="{{ col.name }}"
+                        oninput="markColumnChanged(this, 'cs', this.parentElement.parentElement.dataset.col)"></td>
+              <td><input type="number" value="{{ col.max }}" min="1" data-original="{{ col.max }}"
+                        oninput="markHpsChanged(this, 'ww', this.parentElement.parentElement.dataset.col)"></td>
+              <td><button type="button" class="editor-del-btn" onclick="markDelete('cs', this.parentElement.parentElement.dataset.col)">✕ Delete</button></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <button type="button" class="editor-add-btn" onclick="queueAdd('cs')">
+          <i class="bi bi-plus-circle me-1"></i>Add CS Column
+        </button>
+      </div>
+
+      <!-- ══ PERFORMANCE TASK (PT) ══ -->
+      <div class="editor-panel">
+        <div class="editor-section-header">
+          <input type="text" class="section-label-input" id="ptLabel"
+                 placeholder="e.g., Performance Task (PT)"
+                 value="{{ course.pt_section_name|default:'' }}"
+                 data-original="{{ course.pt_section_name|default:'' }}"
+                 oninput="markLabelChanged(this, 'pt_section_name')">
+          <input type="number" class="section-weight-input" id="ptWeight" min="1" max="98"
+                 value="{{ course.req_weight }}"
+                 oninput="markWeightChanged(this, 'req_weight')">
+          <span class="section-weight-label">%</span>
+        </div>
+        <table class="editor-col-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>HPS</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="ptColsList">
+            {% for col in pt_col_data %}
+            <tr id="pt-row-{{ col.n }}" data-type="pt" data-col="{{ col.n }}">
+              <td><input type="text" value="{{ col.name }}" data-original="{{ col.name }}"
+                        oninput="markColumnChanged(this, 'pt', this.parentElement.parentElement.dataset.col)"></td>
+              <td><input type="number" value="{{ col.max }}" min="1" data-original="{{ col.max }}"
+                        oninput="markHpsChanged(this, 'pt', this.parentElement.parentElement.dataset.col)"></td>
+              <td><button type="button" class="editor-del-btn" onclick="markDelete('pt', this.parentElement.parentElement.dataset.col)">✕ Delete</button></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <button type="button" class="editor-add-btn" onclick="queueAdd('pt')">
+          <i class="bi bi-plus-circle me-1"></i>Add PT Column
+        </button>
+      </div>
+
+      <!-- ══ ACTIVITY OUTPUT (AO) ══ -->
+      <div class="editor-panel">
+        <div class="editor-section-header">
+          <input type="text" class="section-label-input" id="aoLabel"
+                 placeholder="e.g., Activity Output (AO)"
+                 value="{{ course.ao_section_name|default:'' }}"
+                 data-original="{{ course.ao_section_name|default:'' }}"
+                 oninput="markLabelChanged(this, 'ao_section_name')">
+          <input type="number" class="section-weight-input" id="aoWeight" min="1" max="98"
+                 value="{{ course.ao_weight }}"
+                 oninput="markWeightChanged(this, 'ao_weight')">
+          <span class="section-weight-label">%</span>
+        </div>
+        <table class="editor-col-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>HPS</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="aoColsList">
+            {% for col in ao_col_data %}
+            <tr id="ao-row-{{ col.n }}" data-type="ao" data-col="{{ col.n }}">
+              <td><input type="text" value="{{ col.name }}" data-original="{{ col.name }}"
+                        oninput="markColumnChanged(this, 'ao', this.parentElement.parentElement.dataset.col)"></td>
+              <td><input type="number" value="{{ col.max }}" min="1" data-original="{{ col.max }}"
+                        oninput="markHpsChanged(this, 'ao', this.parentElement.parentElement.dataset.col)"></td>
+              <td><button type="button" class="editor-del-btn" onclick="markDelete('ao', this.parentElement.parentElement.dataset.col)">✕ Delete</button></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <button type="button" class="editor-add-btn" onclick="queueAdd('ao')">
+          <i class="bi bi-plus-circle me-1"></i>Add AO Column
+        </button>
+      </div>
+    </div>
+
+    <!-- ══ MAJOR EXAMS ══ -->
+    <div class="editor-exam-panel">
+      <div class="editor-section-header">
+        <input type="text" class="section-label-input" id="examLabel"
+               placeholder="e.g., Major Exams"
+               value="{{ course.exam_section_name|default:'' }}"
+               data-original="{{ course.exam_section_name|default:'' }}"
+               oninput="markLabelChanged(this, 'exam_section_name')">
+        <input type="number" class="section-weight-input" id="examWeight" min="1" max="98"
+               value="{{ course.exam_weight }}"
+               oninput="markWeightChanged(this, 'exam_weight')">
+        <span class="section-weight-label">%</span>
+      </div>
+      <div style="margin-top: 12px; padding: 8px; background: #f8fafc; border-radius: 4px; font-size: .8rem;">
+        <div>Major Examination Score — Single score per student</div>
+        <div style="margin-top: 8px; display: flex; align-items: center; gap: 8px;">
+          <span>HPS (Max):</span>
+          <input type="number" id="exam-hps-edit" value="{{ course.requirement_max }}" min="1"
+                 style="width: 80px; padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 4px;"
+                 oninput="markHpsChanged(this, 'qa', 0)">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="editor-footer">
+    <span class="editor-status" id="col-editor-status">No pending changes</span>
+    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="closeColumnEditor()">Cancel</button>
+    <button type="button" class="btn btn-sm btn-primary" id="colEditorSaveBtn" onclick="saveColumnChanges()">
+      <i class="bi bi-check2-circle me-1"></i>Apply Changes
+    </button>
+  </div>
+</div>
+
+<!-- HPS Exceeded Warning Modal -->
+<div class="modal fade" id="hpsWarningModal" tabindex="-1" aria-labelledby="hpsWarningLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header py-2" style="background:#b71c1c;">
+        <h6 class="modal-title text-white mb-0" id="hpsWarningLabel">
+          <i class="bi bi-exclamation-triangle-fill me-1"></i> Score Exceeds HPS
+        </h6>
+        <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body py-3 px-4 text-center">
+        <p class="mb-1 fw-semibold" id="hpsWarningMsg" style="font-size:.9rem;"></p>
+        <p class="text-muted mb-0" style="font-size:.78rem;">
+          Please correct the score before saving.
+        </p>
+      </div>
+      <div class="modal-footer py-2 justify-content-center">
+        <button type="button" class="btn btn-sm btn-danger px-4" data-bs-dismiss="modal">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block extra_js %}
+<script>
+const WW_JSON = {{ ww_json|safe }};
+const PT_JSON = {{ pt_json|safe }};
+const AO_JSON = {{ ao_json|safe }};
+const WW_COUNT = {{ ww_count }};
+const PT_COUNT = {{ pt_count }};
+const AO_COUNT = {{ ao_count }};
+
+// Weights (mutable, updated by editor)
+let csWeightCurrent   = {{ course.cs_weight }};
+let ptWeightCurrent   = {{ course.req_weight }};
+let aoWeightCurrent   = {{ course.ao_weight }};
+let examWeightCurrent = {{ course.exam_weight }};
+
+function getNum(sel) {
+  const el = document.querySelector(sel);
+  return el && el.value !== '' ? parseFloat(el.value) : null;
+}
+function getHPSArray(type) {
+  const arr = [];
+  document.querySelectorAll(`.hps-input[data-type="${type}"]`).forEach(el => {
+    arr.push(parseFloat(el.value) || 10);
+  });
+  return arr;
+}
+
+function computeRow(epk) {
+  // ── Written Work ──────────────────────────────────────────────────
+  const wwMaxes = getHPSArray('ww-max');
+  let wwTotal = 0, wwHps = wwMaxes.reduce((a,b)=>a+b,0), wwHasAny = false;
+  for (let n = 1; n <= WW_COUNT; n++) {
+    const v = getNum(`input[name="ww_${epk}_${n}"]`);
+    if (v !== null) { wwTotal += v; wwHasAny = true; }
+  }
+  const wwPS = wwHasAny && wwHps ? wwTotal / wwHps * 100 : null;
+  const wwWS = wwPS !== null ? wwPS * (csWeightCurrent / 100) : null;
+
+  // ── Performance Tasks ─────────────────────────────────────────────
+  const ptMaxes = getHPSArray('pt-max');
+  let ptTotal = 0, ptHps = ptMaxes.reduce((a,b)=>a+b,0), ptHasAny = false;
+  for (let n = 1; n <= PT_COUNT; n++) {
+    const v = getNum(`input[name="pt_${epk}_${n}"]`);
+    if (v !== null) { ptTotal += v; ptHasAny = true; }
+  }
+  const ptPS = ptHasAny && ptHps ? ptTotal / ptHps * 100 : null;
+  const ptWS = ptPS !== null ? ptPS * (ptWeightCurrent / 100) : null;
+
+  // ── Activity Output ────────────────────────────────────────────────
+  const aoMaxes = getHPSArray('ao-max');
+  let aoTotal = 0, aoHps = aoMaxes.reduce((a,b)=>a+b,0), aoHasAny = false;
+  for (let n = 1; n <= AO_COUNT; n++) {
+    const v = getNum(`input[name="ao_${epk}_${n}"]`);
+    if (v !== null) { aoTotal += v; aoHasAny = true; }
+  }
+  const aoPS = aoHasAny && aoHps ? aoTotal / aoHps * 100 : null;
+  const aoWS = aoPS !== null ? aoPS * (aoWeightCurrent / 100) : null;
+
+  // ── Major Exams ───────────────────────────────────────────────────
+  const qaScore = getNum(`input[name="qa_${epk}"]`);
+  const qaMax   = parseFloat(document.getElementById('qa-max')?.value) || 10;
+  const qaPS    = qaScore !== null ? qaScore / qaMax * 100 : null;
+  const qaWS    = qaPS    !== null ? qaPS * (examWeightCurrent / 100) : null;
+
+  // ── Initial / Quarterly Grade ─────────────────────────────────────
+  const IG = (wwWS !== null && ptWS !== null && aoWS !== null && qaWS !== null)
+    ? wwWS + ptWS + aoWS + qaWS : null;
+  const QG = IG !== null ? 60 + IG * 0.4 : null;
+
+  // ── Update cells ──────────────────────────────────────────────────
+  const fmt = (v, d=2) => v !== null ? v.toFixed(d) : '—';
+
+  const set = (sel, v, d=2) => { const el = document.querySelector(sel); if (el) el.textContent = fmt(v,d); };
+  set(`[data-ww-total="${epk}"]`, wwHasAny ? wwTotal : null, 2);
+  set(`[data-ww-ps="${epk}"]`,    wwPS, 2);
+  set(`[data-pt-total="${epk}"]`, ptHasAny ? ptTotal : null, 2);
+  set(`[data-pt-ps="${epk}"]`,    ptPS, 2);
+  set(`[data-ao-total="${epk}"]`, aoHasAny ? aoTotal : null, 2);
+  set(`[data-ao-ps="${epk}"]`,    aoPS, 2);
+  set(`[data-qa-ps="${epk}"]`,    qaPS, 2);
+  set(`[data-ig="${epk}"]`,       IG, 2);
+
+  const qgEl = document.querySelector(`[data-qg="${epk}"]`);
+  if (qgEl) {
+    qgEl.textContent = QG !== null ? QG.toFixed(2) : '—';
+    qgEl.className   = 'c-qg ' + (QG === null ? 'blank' : QG >= 75 ? 'pass' : 'fail');
+  }
+}
+
+function updateHPSTotals() {
+  const wwHps = getHPSArray('ww-max').reduce((a,b)=>a+b,0);
+  const ptHps = getHPSArray('pt-max').reduce((a,b)=>a+b,0);
+  const aoHps = getHPSArray('ao-max').reduce((a,b)=>a+b,0);
+  const wwEl  = document.getElementById('ww-hps-total');
+  const ptEl  = document.getElementById('pt-hps-total');
+  const aoEl  = document.getElementById('ao-hps-total');
+  if (wwEl) wwEl.textContent = wwHps || '—';
+  if (ptEl) ptEl.textContent = ptHps || '—';
+  if (aoEl) aoEl.textContent = aoHps || '—';
+}
+
+function computeAll() {
+  updateHPSTotals();
+  document.querySelectorAll('tr[data-epk]').forEach(row => computeRow(row.dataset.epk));
+}
+
+// ── HPS Warning ───────────────────────────────────────────────────────────────
+function showHpsWarning(entered, max, colLabel) {
+  const msg = document.getElementById('hpsWarningMsg');
+  if (msg) msg.textContent =
+    `Entered score (${entered}) exceeds the Highest Possible Score (${max}) for "${colLabel}".`;
+  const modal = new bootstrap.Modal(document.getElementById('hpsWarningModal'));
+  modal.show();
+}
+
+function checkHps(input, max, colLabel) {
+  const v = parseFloat(input.value);
+  if (!isNaN(v) && v > max) {
+    input.style.outline = '2px solid #b71c1c';
+    input.style.background = '#ffebee';
+    showHpsWarning(v, max, colLabel);
+  } else {
+    input.style.outline = '';
+    input.style.background = '';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  // Populate WW scores from server JSON
+  Object.entries(WW_JSON).forEach(([epk, scores]) => {
+    scores.forEach((v, i) => {
+      if (v === null) return;
+      const el = document.querySelector(`input[name="ww_${epk}_${i+1}"]`);
+      if (el) el.value = v;
+    });
+  });
+
+  // Populate PT scores from server JSON
+  Object.entries(PT_JSON).forEach(([epk, scores]) => {
+    scores.forEach((v, i) => {
+      if (v === null) return;
+      const el = document.querySelector(`input[name="pt_${epk}_${i+1}"]`);
+      if (el) el.value = v;
+    });
+  });
+
+  // Populate AO scores from server JSON
+  Object.entries(AO_JSON).forEach(([epk, scores]) => {
+    scores.forEach((v, i) => {
+      if (v === null) return;
+      const el = document.querySelector(`input[name="ao_${epk}_${i+1}"]`);
+      if (el) el.value = v;
+    });
+  });
+
+  computeAll();
+
+  // Live recompute + HPS check on any score change
+  document.querySelectorAll('.ww-score').forEach(el => {
+    el.addEventListener('input', () => {
+      const idx = parseInt(el.name.split('_').pop()) - 1;
+      const maxes = getHPSArray('ww-max');
+      checkHps(el, maxes[idx] ?? 10, `CS Col ${idx + 1}`);
+      computeRow(el.dataset.epk);
+    });
+  });
+  document.querySelectorAll('.pt-score').forEach(el => {
+    el.addEventListener('input', () => {
+      const idx = parseInt(el.name.split('_').pop()) - 1;
+      const maxes = getHPSArray('pt-max');
+      checkHps(el, maxes[idx] ?? 10, `PT Col ${idx + 1}`);
+      computeRow(el.dataset.epk);
+    });
+  });
+  document.querySelectorAll('.ao-score').forEach(el => {
+    el.addEventListener('input', () => {
+      const idx = parseInt(el.name.split('_').pop()) - 1;
+      const maxes = getHPSArray('ao-max');
+      checkHps(el, maxes[idx] ?? 10, `AO Col ${idx + 1}`);
+      computeRow(el.dataset.epk);
+    });
+  });
+  document.querySelectorAll('.qa-score').forEach(el => {
+    el.addEventListener('input', () => {
+      const max = parseFloat(document.getElementById('qa-max')?.value) || 10;
+      checkHps(el, max, 'Major Exams');
+      computeRow(el.dataset.epk);
+    });
+  });
+
+  // HPS changes → recompute everything + re-validate all scores
+  document.querySelectorAll('.hps-input').forEach(el =>
+    el.addEventListener('input', () => {
+      computeAll();
+      // Re-validate all score inputs after HPS change
+      document.querySelectorAll('.ww-score').forEach(s => {
+        const idx = parseInt(s.name.split('_').pop()) - 1;
+        const maxes = getHPSArray('ww-max');
+        if (s.value !== '') checkHps(s, maxes[idx] ?? 10, `CS Col ${idx + 1}`);
+      });
+      document.querySelectorAll('.pt-score').forEach(s => {
+        const idx = parseInt(s.name.split('_').pop()) - 1;
+        const maxes = getHPSArray('pt-max');
+        if (s.value !== '') checkHps(s, maxes[idx] ?? 10, `PT Col ${idx + 1}`);
+      });
+      document.querySelectorAll('.ao-score').forEach(s => {
+        const idx = parseInt(s.name.split('_').pop()) - 1;
+        const maxes = getHPSArray('ao-max');
+        if (s.value !== '') checkHps(s, maxes[idx] ?? 10, `AO Col ${idx + 1}`);
+      });
+      document.querySelectorAll('.qa-score').forEach(s => {
+        const max = parseFloat(document.getElementById('qa-max')?.value) || 10;
+        if (s.value !== '') checkHps(s, max, 'Major Exams');
+      });
+    }));
+
+  // Block form save if any score exceeds HPS
+  document.getElementById('eclass-form')?.addEventListener('submit', function(e) {
+    const over = document.querySelectorAll('.ec-table input[type=number][style*="b71c1c"]');
+    if (over.length > 0) {
+      e.preventDefault();
+      showHpsWarning('one or more scores', 'HPS', 'the highlighted field(s)');
+    }
+  });
+
+  // Enter key moves to next input (Excel-like)
+  const inputs = Array.from(document.querySelectorAll('.ec-table input[type=number]'));
+  inputs.forEach((el, i) => el.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); if (inputs[i+1]) inputs[i+1].focus(); }
+  }));
+
+  // ── Auto-save functionality ──────────────────────────────────────────────
+  let autoSaveTimeout = null;
+  const AUTOSAVE_DELAY = 1500; // 1.5 seconds after user stops typing
+  
+  function autoSaveScore(input) {
+    const name = input.name; // e.g., 'ww_123_1', 'pt_123_2', 'qa_123', 'ww_name_1'
+    const parts = name.split('_');
+    
+    let enrollmentId, fieldName;
+    
+    // Check if this is a column name field
+    if (name.includes('_name_')) {
+      // Column name update (no enrollment ID needed)
+      fieldName = name; // e.g., 'ww_name_1', 'pt_name_2'
+      enrollmentId = null;
+    } else if (parts[0] === 'ww' || parts[0] === 'pt' || parts[0] === 'ao') {
+      // Format: ww_enrollmentId_columnNum or pt_enrollmentId_columnNum or ao_enrollmentId_columnNum
+      enrollmentId = parts[1];
+      fieldName = `${parts[0]}_${parts[2]}`; // e.g., 'ww_1', 'pt_2', 'ao_3'
+    } else if (parts[0] === 'qa') {
+      // Format: qa_enrollmentId
+      enrollmentId = parts[1];
+      fieldName = 'qa';
+    } else {
+      return; // Not a score or name field
+    }
+    
+    const value = input.value.trim();
+    
+    // Show saving indicator
+    input.style.borderColor = '#f59e0b';
+    input.style.backgroundColor = '#fffbeb';
+    
+    // Get CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    // Prepare form data
+    const formData = new URLSearchParams({
+      'field_name': fieldName,
+      'value': value
+    });
+    
+    // Add enrollment_id only if it's a score field (not a column name)
+    if (enrollmentId) {
+      formData.append('enrollment_id', enrollmentId);
+    }
+    
+    // Send AJAX request
+    fetch('{% url "grading:autosave_score" course.pk %}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': csrfToken
+      },
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        // Show success indicator briefly
+        input.style.borderColor = '#10b981';
+        input.style.backgroundColor = '#f0fdf4';
+        setTimeout(() => {
+          input.style.borderColor = '';
+          input.style.backgroundColor = '';
+        }, 800);
+      } else {
+        // Show error indicator
+        input.style.borderColor = '#ef4444';
+        input.style.backgroundColor = '#fef2f2';
+        console.error('Auto-save error:', data.error);
+      }
+    })
+    .catch(error => {
+      console.error('Auto-save failed:', error);
+      input.style.borderColor = '#ef4444';
+      input.style.backgroundColor = '#fef2f2';
+    });
+  }
+  
+  // Attach auto-save to all score inputs AND column name inputs
+  document.querySelectorAll('.ww-score, .pt-score, .ao-score, .qa-score, .row-subhdr input[type=text]').forEach(input => {
+    input.addEventListener('input', function() {
+      // Clear previous timeout
+      if (autoSaveTimeout) {
+        clearTimeout(autoSaveTimeout);
+      }
+      
+      // Set new timeout
+      autoSaveTimeout = setTimeout(() => {
+        autoSaveScore(this);
+      }, AUTOSAVE_DELAY);
+    });
+    
+    // Also save on blur (when user leaves the field)
+    input.addEventListener('blur', function() {
+      if (autoSaveTimeout) {
+        clearTimeout(autoSaveTimeout);
+      }
+      autoSaveScore(this);
+    });
+  });
+});
+
+// ── Column Editor Overlay ────────────────────────────────────────────────────
+let pending = { renames: {}, hpsChanges: {}, deletes: new Set(), adds: [], labelChanges: {}, weightChanges: {} };
+
+function openColumnEditor() {
+  resetPending();
+  document.getElementById('colEditorOverlay').classList.add('show');
+}
+
+function closeColumnEditor() {
+  document.getElementById('colEditorOverlay').classList.remove('show');
+  resetPending();
+}
+
+function resetPending() {
+  pending = { renames: {}, hpsChanges: {}, deletes: new Set(), adds: [], labelChanges: {}, weightChanges: {} };
+
+  // Reset deleted row styling
+  document.querySelectorAll('#colEditorOverlay [id^="cs-row-"], #colEditorOverlay [id^="pt-row-"], #colEditorOverlay [id^="ao-row-"]').forEach(row => {
+    row.style.opacity = '';
+    row.style.pointerEvents = '';
+  });
+
+  // Reset input styling
+  document.querySelectorAll('#colEditorOverlay input').forEach(input => {
+    input.style.background = '';
+    input.style.borderColor = '';
+  });
+
+  // Reset add button text
+  document.querySelectorAll('#colEditorOverlay .editor-add-btn').forEach(btn => {
+    const isSec = btn.parentElement.parentElement.id;
+    if (isSec.includes('csColsList')) {
+      btn.innerHTML = '<i class="bi bi-plus-circle me-1"></i>Add CS Column';
+    } else if (isSec.includes('ptColsList')) {
+      btn.innerHTML = '<i class="bi bi-plus-circle me-1"></i>Add PT Column';
+    } else if (isSec.includes('aoColsList')) {
+      btn.innerHTML = '<i class="bi bi-plus-circle me-1"></i>Add AO Column';
+    }
+  });
+
+  // Remove preview rows
+  document.querySelectorAll('#colEditorOverlay .col-editor-row.preview').forEach(r => r.remove());
+
+  // Reset weight inputs to current values
+  document.getElementById('csWeight').value = csWeightCurrent;
+  document.getElementById('ptWeight').value = ptWeightCurrent;
+  document.getElementById('aoWeight').value = aoWeightCurrent;
+  document.getElementById('examWeight').value = examWeightCurrent;
+
+  updateEditorStatus();
+  updateWeightWarning();
+}
+
+function updateEditorStatus() {
+  const total = Object.keys(pending.renames).length +
+                Object.keys(pending.hpsChanges).length +
+                Object.keys(pending.labelChanges).length +
+                Object.keys(pending.weightChanges).length +
+                pending.deletes.size + pending.adds.length;
+  const el = document.getElementById('col-editor-status');
+  if (!el) return;
+  el.textContent = total > 0 ? `${total} unsaved change(s)` : 'No pending changes';
+}
+
+function updateWeightWarning() {
+  const csW = parseInt(document.getElementById('csWeight').value) || csWeightCurrent;
+  const ptW = parseInt(document.getElementById('ptWeight').value) || ptWeightCurrent;
+  const aoW = parseInt(document.getElementById('aoWeight').value) || aoWeightCurrent;
+  const exW = parseInt(document.getElementById('examWeight').value) || examWeightCurrent;
+  const sum = csW + ptW + aoW + exW;
+
+  const warn = document.getElementById('weightWarning');
+  const text = document.getElementById('weightSumText');
+
+  if (sum === 100) {
+    warn.className = 'weight-warning valid';
+    text.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i>Weights: ${csW}+${ptW}+${aoW}+${exW} = ${sum} ✓`;
+  } else {
+    warn.className = 'weight-warning invalid';
+    text.innerHTML = `<i class="bi bi-exclamation-circle-fill me-1"></i>Weights: ${csW}+${ptW}+${aoW}+${exW} = ${sum} (must equal 100)`;
+  }
+}
+
+function markLabelChanged(input, fieldName) {
+  const val = input.value.trim();
+  const original = input.dataset.original || '';
+  if (val !== original) {
+    pending.labelChanges[fieldName] = { field: fieldName, value: val };
+    input.style.background = '#fefce8';
+  } else {
+    delete pending.labelChanges[fieldName];
+    input.style.background = '';
+  }
+  updateEditorStatus();
+}
+
+function markWeightChanged(input, fieldName) {
+  const val = parseInt(input.value);
+  if (!isNaN(val) && val > 0 && val < 100) {
+    pending.weightChanges[fieldName] = { field: fieldName, value: val };
+    input.style.background = '#fefce8';
+    // Update live weight display
+    if (fieldName === 'cs_weight') csWeightCurrent = val;
+    else if (fieldName === 'req_weight') ptWeightCurrent = val;
+    else if (fieldName === 'ao_weight') aoWeightCurrent = val;
+    else if (fieldName === 'exam_weight') examWeightCurrent = val;
+    computeAll();
+  } else {
+    delete pending.weightChanges[fieldName];
+    input.style.background = '';
+  }
+  updateWeightWarning();
+  updateEditorStatus();
+}
+
+function markColumnChanged(input, type, colNum) {
+  const key = `${type}_${colNum}`;
+  const val = input.value.trim();
+  if (val !== input.dataset.original) {
+    pending.renames[key] = { type, col: colNum, name: val };
+    input.style.background = '#fefce8';
+  } else {
+    delete pending.renames[key];
+    input.style.background = '';
+  }
+  updateEditorStatus();
+}
+
+function markHpsChanged(input, prefix, colNum) {
+  const val = parseInt(input.value);
+  if (!isNaN(val) && val > 0) {
+    const key = `${prefix}_${colNum}`;
+    pending.hpsChanges[key] = { prefix, col: colNum, max: val };
+    input.style.background = '#fefce8';
+  } else {
+    delete pending.hpsChanges[`${prefix}_${colNum}`];
+    input.style.background = '';
+  }
+  updateEditorStatus();
+}
+
+function markDelete(type, colNum) {
+  const key = `${type}_${colNum}`;
+  const row = document.getElementById(`${type}-row-${colNum}`);
+  if (!row) return;
+  if (pending.deletes.has(key)) {
+    pending.deletes.delete(key);
+    row.style.opacity = '';
+    row.style.pointerEvents = '';
+  } else {
+    pending.deletes.add(key);
+    row.style.opacity = '0.5';
+    row.style.pointerEvents = 'none';
+  }
+  updateEditorStatus();
+}
+
+function queueAdd(type) {
+  pending.adds.push({ type });
+  const btn = event.currentTarget;
+  const n = pending.adds.filter(a => a.type === type).length;
+  const label = type === 'cs' ? 'CS' : 'PT';
+  const tbody = document.getElementById(type === 'cs' ? 'csColsList' : 'ptColsList');
+
+  const tr = document.createElement('tr');
+  tr.className = 'col-editor-row preview';
+  tr.style.opacity = '0.7';
+  tr.innerHTML = `
+    <td><input class="form-control form-control-sm" placeholder="New ${label} column" disabled style="background: transparent;"></td>
+    <td><input type="number" class="form-control form-control-sm" value="10" disabled style="background: transparent; text-align: center;"></td>
+    <td><span class="badge bg-success" style="font-size:.68rem;">+ New</span></td>`;
+  tbody.appendChild(tr);
+
+  btn.textContent = `${n} column(s) queued`;
+  updateEditorStatus();
+}
+
+async function saveColumnChanges() {
+  const csrf    = document.querySelector('[name=csrfmiddlewaretoken]').value;
+  const saveBtn = document.getElementById('colEditorSaveBtn');
+  const status  = document.getElementById('col-editor-status');
+
+  const hasChanges = Object.keys(pending.renames).length ||
+                     Object.keys(pending.hpsChanges).length ||
+                     Object.keys(pending.labelChanges).length ||
+                     Object.keys(pending.weightChanges).length ||
+                     pending.deletes.size || pending.adds.length;
+  if (!hasChanges) {
+    closeColumnEditor();
+    return;
+  }
+
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving…';
+  status.textContent = 'Applying changes…';
+
+  const post = (url, body) => fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrf },
+    body: new URLSearchParams(body)
+  });
+
+  try {
+    // 0. Section labels + weights
+    for (const { field, value } of Object.values(pending.labelChanges)) {
+      await post('{% url "grading:autosave_score" course.pk %}', { field_name: field, value: value });
+    }
+    for (const { field, value } of Object.values(pending.weightChanges)) {
+      await post('{% url "grading:autosave_score" course.pk %}', { field_name: field, value: value });
+    }
+
+    // 1. Column renames
+    for (const { type, col, name } of Object.values(pending.renames)) {
+      const field = `${type === 'cs' ? 'ww' : 'pt'}_name_${col}`;
+      await post('{% url "grading:autosave_score" course.pk %}', { field_name: field, value: name });
+    }
+
+    // 2. HPS changes
+    for (const { prefix, col, max } of Object.values(pending.hpsChanges)) {
+      const field = prefix === 'qa' ? 'qa_max' : `${prefix}_max_${col}`;
+      await post('{% url "grading:autosave_score" course.pk %}', { field_name: field, value: max });
+    }
+
+    // 3. Deletes — process highest column number first to avoid index shifting
+    const sortedDeletes = [...pending.deletes].sort((a, b) => {
+      const [, ca] = a.split('_'); const [, cb] = b.split('_');
+      return parseInt(cb) - parseInt(ca);
+    });
+    for (const key of sortedDeletes) {
+      const [type, col] = key.split('_');
+      const url = type === 'cs'
+        ? '{% url "grading:delete_ww_column" course.pk 0 %}'.replace('/0/', `/${col}/`)
+        : '{% url "grading:delete_pt_column" course.pk 0 %}'.replace('/0/', `/${col}/`);
+      await fetch(url, { method: 'GET' });
+    }
+
+    // 4. Adds
+    for (const { type } of pending.adds) {
+      const url = type === 'cs'
+        ? '{% url "grading:add_ww_column" course.pk %}'
+        : '{% url "grading:add_pt_column" course.pk %}';
+      await fetch(url, { method: 'GET' });
+    }
+
+    status.textContent = 'Done! Reloading…';
+    window.location.reload();
+
+  } catch (err) {
+    console.error(err);
+    status.textContent = 'Error — please try again.';
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = '<i class="bi bi-check2-circle me-1"></i>Apply Changes';
+  }
+}
+
+</script>
+{% endblock %}

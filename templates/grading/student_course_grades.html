@@ -1,0 +1,599 @@
+{% extends 'base.html' %}
+{% block page_title %}{{ course.code }} — Grade Breakdown{% endblock %}
+{% block content %}
+<style>
+.course-banner {
+  background:linear-gradient(135deg,#1e1b4b,#4338ca);
+  border-radius:14px;padding:1.5rem 2rem;color:#fff;margin-bottom:1.5rem;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;
+}
+.course-banner-info h3 { font-size:1.15rem;font-weight:800;margin:0 0 .3rem; }
+.course-banner-info p  { font-size:.82rem;opacity:.75;margin:0; }
+.final-bubble {
+  width:80px;height:80px;border-radius:50%;
+  background:rgba(255,255,255,.12);border:3px solid rgba(255,255,255,.3);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;
+}
+.final-bubble-num { font-size:1.4rem;font-weight:900;line-height:1; }
+.final-bubble-lbl { font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;opacity:.7;margin-top:2px; }
+
+.term-label {
+  font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;
+  color:#64748b;margin:1.25rem 0 .75rem;display:flex;align-items:center;gap:.5rem;
+}
+.term-label::after { content:'';flex:1;height:1px;background:#e2e8f0; }
+
+.component-card { border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:.75rem; }
+.component-card .card-header {
+  background:#f8fafc;border-bottom:0;padding:.7rem 1rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid #e2e8f0;
+}
+.component-card .card-header:hover { background:#f1f5f9; }
+.component-card .card-header .bi-chevron-down { transition:transform .2s;color:#94a3b8; }
+.component-card .card-header[aria-expanded="true"] .bi-chevron-down { transform:rotate(180deg); }
+.comp-score-tbl { font-size:.83rem; }
+.comp-score-tbl th { color:#94a3b8;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:.5rem 1rem; }
+.comp-score-tbl td { padding:.5rem 1rem;border-top:1px solid #f1f5f9; }
+.comp-total { background:#f8fafc;font-size:.8rem;padding:.6rem 1rem;display:flex;justify-content:space-between;border-top:1px solid #e2e8f0; }
+
+.grade-display { text-align:center;padding:1rem 0; }
+.grade-number  { font-size:3rem;font-weight:900;line-height:1; }
+.grade-label   { font-size:.78rem;color:#94a3b8;font-weight:600;margin-top:4px; }
+
+.att-stat-box { border-radius:10px;padding:.875rem;text-align:center; }
+.att-stat-box .num { font-size:1.75rem;font-weight:900;line-height:1;margin-bottom:2px; }
+.att-stat-box small { font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#94a3b8; }
+</style>
+
+<!-- Back navigation -->
+<div class="d-flex gap-2 mb-3">
+  <a href="{% url 'accounts:student_dashboard' %}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i> Dashboard
+  </a>
+  <a href="{% url 'grading:student_grades' %}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-list me-1"></i> All Subjects
+  </a>
+  <a href="{% url 'attendance:student_attendance' course.pk %}" class="btn btn-sm btn-outline-primary">
+    <i class="bi bi-calendar3 me-1"></i> My Attendance
+  </a>
+</div>
+
+<!-- Course Banner -->
+<div class="course-banner">
+  <div class="course-banner-info">
+    <h3>{{ course.code }} — {{ course.title }}</h3>
+    <p>
+      <i class="bi bi-person me-1"></i>{{ course.instructor.get_full_name }}
+      &nbsp;·&nbsp;{{ course.get_semester_display }} {{ course.school_year }}
+      {% if course.block %}&nbsp;·&nbsp;Block {{ course.block }}{% endif %}
+    </p>
+    {% if course.program %}
+    <span style="margin-top:.5rem;display:inline-block;background:rgba(6,182,212,.25);color:#67e8f9;font-size:.7rem;font-weight:700;padding:.2rem .6rem;border-radius:10px;">
+      {{ course.get_program_display }}
+    </span>
+    {% endif %}
+  </div>
+  {% if record and grade_summary.final %}
+  <div class="final-bubble">
+    <div class="final-bubble-num">{{ grade_summary.final }}</div>
+    <div class="final-bubble-lbl">Final</div>
+  </div>
+  {% endif %}
+</div>
+
+{% if record %}
+<div class="row g-4">
+
+  <!-- ══ LEFT COLUMN: Component Cards ══ -->
+  <div class="col-lg-8">
+
+    {# ── e-Class Record (old format: WW + PT + AO + QA) ── #}
+    {% if cs_items or pt_items or ao_items or record.requirement_score %}
+    <div class="term-label"><i class="bi bi-journal-text"></i> e-Class Record (Midterm)</div>
+
+    {% if cs_items %}
+    <div class="component-card">
+      <div class="card-header" data-bs-toggle="collapse" data-bs-target="#comp-cs" aria-expanded="true">
+        <div><i class="bi bi-pencil-square text-primary me-2"></i><strong>Class Standing</strong><span class="text-muted ms-2 small">(25%)</span></div>
+        <div class="d-flex align-items-center gap-2">
+          {% if record.ww_ps is not None %}
+            {% if record.ww_ps >= 100 %}<span class="badge bg-success">{{ record.ww_ps }}%</span>
+            {% elif record.ww_ps >= 90 %}<span class="badge bg-info">{{ record.ww_ps }}%</span>
+            {% elif record.ww_ps >= 75 %}<span class="badge bg-warning text-dark">{{ record.ww_ps }}%</span>
+            {% else %}<span class="badge bg-danger">{{ record.ww_ps }}%</span>{% endif %}
+          {% else %}<span class="badge bg-secondary">—</span>{% endif %}
+          <i class="bi bi-chevron-down"></i>
+        </div>
+      </div>
+      <div id="comp-cs" class="collapse show">
+        <table class="table comp-score-tbl mb-0">
+          <thead><tr><th>Item</th><th class="text-end">Score</th><th class="text-end">Max</th><th class="text-end">%</th></tr></thead>
+          <tbody>
+            {% for item in cs_items %}
+            <tr>
+              <td>{{ item.name }}</td>
+              <td class="text-end">{{ item.score|default:"—" }}</td>
+              <td class="text-end">{{ item.max }}</td>
+              <td class="text-end">
+                {% if item.pct is not None %}
+                  {% if item.pct >= 100 %}<span class="badge bg-success">{{ item.pct }}%</span>
+                  {% elif item.pct >= 90 %}<span class="badge bg-info">{{ item.pct }}%</span>
+                  {% elif item.pct >= 75 %}<span class="badge bg-warning text-dark">{{ item.pct }}%</span>
+                  {% else %}<span class="badge bg-danger">{{ item.pct }}%</span>{% endif %}
+                {% else %}<span class="badge bg-secondary">—</span>{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% if record.ww_total is not None %}
+        <div class="comp-total">
+          <span class="text-muted">Component Total:</span>
+          <span class="fw-bold">{{ record.ww_total }} / {{ record.ww_hps_total }} ({{ record.ww_ps }}%)</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if pt_items %}
+    <div class="component-card">
+      <div class="card-header" data-bs-toggle="collapse" data-bs-target="#comp-pt" aria-expanded="true">
+        <div><i class="bi bi-clipboard-check text-success me-2"></i><strong>Performance Tasks</strong><span class="text-muted ms-2 small">(45%)</span></div>
+        <div class="d-flex align-items-center gap-2">
+          {% if record.pt_ps is not None %}
+            {% if record.pt_ps >= 100 %}<span class="badge bg-success">{{ record.pt_ps }}%</span>
+            {% elif record.pt_ps >= 90 %}<span class="badge bg-info">{{ record.pt_ps }}%</span>
+            {% elif record.pt_ps >= 75 %}<span class="badge bg-warning text-dark">{{ record.pt_ps }}%</span>
+            {% else %}<span class="badge bg-danger">{{ record.pt_ps }}%</span>{% endif %}
+          {% else %}<span class="badge bg-secondary">—</span>{% endif %}
+          <i class="bi bi-chevron-down"></i>
+        </div>
+      </div>
+      <div id="comp-pt" class="collapse show">
+        <table class="table comp-score-tbl mb-0">
+          <thead><tr><th>Item</th><th class="text-end">Score</th><th class="text-end">Max</th><th class="text-end">%</th></tr></thead>
+          <tbody>
+            {% for item in pt_items %}
+            <tr>
+              <td>{{ item.name }}</td>
+              <td class="text-end">{{ item.score|default:"—" }}</td>
+              <td class="text-end">{{ item.max }}</td>
+              <td class="text-end">
+                {% if item.pct is not None %}
+                  {% if item.pct >= 100 %}<span class="badge bg-success">{{ item.pct }}%</span>
+                  {% elif item.pct >= 90 %}<span class="badge bg-info">{{ item.pct }}%</span>
+                  {% elif item.pct >= 75 %}<span class="badge bg-warning text-dark">{{ item.pct }}%</span>
+                  {% else %}<span class="badge bg-danger">{{ item.pct }}%</span>{% endif %}
+                {% else %}<span class="badge bg-secondary">—</span>{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% if record.pt_total is not None %}
+        <div class="comp-total">
+          <span class="text-muted">Component Total:</span>
+          <span class="fw-bold">{{ record.pt_total }} / {{ record.pt_hps_total }} ({{ record.pt_ps }}%)</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if ao_items %}
+    <div class="component-card">
+      <div class="card-header" data-bs-toggle="collapse" data-bs-target="#comp-ao" aria-expanded="true">
+        <div><i class="bi bi-folder-check text-warning me-2"></i><strong>Activity Output</strong></div>
+        <div class="d-flex align-items-center gap-2">
+          <span class="badge bg-secondary">See scores</span>
+          <i class="bi bi-chevron-down"></i>
+        </div>
+      </div>
+      <div id="comp-ao" class="collapse show">
+        <table class="table comp-score-tbl mb-0">
+          <thead><tr><th>Item</th><th class="text-end">Score</th><th class="text-end">Max</th><th class="text-end">%</th></tr></thead>
+          <tbody>
+            {% for item in ao_items %}
+            <tr>
+              <td>{{ item.name }}</td>
+              <td class="text-end">{{ item.score|default:"—" }}</td>
+              <td class="text-end">{{ item.max }}</td>
+              <td class="text-end">
+                {% if item.pct is not None %}
+                  {% if item.pct >= 100 %}<span class="badge bg-success">{{ item.pct }}%</span>
+                  {% elif item.pct >= 90 %}<span class="badge bg-info">{{ item.pct }}%</span>
+                  {% elif item.pct >= 75 %}<span class="badge bg-warning text-dark">{{ item.pct }}%</span>
+                  {% else %}<span class="badge bg-danger">{{ item.pct }}%</span>{% endif %}
+                {% else %}<span class="badge bg-secondary">—</span>{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if record.requirement_score %}
+    <div class="component-card">
+      <div class="card-header" data-bs-toggle="collapse" data-bs-target="#comp-qa" aria-expanded="true">
+        <div><i class="bi bi-file-earmark-text text-purple me-2" style="color:#7c3aed;"></i><strong>Quarterly Assessment</strong><span class="text-muted ms-2 small">(30%)</span></div>
+        <div class="d-flex align-items-center gap-2">
+          {% if record.qa_ps is not None %}
+            {% if record.qa_ps >= 100 %}<span class="badge bg-success">{{ record.qa_ps }}%</span>
+            {% elif record.qa_ps >= 90 %}<span class="badge bg-info">{{ record.qa_ps }}%</span>
+            {% elif record.qa_ps >= 75 %}<span class="badge bg-warning text-dark">{{ record.qa_ps }}%</span>
+            {% else %}<span class="badge bg-danger">{{ record.qa_ps }}%</span>{% endif %}
+          {% else %}<span class="badge bg-secondary">—</span>{% endif %}
+          <i class="bi bi-chevron-down"></i>
+        </div>
+      </div>
+      <div id="comp-qa" class="collapse show">
+        <table class="table comp-score-tbl mb-0">
+          <thead><tr><th>Item</th><th class="text-end">Score</th><th class="text-end">Max</th><th class="text-end">%</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Quarterly Assessment</td>
+              <td class="text-end">{{ record.requirement_score }}</td>
+              <td class="text-end">{{ course.requirement_max }}</td>
+              <td class="text-end">
+                {% if record.qa_ps is not None %}
+                  {% if record.qa_ps >= 100 %}<span class="badge bg-success">{{ record.qa_ps }}%</span>
+                  {% elif record.qa_ps >= 90 %}<span class="badge bg-info">{{ record.qa_ps }}%</span>
+                  {% elif record.qa_ps >= 75 %}<span class="badge bg-warning text-dark">{{ record.qa_ps }}%</span>
+                  {% else %}<span class="badge bg-danger">{{ record.qa_ps }}%</span>{% endif %}
+                {% else %}<span class="badge bg-secondary">—</span>{% endif %}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        {% if record.midterm_term_grade %}
+        <div class="comp-total">
+          <span class="text-muted">Midterm Term Grade:</span>
+          <span class="fw-bold text-primary">{{ record.midterm_term_grade }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+    {% endif %}{# end e-class record section #}
+
+    {# ── Midterm Sheet (new format: CS + PT + AO + Exam using final_* fields) ── #}
+    {% if fcs_items or fpt_items or fao_items or record.final_exam_score %}
+    <div class="term-label"><i class="bi bi-file-earmark-spreadsheet"></i> {{ course.cs_section_name|default:"Grade Sheet" }} (Final Term)</div>
+
+    {% if fcs_items %}
+    <div class="component-card">
+      <div class="card-header" data-bs-toggle="collapse" data-bs-target="#comp-fcs" aria-expanded="true">
+        <div><i class="bi bi-pencil-square text-primary me-2"></i><strong>{{ course.cs_section_name|default:"Class Standing" }}</strong><span class="text-muted ms-2 small">({{ course.cs_weight }}%)</span></div>
+        <div class="d-flex align-items-center gap-2">
+          {% if record.fcs_ps is not None %}
+            {% if record.fcs_ps >= 100 %}<span class="badge bg-success">{{ record.fcs_ps }}%</span>
+            {% elif record.fcs_ps >= 90 %}<span class="badge bg-info">{{ record.fcs_ps }}%</span>
+            {% elif record.fcs_ps >= 75 %}<span class="badge bg-warning text-dark">{{ record.fcs_ps }}%</span>
+            {% else %}<span class="badge bg-danger">{{ record.fcs_ps }}%</span>{% endif %}
+          {% else %}<span class="badge bg-secondary">—</span>{% endif %}
+          <i class="bi bi-chevron-down"></i>
+        </div>
+      </div>
+      <div id="comp-fcs" class="collapse show">
+        <table class="table comp-score-tbl mb-0">
+          <thead><tr><th>Item</th><th class="text-end">Score</th><th class="text-end">Max</th><th class="text-end">%</th></tr></thead>
+          <tbody>
+            {% for item in fcs_items %}
+            <tr>
+              <td>{{ item.name }}</td>
+              <td class="text-end">{{ item.score|default:"—" }}</td>
+              <td class="text-end">{{ item.max }}</td>
+              <td class="text-end">
+                {% if item.pct is not None %}
+                  {% if item.pct >= 100 %}<span class="badge bg-success">{{ item.pct }}%</span>
+                  {% elif item.pct >= 90 %}<span class="badge bg-info">{{ item.pct }}%</span>
+                  {% elif item.pct >= 75 %}<span class="badge bg-warning text-dark">{{ item.pct }}%</span>
+                  {% else %}<span class="badge bg-danger">{{ item.pct }}%</span>{% endif %}
+                {% else %}<span class="badge bg-secondary">—</span>{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% if record.fcs_total is not None %}
+        <div class="comp-total">
+          <span class="text-muted">Component Total:</span>
+          <span class="fw-bold">{{ record.fcs_total }} / {{ record.fcs_hps_total }} ({{ record.fcs_ps }}%)</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if fpt_items %}
+    <div class="component-card">
+      <div class="card-header" data-bs-toggle="collapse" data-bs-target="#comp-fpt" aria-expanded="true">
+        <div><i class="bi bi-clipboard-check text-success me-2"></i><strong>{{ course.pt_section_name|default:"Performance Task" }}</strong><span class="text-muted ms-2 small">({{ course.req_weight }}%)</span></div>
+        <div class="d-flex align-items-center gap-2">
+          {% if record.fpt_ps is not None %}
+            {% if record.fpt_ps >= 100 %}<span class="badge bg-success">{{ record.fpt_ps }}%</span>
+            {% elif record.fpt_ps >= 90 %}<span class="badge bg-info">{{ record.fpt_ps }}%</span>
+            {% elif record.fpt_ps >= 75 %}<span class="badge bg-warning text-dark">{{ record.fpt_ps }}%</span>
+            {% else %}<span class="badge bg-danger">{{ record.fpt_ps }}%</span>{% endif %}
+          {% else %}<span class="badge bg-secondary">—</span>{% endif %}
+          <i class="bi bi-chevron-down"></i>
+        </div>
+      </div>
+      <div id="comp-fpt" class="collapse show">
+        <table class="table comp-score-tbl mb-0">
+          <thead><tr><th>Item</th><th class="text-end">Score</th><th class="text-end">Max</th><th class="text-end">%</th></tr></thead>
+          <tbody>
+            {% for item in fpt_items %}
+            <tr>
+              <td>{{ item.name }}</td>
+              <td class="text-end">{{ item.score|default:"—" }}</td>
+              <td class="text-end">{{ item.max }}</td>
+              <td class="text-end">
+                {% if item.pct is not None %}
+                  {% if item.pct >= 100 %}<span class="badge bg-success">{{ item.pct }}%</span>
+                  {% elif item.pct >= 90 %}<span class="badge bg-info">{{ item.pct }}%</span>
+                  {% elif item.pct >= 75 %}<span class="badge bg-warning text-dark">{{ item.pct }}%</span>
+                  {% else %}<span class="badge bg-danger">{{ item.pct }}%</span>{% endif %}
+                {% else %}<span class="badge bg-secondary">—</span>{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% if record.fpt_total is not None %}
+        <div class="comp-total">
+          <span class="text-muted">Component Total:</span>
+          <span class="fw-bold">{{ record.fpt_total }} / {{ record.fpt_hps_total }} ({{ record.fpt_ps }}%)</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if fao_items %}
+    <div class="component-card">
+      <div class="card-header" data-bs-toggle="collapse" data-bs-target="#comp-fao" aria-expanded="true">
+        <div><i class="bi bi-folder-check text-warning me-2"></i><strong>{{ course.ao_section_name|default:"Activity Output" }}</strong><span class="text-muted ms-2 small">({{ course.ao_weight }}%)</span></div>
+        <div class="d-flex align-items-center gap-2">
+          {% if record.fao_ps is not None %}
+            {% if record.fao_ps >= 100 %}<span class="badge bg-success">{{ record.fao_ps }}%</span>
+            {% elif record.fao_ps >= 90 %}<span class="badge bg-info">{{ record.fao_ps }}%</span>
+            {% elif record.fao_ps >= 75 %}<span class="badge bg-warning text-dark">{{ record.fao_ps }}%</span>
+            {% else %}<span class="badge bg-danger">{{ record.fao_ps }}%</span>{% endif %}
+          {% else %}<span class="badge bg-secondary">—</span>{% endif %}
+          <i class="bi bi-chevron-down"></i>
+        </div>
+      </div>
+      <div id="comp-fao" class="collapse show">
+        <table class="table comp-score-tbl mb-0">
+          <thead><tr><th>Item</th><th class="text-end">Score</th><th class="text-end">Max</th><th class="text-end">%</th></tr></thead>
+          <tbody>
+            {% for item in fao_items %}
+            <tr>
+              <td>{{ item.name }}</td>
+              <td class="text-end">{{ item.score|default:"—" }}</td>
+              <td class="text-end">{{ item.max }}</td>
+              <td class="text-end">
+                {% if item.pct is not None %}
+                  {% if item.pct >= 100 %}<span class="badge bg-success">{{ item.pct }}%</span>
+                  {% elif item.pct >= 90 %}<span class="badge bg-info">{{ item.pct }}%</span>
+                  {% elif item.pct >= 75 %}<span class="badge bg-warning text-dark">{{ item.pct }}%</span>
+                  {% else %}<span class="badge bg-danger">{{ item.pct }}%</span>{% endif %}
+                {% else %}<span class="badge bg-secondary">—</span>{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% if record.fao_total is not None %}
+        <div class="comp-total">
+          <span class="text-muted">Component Total:</span>
+          <span class="fw-bold">{{ record.fao_total }} / {{ record.fao_hps_total }} ({{ record.fao_ps }}%)</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Final Exam -->
+    <div class="component-card">
+      <div class="card-header" data-bs-toggle="collapse" data-bs-target="#comp-fexam" aria-expanded="true">
+        <div><i class="bi bi-file-earmark-text me-2" style="color:#7c3aed;"></i><strong>{{ course.exam_section_name|default:"Major Exam" }}</strong><span class="text-muted ms-2 small">({{ course.exam_weight }}%)</span></div>
+        <div class="d-flex align-items-center gap-2">
+          {% if record.fexam_ps is not None %}
+            {% if record.fexam_ps >= 100 %}<span class="badge bg-success">{{ record.fexam_ps }}%</span>
+            {% elif record.fexam_ps >= 90 %}<span class="badge bg-info">{{ record.fexam_ps }}%</span>
+            {% elif record.fexam_ps >= 75 %}<span class="badge bg-warning text-dark">{{ record.fexam_ps }}%</span>
+            {% else %}<span class="badge bg-danger">{{ record.fexam_ps }}%</span>{% endif %}
+          {% else %}<span class="badge bg-secondary">Not yet recorded</span>{% endif %}
+          <i class="bi bi-chevron-down"></i>
+        </div>
+      </div>
+      <div id="comp-fexam" class="collapse show">
+        <table class="table comp-score-tbl mb-0">
+          <thead><tr><th>Item</th><th class="text-end">Score</th><th class="text-end">Max</th><th class="text-end">%</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>{{ course.exam_section_name|default:"Major Exam" }}</td>
+              <td class="text-end">{{ record.final_exam_score|default:"—" }}</td>
+              <td class="text-end">{{ course.final_exam_max|default:100 }}</td>
+              <td class="text-end">
+                {% if record.fexam_ps is not None %}
+                  {% if record.fexam_ps >= 100 %}<span class="badge bg-success">{{ record.fexam_ps }}%</span>
+                  {% elif record.fexam_ps >= 90 %}<span class="badge bg-info">{{ record.fexam_ps }}%</span>
+                  {% elif record.fexam_ps >= 75 %}<span class="badge bg-warning text-dark">{{ record.fexam_ps }}%</span>
+                  {% else %}<span class="badge bg-danger">{{ record.fexam_ps }}%</span>{% endif %}
+                {% else %}<span class="badge bg-secondary">—</span>{% endif %}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        {% if record.final_term_grade %}
+        <div class="comp-total">
+          <span class="text-muted">Final Term Grade:</span>
+          <span class="fw-bold text-primary">{{ record.final_term_grade }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}{# end midterm sheet section #}
+
+    {# legacy exams if old format #}
+    {% if record.midterm_score or record.final_score %}
+    <div class="term-label"><i class="bi bi-journal-text"></i> Examinations</div>
+    <div class="component-card">
+      <div class="card-header" data-bs-toggle="collapse" data-bs-target="#comp-exams" aria-expanded="true">
+        <div><i class="bi bi-file-earmark-text text-purple me-2" style="color:#7c3aed;"></i><strong>Exam Scores</strong></div>
+        <div class="d-flex align-items-center gap-2">
+          {% if record.examination_average is not None %}
+            {% if record.examination_average >= 100 %}<span class="badge bg-success">{{ record.examination_average }}%</span>
+            {% elif record.examination_average >= 90 %}<span class="badge bg-info">{{ record.examination_average }}%</span>
+            {% elif record.examination_average >= 75 %}<span class="badge bg-warning text-dark">{{ record.examination_average }}%</span>
+            {% else %}<span class="badge bg-danger">{{ record.examination_average }}%</span>{% endif %}
+          {% else %}<span class="badge bg-secondary">—</span>{% endif %}
+          <i class="bi bi-chevron-down"></i>
+        </div>
+      </div>
+      <div id="comp-exams" class="collapse show">
+        <table class="table comp-score-tbl mb-0">
+          <thead><tr><th>Item</th><th class="text-end">Score</th><th class="text-end">Max</th></tr></thead>
+          <tbody>
+            {% if record.midterm_score %}<tr><td>Midterm Exam</td><td class="text-end">{{ record.midterm_score }}</td><td class="text-end">{{ course.midterm_max }}</td></tr>{% endif %}
+            {% if record.final_score %}<tr><td>Final Exam</td><td class="text-end">{{ record.final_score }}</td><td class="text-end">{{ course.final_max }}</td></tr>{% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if record.remarks %}
+    <div class="alert alert-warning mt-2" style="font-size:.85rem;">
+      <i class="bi bi-info-circle me-2"></i><strong>Remarks:</strong> {{ record.remarks }}
+    </div>
+    {% endif %}
+
+  </div>{# end col-lg-8 #}
+
+  <!-- ══ RIGHT COLUMN: Sidebar ══ -->
+  <div class="col-lg-4">
+
+    <!-- Grade Summary Card (sticky) -->
+    <div class="card mb-3" style="position:sticky;top:20px;">
+      <div class="card-header bg-white border-bottom">
+        <h6 class="mb-0 fw-bold"><i class="bi bi-award text-primary me-2"></i>Grade Summary</h6>
+      </div>
+      <div class="card-body">
+        {% if grade_summary.final %}
+        <div class="grade-display">
+          <div class="grade-number {% if grade_summary.passed %}text-success{% else %}text-danger{% endif %}">
+            {{ grade_summary.final }}
+          </div>
+          <div class="grade-label">Final Grade</div>
+        </div>
+        <hr class="my-2">
+        {% if grade_summary.midterm %}
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-muted small">Midterm Grade:</span>
+          <span class="fw-semibold">{{ grade_summary.midterm }}</span>
+        </div>
+        {% endif %}
+        {% if grade_summary.final_term %}
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-muted small">Final Term Grade:</span>
+          <span class="fw-semibold">{{ grade_summary.final_term }}</span>
+        </div>
+        {% endif %}
+        <hr class="my-2">
+        <div class="d-flex justify-content-between mb-1">
+          <span class="text-muted small">Grade Point:</span>
+          <span class="fw-bold text-primary">{{ grade_summary.equiv }}</span>
+        </div>
+        {% if grade_summary.descriptor %}
+        <div class="d-flex justify-content-between mb-3">
+          <span class="text-muted small">Descriptor:</span>
+          <span class="fw-semibold small">{{ grade_summary.descriptor }}</span>
+        </div>
+        {% endif %}
+        <div class="alert {% if grade_summary.passed %}alert-success{% else %}alert-danger{% endif %} mb-0 text-center py-2" style="font-size:.85rem;">
+          {% if grade_summary.passed %}
+          <i class="bi bi-check-circle-fill me-1"></i><strong>PASSED</strong>
+          {% else %}
+          <i class="bi bi-x-circle-fill me-1"></i><strong>FAILED</strong>
+          {% endif %}
+        </div>
+        {% else %}
+        <div class="text-center py-3">
+          <i class="bi bi-hourglass-split text-muted" style="font-size:1.75rem;"></i>
+          <p class="text-muted mt-2 mb-0 small">Grade not yet computed.<br>Some scores may be missing.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Attendance Summary Card -->
+    <div class="card">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold"><i class="bi bi-calendar3 text-info me-2"></i>Attendance</h6>
+        <a href="{% url 'attendance:student_attendance' course.pk %}" class="btn btn-sm btn-outline-primary">
+          View Details
+        </a>
+      </div>
+      {% if att_summary.total %}
+      <div class="card-body">
+        <div class="row g-2 text-center">
+          <div class="col-6">
+            <div class="att-stat-box" style="background:#d1fae5;">
+              <div class="num text-success">{{ att_summary.present }}</div>
+              <small>Present</small>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="att-stat-box" style="background:#fef3c7;">
+              <div class="num text-warning">{{ att_summary.late }}</div>
+              <small>Late</small>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="att-stat-box" style="background:#fee2e2;">
+              <div class="num text-danger">{{ att_summary.absent }}</div>
+              <small>Absent</small>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="att-stat-box" style="background:#e0e7ff;">
+              <div class="num text-primary">{{ att_summary.excused }}</div>
+              <small>Excused</small>
+            </div>
+          </div>
+        </div>
+        <div class="mt-3 text-center">
+          <small class="text-muted">
+            <i class="bi bi-calendar3 me-1"></i>
+            {{ att_summary.total }} session{{ att_summary.total|pluralize }} recorded
+          </small>
+        </div>
+      </div>
+      {% else %}
+      <div class="card-body text-center py-4">
+        <i class="bi bi-calendar-x text-muted" style="font-size:2rem;"></i>
+        <p class="text-muted mt-2 mb-1 small fw-semibold">No attendance records yet</p>
+        <small class="text-muted">Your instructor hasn't recorded any sessions.</small>
+      </div>
+      {% endif %}
+    </div>
+
+  </div>{# end col-lg-4 #}
+</div>{# end row #}
+
+{% else %}
+<div class="page-card text-center" style="padding:4rem 2rem;">
+  <i class="bi bi-journal-x" style="font-size:2.5rem;color:#94a3b8;"></i>
+  <p style="margin-top:1rem;color:#64748b;font-size:.9rem;">Grades not yet entered by your instructor.</p>
+</div>
+{% endif %}
+
+{% endblock %}

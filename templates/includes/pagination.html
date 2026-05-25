@@ -1,0 +1,65 @@
+{% comment %}
+Reusable pagination widget.
+Requires in context:
+  - page_obj     : Django Page object
+  - page_query   : URL-encoded query string WITHOUT the 'page' param (can be empty string)
+{% endcomment %}
+{% if page_obj.paginator.num_pages > 1 %}
+<nav aria-label="Page navigation" style="margin-top:1.25rem;">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;">
+
+    <!-- Info text -->
+    <span style="font-size:.77rem;color:#94a3b8;">
+      Showing
+      <strong style="color:#475569;">{{ page_obj.start_index }}–{{ page_obj.end_index }}</strong>
+      of
+      <strong style="color:#475569;">{{ page_obj.paginator.count }}</strong>
+      result{{ page_obj.paginator.count|pluralize }}
+    </span>
+
+    <!-- Page buttons -->
+    <ul class="pagination pagination-sm mb-0" style="gap:.25rem;">
+
+      <!-- Previous -->
+      <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+        <a class="page-link" style="border-radius:6px;border:1px solid #e2e8f0;color:#475569;font-size:.78rem;padding:.3rem .65rem;"
+           href="?{% if page_query %}{{ page_query }}&{% endif %}page={{ page_obj.previous_page_number }}"
+           {% if not page_obj.has_previous %}tabindex="-1" aria-disabled="true"{% endif %}>
+          <i class="bi bi-chevron-left" style="font-size:.7rem;"></i>
+        </a>
+      </li>
+
+      <!-- Page numbers (show at most 7 links, with ellipsis) -->
+      {% with cp=page_obj.number tp=page_obj.paginator.num_pages %}
+        {% for p in page_obj.paginator.page_range %}
+          {% if p == 1 or p == tp or p >= cp|add:"-2" and p <= cp|add:"2" %}
+            <li class="page-item {% if p == cp %}active{% endif %}">
+              <a class="page-link" style="border-radius:6px;border:1px solid {% if p == cp %}#4f46e5{% else %}#e2e8f0{% endif %};
+                         background:{% if p == cp %}#4f46e5{% else %}#fff{% endif %};
+                         color:{% if p == cp %}#fff{% else %}#475569{% endif %};
+                         font-size:.78rem;font-weight:{% if p == cp %}700{% else %}400{% endif %};padding:.3rem .62rem;"
+                 href="?{% if page_query %}{{ page_query }}&{% endif %}page={{ p }}">
+                {{ p }}
+              </a>
+            </li>
+          {% elif p == cp|add:"-3" or p == cp|add:"3" %}
+            <li class="page-item disabled">
+              <span class="page-link" style="border:none;background:transparent;color:#94a3b8;font-size:.78rem;padding:.3rem .4rem;">…</span>
+            </li>
+          {% endif %}
+        {% endfor %}
+      {% endwith %}
+
+      <!-- Next -->
+      <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+        <a class="page-link" style="border-radius:6px;border:1px solid #e2e8f0;color:#475569;font-size:.78rem;padding:.3rem .65rem;"
+           href="?{% if page_query %}{{ page_query }}&{% endif %}page={{ page_obj.next_page_number }}"
+           {% if not page_obj.has_next %}tabindex="-1" aria-disabled="true"{% endif %}>
+          <i class="bi bi-chevron-right" style="font-size:.7rem;"></i>
+        </a>
+      </li>
+
+    </ul>
+  </div>
+</nav>
+{% endif %}

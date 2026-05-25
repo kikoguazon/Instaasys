@@ -1,0 +1,46 @@
+{% extends 'accounts/course_base.html' %}
+{% block course_content %}
+
+<div class="page-card" style="max-width:480px;">
+  <h5 class="fw-bold mb-3">
+    <i class="bi bi-calendar-plus me-2"></i>New Attendance Session
+  </h5>
+  <form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label for="id_date" class="form-label fw-semibold">Date</label>
+      {{ form.date }}
+    </div>
+    <div class="mb-3">
+      <label class="form-label fw-semibold">
+        Time Schedule <span class="text-muted fw-normal">(optional)</span>
+      </label>
+      <div class="d-flex gap-2 align-items-center">
+        <div class="flex-fill">
+          <div class="form-text mb-1">Start</div>
+          {{ form.time_start }}
+        </div>
+        <div class="pt-3 text-muted">—</div>
+        <div class="flex-fill">
+          <div class="form-text mb-1">End</div>
+          {{ form.time_end }}
+        </div>
+      </div>
+    </div>
+    <div class="mb-3">
+      <label for="id_notes" class="form-label fw-semibold">
+        Notes <span class="text-muted fw-normal">(optional)</span>
+      </label>
+      {{ form.notes }}
+    </div>
+    <div class="alert alert-info py-2" style="font-size:.825rem;">
+      <i class="bi bi-info-circle me-1"></i>
+      All enrolled students will be marked <strong>Present</strong> by default.
+    </div>
+    <button type="submit" class="btn btn-primary w-100">
+      <i class="bi bi-check-lg me-1"></i> Create &amp; Mark Attendance
+    </button>
+  </form>
+</div>
+
+{% endblock %}

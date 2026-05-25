@@ -1,0 +1,678 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Slide Builder — {{ course.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Layout ── */
+.builder-layout {
+  display: flex;
+  height: calc(100vh - 64px); /* Subtract navbar height */
+  overflow: hidden;
+  background: var(--bg);
+}
+
+/* ── Sidebar: Slide list ── */
+.sidebar-slides {
+  width: 280px;
+  background: var(--card-bg);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.sidebar-header {
+  padding: var(--sp-4);
+  border-bottom: 1px solid var(--border);
+  background: var(--color-slate-50);
+}
+
+.slide-items-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.slide-item {
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-3);
+  cursor: pointer;
+  position: relative;
+  transition: var(--transition-base);
+  display: flex;
+  gap: var(--sp-3);
+  align-items: flex-start;
+}
+
+.slide-item:hover {
+  border-color: var(--color-slate-400);
+}
+
+.slide-item.active {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  box-shadow: var(--shadow-sm);
+}
+
+.slide-item-num {
+  font-size: var(--text-xs);
+  font-weight: var(--fw-bold);
+  color: var(--text-muted);
+  width: 20px;
+}
+
+.slide-item-preview {
+  flex: 1;
+  min-width: 0;
+}
+
+.slide-item-title {
+  font-size: var(--text-sm);
+  font-weight: var(--fw-semibold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+
+.slide-item-type {
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: .05em;
+}
+
+.drag-handle {
+  cursor: grab;
+  color: var(--color-slate-300);
+  padding: 0 var(--sp-1);
+}
+
+.drag-handle:active { cursor: grabbing; }
+
+/* ── Center: Editor ── */
+.main-editor {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sp-8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.editor-card {
+  width: 100%;
+  max-width: 900px;
+  background: var(--card-bg);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-lg);
+  padding: var(--sp-8);
+  margin-bottom: var(--sp-8);
+}
+
+/* ── Right: Live Preview ── */
+.preview-panel {
+  width: 360px;
+  background: var(--card-bg);
+  border-left: 1px solid var(--border);
+  padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  flex-shrink: 0;
+}
+
+.preview-stage {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  background: #1e293b;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  position: relative;
+  color: white;
+  padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-shadow: var(--shadow-md);
+}
+
+.preview-stage h1 { font-size: 1.1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: .5rem; margin-bottom: .75rem; }
+.preview-stage ul { font-size: 0.75rem; padding-left: 1rem; }
+.preview-stage li { margin-bottom: 0.25rem; }
+
+/* ── UI Components ── */
+.layout-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-6);
+}
+
+.layout-opt {
+  padding: var(--sp-3);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  text-align: center;
+  cursor: pointer;
+  transition: var(--transition-base);
+  font-size: var(--text-xs);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.layout-opt:hover { border-color: var(--primary); background: var(--primary-light); }
+.layout-opt.active { border-color: var(--primary); background: var(--primary); color: white; }
+.layout-opt i { font-size: 1.25rem; }
+
+.content-block {
+  background: var(--color-slate-50);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-4);
+  margin-bottom: var(--sp-3);
+  position: relative;
+  transition: var(--transition-base);
+}
+
+.content-block:hover { border-color: var(--color-slate-300); box-shadow: var(--shadow-sm); }
+
+.content-block-remove {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
+  background: var(--danger);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  font-size: 14px;
+  box-shadow: var(--shadow-sm);
+  z-index: 10;
+}
+
+.action-bar-bottom {
+  position: fixed;
+  bottom: 0;
+  left: 280px; /* Sidebar width */
+  right: 360px; /* Preview width */
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid var(--border);
+  padding: var(--sp-4) var(--sp-8);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 100;
+}
+
+/* ── Fullscreen Preview Modal ── */
+#previewModal .modal-content {
+  background: transparent;
+  border: none;
+}
+#fullSlideStage {
+  aspect-ratio: 16/9;
+  width: 100%;
+  border-radius: var(--radius-2xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-2xl);
+}
+
+/* Animations */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.slide-active-content { animation: fadeIn 0.3s ease-out; }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="builder-layout">
+  
+  <!-- Sidebar: Slides Navigation -->
+  <aside class="sidebar-slides">
+    <div class="sidebar-header">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="fw-bold mb-0">Slides</h6>
+        <span id="slideCountBadge" class="badge bg-primary">0</span>
+      </div>
+      <button id="addSlideBtn" class="btn btn-sm btn-outline-primary w-100">
+        <i class="bi bi-plus-lg me-1"></i> Add New Slide
+      </button>
+    </div>
+    
+    <div id="slidesList" class="slide-items-container">
+      <!-- Generated by JS -->
+    </div>
+
+    <!-- Metadata Panel -->
+    <div class="p-4 border-top">
+      <div class="mb-3">
+        <label class="form-label small">Week Number</label>
+        <input type="number" id="weekNumberInput" class="form-control form-control-sm" value="1" min="1">
+      </div>
+      <div class="mb-0">
+        <label class="form-label small">Presentation Topic</label>
+        <input type="text" id="topicInput" class="form-control form-control-sm" placeholder="e.g. Intro to Databases">
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Editor Area -->
+  <main class="main-editor">
+    <div id="editorContent" class="editor-card slide-active-content">
+      <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 text-muted">Loading slide editor...</p>
+      </div>
+    </div>
+    <div style="height: 100px;"></div> <!-- Spacer for action bar -->
+  </main>
+
+  <!-- Right Sidebar: Live Preview -->
+  <aside class="preview-panel">
+    <h6 class="fw-bold mb-0">Live Preview</h6>
+    <div id="slidePreview" class="preview-stage">
+      <!-- Rendering of active slide -->
+    </div>
+    
+    <div class="card bg-light border-0 rounded-4 p-4 mt-auto">
+      <h6 class="fw-bold small mb-3">Theme Settings</h6>
+      <select id="themeSelector" class="form-select form-select-sm mb-3">
+        <option value="Academic Blue">Academic Blue</option>
+        <option value="Tech Teal">Tech Teal</option>
+        <option value="Science Green">Science Green</option>
+        <option value="Creative Warm">Creative Warm</option>
+        <option value="Royal Purple">Royal Purple</option>
+        <option value="Cherry Red">Cherry Red</option>
+        <option value="Minimal Gray">Minimal Gray</option>
+      </select>
+      <button id="fullPreviewBtn" class="btn btn-sm btn-dark w-100">
+        <i class="bi bi-fullscreen me-2"></i> Full Preview
+      </button>
+    </div>
+  </aside>
+
+</div>
+
+<!-- Action Bar -->
+<div class="action-bar-bottom">
+  <div class="d-flex align-items-center gap-2">
+    <a href="{% url 'lessons:lesson_list' course.pk %}" class="btn btn-outline-secondary">
+      <i class="bi bi-x-lg me-1"></i> Exit
+    </a>
+  </div>
+  <div class="d-flex gap-2">
+    <span id="autosaveMsg" class="text-muted small me-3 align-self-center fst-italic"></span>
+    <button id="saveBtn" class="btn btn-primary px-5 shadow-primary-md">
+      <i class="bi bi-cloud-check me-2"></i> <span id="saveBtnText">Save Presentation</span>
+    </button>
+  </div>
+</div>
+
+<!-- Full Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-body p-0">
+        <div id="fullSlideStage" class="preview-stage" style="font-size: 1.5rem;">
+          <!-- Rendered Slide -->
+        </div>
+        <div class="mt-3 text-center text-white">
+          <button class="btn btn-sm btn-outline-light px-4" data-bs-dismiss="modal">Close Preview</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Data Context
+const courseWeeklyPlan = {{ course.weekly_plan|safe }};
+const coursePk = {{ course.pk }};
+const planData = {% if plan %}{{ plan.ai_data|safe }}{% else %}null{% endif %};
+const planPk = {% if plan %}{{ plan.pk }}{% else %}null{% endif %};
+
+// State
+let slides = planData ? (planData.slides || []) : [
+  { title: 'Untitled Slide', layout: 'title', content: [''], notes: '' }
+];
+let activeIndex = 0;
+let lastSavedAt = null;
+
+// Initialization
+document.addEventListener('DOMContentLoaded', () => {
+  if (planData) {
+    document.getElementById('themeSelector').value = planData.theme || 'Academic Blue';
+    document.getElementById('weekNumberInput').value = planData.week || 1;
+    document.getElementById('topicInput').value = planData.title || '';
+    document.getElementById('saveBtnText').textContent = 'Update Changes';
+  }
+  
+  renderSlideList();
+  renderEditor();
+  updatePreview();
+  initDragDrop();
+});
+
+// UI Rendering
+function renderSlideList() {
+  const container = document.getElementById('slidesList');
+  container.innerHTML = '';
+  
+  slides.forEach((slide, idx) => {
+    const item = document.createElement('div');
+    item.className = `slide-item ${idx === activeIndex ? 'active' : ''}`;
+    item.dataset.index = idx;
+    item.setAttribute('data-drag-item', 'true');
+    item.onclick = () => selectSlide(idx);
+    
+    item.innerHTML = `
+      <div class="drag-handle"><i class="bi bi-grip-vertical"></i></div>
+      <div class="slide-item-num">${idx + 1}</div>
+      <div class="slide-item-preview">
+        <div class="slide-item-title">${escapeHtml(slide.title || 'Untitled Slide')}</div>
+        <div class="slide-item-type">${slide.layout}</div>
+      </div>
+      <div class="d-flex flex-column gap-1">
+        <button class="btn btn-link text-primary p-1" title="Preview Slide" onclick="previewSlide(event, ${idx})">
+          <i class="bi bi-eye"></i>
+        </button>
+        <button class="btn btn-link text-danger p-1" title="Delete Slide" onclick="deleteSlide(event, ${idx})">
+          <i class="bi bi-trash"></i>
+        </button>
+      </div>
+    `;
+    container.appendChild(item);
+  });
+  
+  document.getElementById('slideCountBadge').textContent = slides.length;
+}
+
+function selectSlide(idx) {
+  activeIndex = idx;
+  renderSlideList();
+  renderEditor();
+  updatePreview();
+}
+
+function renderEditor() {
+  const container = document.getElementById('editorContent');
+  const slide = slides[activeIndex];
+  if (!slide) return;
+
+  const layouts = ['title', 'objectives', 'content', 'section', 'summary'];
+  const layoutIcons = { title: 'easel', objectives: 'list-ol', content: 'card-text', section: 'hr', summary: 'check2-circle' };
+
+  let html = `
+    <div class="mb-4">
+      <label class="form-label">Slide Layout</label>
+      <div class="layout-grid">
+        ${layouts.map(l => `
+          <div class="layout-opt ${slide.layout === l ? 'active' : ''}" onclick="changeLayout('${l}')">
+            <i class="bi bi-${layoutIcons[l]}"></i>
+            <span>${l.charAt(0).toUpperCase() + l.slice(1)}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    
+    <div class="mb-4">
+      <label class="form-label">Slide Title</label>
+      <input type="text" class="form-control form-control-lg fw-bold" 
+             value="${escapeHtml(slide.title)}" 
+             placeholder="Enter slide title..."
+             oninput="updateSlideData('title', this.value)">
+    </div>
+
+    <div class="mb-4">
+      <label class="form-label">Content blocks</label>
+      <div id="contentBlocksArea">
+        ${renderEditorContent(slide)}
+      </div>
+      <button class="btn btn-outline-secondary w-100 mt-2" onclick="addContentBlock()">
+        <i class="bi bi-plus-lg me-1"></i> Add Block
+      </button>
+    </div>
+
+    <div class="mt-5 pt-4 border-top">
+      <label class="form-label text-muted small"><i class="bi bi-chat-left-text me-1"></i> Speaker Notes</label>
+      <textarea class="form-control" rows="3" placeholder="Notes for your presentation..."
+                oninput="updateSlideData('notes', this.value)">${escapeHtml(slide.notes || '')}</textarea>
+    </div>
+  `;
+  
+  container.innerHTML = html;
+}
+
+function renderEditorContent(slide) {
+  if (['title', 'section'].includes(slide.layout)) {
+    return `
+      <input type="text" class="form-control" placeholder="Subtitle or small text..." 
+             value="${escapeHtml(slide.content[0] || '')}"
+             oninput="updateContentItem(0, this.value)">
+    `;
+  }
+  
+  return slide.content.map((item, i) => `
+    <div class="content-block slide-active-content">
+      <button class="content-block-remove" onclick="removeContentItem(${i})"><i class="bi bi-x"></i></button>
+      <textarea class="form-control form-control-sm border-0 bg-transparent p-0" 
+                rows="${slide.layout === 'content' ? 3 : 1}" 
+                placeholder="Point description..."
+                oninput="updateContentItem(${i}, this.value)">${escapeHtml(item)}</textarea>
+    </div>
+  `).join('');
+}
+
+// State Mutation
+function updateSlideData(key, value) {
+  slides[activeIndex][key] = value;
+  if (key === 'title') {
+    // Update sidebar title immediately without re-rendering everything
+    const sidebarTitle = document.querySelector(`.slide-item[data-index="${activeIndex}"] .slide-item-title`);
+    if (sidebarTitle) sidebarTitle.textContent = value || 'Untitled Slide';
+  }
+  updatePreview();
+}
+
+function updateContentItem(idx, value) {
+  slides[activeIndex].content[idx] = value;
+  updatePreview();
+}
+
+function addContentBlock() {
+  slides[activeIndex].content.push('');
+  renderEditor();
+  updatePreview();
+}
+
+function removeContentItem(idx) {
+  slides[activeIndex].content.splice(idx, 1);
+  renderEditor();
+  updatePreview();
+}
+
+function changeLayout(newLayout) {
+  slides[activeIndex].layout = newLayout;
+  renderEditor();
+  updatePreview();
+  renderSlideList();
+}
+
+function deleteSlide(e, idx) {
+  e.stopPropagation();
+  if (slides.length <= 1) {
+    InstaUI.toast.error("Can't delete the last slide.");
+    return;
+  }
+  if (!confirm('Delete this slide?')) return;
+  
+  slides.splice(idx, 1);
+  if (activeIndex >= slides.length) activeIndex = slides.length - 1;
+  renderSlideList();
+  renderEditor();
+  updatePreview();
+}
+
+document.getElementById('addSlideBtn').onclick = () => {
+  slides.push({ title: 'New Slide', layout: 'content', content: [''], notes: '' });
+  activeIndex = slides.length - 1;
+  renderSlideList();
+  renderEditor();
+  updatePreview();
+  // Scroll to bottom of sidebar
+  const container = document.getElementById('slidesList');
+  container.scrollTop = container.scrollHeight;
+};
+
+// Preview Engine
+function updatePreview() {
+  renderToStage(document.getElementById('slidePreview'), slides[activeIndex]);
+}
+
+function renderToStage(stage, slide) {
+  if (!slide) return;
+  const theme = document.getElementById('themeSelector').value;
+  const themeGradients = {
+    'Academic Blue': 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
+    'Tech Teal': 'linear-gradient(135deg, #0d9488 0%, #14b8a6 100%)',
+    'Science Green': 'linear-gradient(135deg, #15803d 0%, #22c55e 100%)',
+    'Creative Warm': 'linear-gradient(135deg, #9f1239 0%, #e11d48 100%)',
+    'Royal Purple': 'linear-gradient(135deg, #6d28d9 0%, #8b5cf6 100%)',
+    'Cherry Red': 'linear-gradient(135deg, #be123c 0%, #f43f5e 100%)',
+    'Minimal Gray': 'linear-gradient(135deg, #334155 0%, #475569 100%)'
+  };
+  
+  stage.style.background = themeGradients[theme] || themeGradients['Academic Blue'];
+  
+  let contentHtml = '';
+  if (['title', 'section'].includes(slide.layout)) {
+    contentHtml = `
+      <h1 class="mb-1 border-0">${escapeHtml(slide.title)}</h1>
+      <p style="opacity:0.8; font-size: 0.9em;">${escapeHtml(slide.content[0] || '')}</p>
+    `;
+  } else {
+    contentHtml = `
+      <h1>${escapeHtml(slide.title)}</h1>
+      <ul>
+        ${slide.content.filter(c => c.trim()).map(c => `<li>${escapeHtml(c)}</li>`).join('')}
+      </ul>
+    `;
+  }
+  stage.innerHTML = contentHtml;
+}
+
+// Drag and Drop
+function initDragDrop() {
+  new InstaUI.DragDrop({
+    container: '#slidesList',
+    itemSelector: '.slide-item',
+    handleSelector: '.drag-handle',
+    onReorder: (newOrder) => {
+      // newOrder is array of indexes
+      const newSlides = newOrder.map(idx => slides[parseInt(idx)]);
+      // Find where current active slide moved to
+      const activeSlide = slides[activeIndex];
+      slides = newSlides;
+      activeIndex = slides.findIndex(s => s === activeSlide);
+      renderSlideList();
+    }
+  });
+}
+
+// Full Preview
+function previewSlide(e, idx) {
+  if (e) e.stopPropagation();
+  const slide = slides[idx];
+  const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+  renderToStage(document.getElementById('fullSlideStage'), slide);
+  modal.show();
+}
+
+document.getElementById('fullPreviewBtn').onclick = () => {
+  previewSlide(null, activeIndex);
+};
+
+// Save
+document.getElementById('saveBtn').onclick = async () => {
+  const btn = document.getElementById('saveBtn');
+  const txt = document.getElementById('saveBtnText');
+  
+  btn.disabled = true;
+  txt.innerHTML = 'Saving...';
+  
+  const payload = {
+    week_number: parseInt(document.getElementById('weekNumberInput').value) || 1,
+    topic: document.getElementById('topicInput').value || slides[0].title,
+    slides: slides,
+    theme: document.getElementById('themeSelector').value
+  };
+  
+  const url = planPk 
+    ? `/lessons/course/${coursePk}/lessons/${planPk}/edit/save/`
+    : `/lessons/course/${coursePk}/lessons/builder/save/`;
+  
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+      body: JSON.stringify(payload)
+    });
+    const result = await resp.json();
+    if (result.success) {
+      lastSavedAt = new Date();
+      document.getElementById('autosaveMsg').textContent = `Saved at ${lastSavedAt.toLocaleTimeString()}`;
+      InstaUI.toast.success('Changes saved successfully.');
+      if (!planPk) window.location.href = `/lessons/course/${coursePk}/lessons/${result.plan_id}/edit/`;
+    } else {
+      throw new Error(result.error);
+    }
+  } catch (err) {
+    InstaUI.toast.error('Save failed: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    txt.textContent = planPk ? 'Update Changes' : 'Save Presentation';
+  }
+};
+
+// Theme change listener
+document.getElementById('themeSelector').onchange = updatePreview;
+
+// Utils
+function escapeHtml(text) {
+  const d = document.createElement('div');
+  d.textContent = text;
+  return d.innerHTML;
+}
+
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+        }
+    }
+  }
+  return cookieValue;
+}
+</script>
+{% endblock %}

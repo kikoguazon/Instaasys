@@ -1,0 +1,261 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% block auth_content %}
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { font-family: 'Inter', system-ui, sans-serif; margin: 0; }
+
+  .auth-shell {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .auth-panel-left {
+    background: linear-gradient(150deg, #312e81 0%, #4f46e5 50%, #6d28d9 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 4rem 3.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .auth-panel-left::before {
+    content: '';
+    position: absolute;
+    width: 500px; height: 500px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.05);
+    top: -200px; right: -150px;
+  }
+  .auth-panel-left::after {
+    content: '';
+    position: absolute;
+    width: 350px; height: 350px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.04);
+    bottom: -100px; left: -100px;
+  }
+  .auth-brand {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    margin-bottom: 3.5rem;
+    position: relative;
+    z-index: 1;
+  }
+  .auth-brand-icon {
+    width: 44px; height: 44px;
+    background: rgba(255,255,255,.15);
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem;
+    color: #fff;
+  }
+  .auth-brand-name { font-size: 1rem; font-weight: 800; color: #fff; letter-spacing: .03em; }
+  .auth-brand-sub { font-size: .72rem; color: rgba(255,255,255,.65); font-weight: 400; }
+
+  .auth-left-heading {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.2;
+    letter-spacing: -.02em;
+    margin-bottom: 1rem;
+    position: relative;
+    z-index: 1;
+  }
+  .auth-left-sub {
+    font-size: .9rem;
+    color: rgba(255,255,255,.7);
+    line-height: 1.6;
+    margin-bottom: 2.5rem;
+    position: relative;
+    z-index: 1;
+  }
+  .auth-feature-list {
+    list-style: none; margin: 0; padding: 0;
+    display: flex; flex-direction: column; gap: .875rem;
+    position: relative; z-index: 1;
+  }
+  .auth-feature-list li {
+    display: flex; align-items: center; gap: .75rem;
+    font-size: .85rem; color: rgba(255,255,255,.85); font-weight: 500;
+  }
+  .auth-feature-icon {
+    width: 30px; height: 30px;
+    background: rgba(255,255,255,.12);
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .85rem; color: #c7d2fe; flex-shrink: 0;
+  }
+
+  .auth-panel-right {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem;
+    background: #f8fafc;
+    overflow-y: auto;
+  }
+  .auth-form-box {
+    width: 100%;
+    max-width: 480px;
+    padding: .5rem 0;
+  }
+  .auth-form-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: .35rem;
+    letter-spacing: -.02em;
+  }
+  .auth-form-sub { font-size: .85rem; color: #64748b; margin-bottom: 2rem; }
+
+  .auth-form-box .form-label {
+    font-size: .78rem; font-weight: 600; color: #475569; margin-bottom: .3rem;
+  }
+  .auth-form-box .form-control,
+  .auth-form-box .form-select {
+    border-radius: 9px;
+    border: 1.5px solid #e2e8f0;
+    padding: .65rem .9rem;
+    font-size: .875rem;
+    background: #fff;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .auth-form-box .form-control:focus,
+  .auth-form-box .form-select:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79,70,229,.1);
+    background: #fff;
+  }
+  .btn-auth {
+    width: 100%;
+    padding: .75rem;
+    border-radius: 9px;
+    font-size: .875rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #4f46e5, #6d28d9);
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    transition: all .2s;
+    margin-top: 1rem;
+    letter-spacing: .01em;
+  }
+  .btn-auth:hover {
+    opacity: .92;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(79,70,229,.35);
+  }
+
+  /* Style crispy form submit buttons */
+  .auth-form-box .btn-primary {
+    width: 100%;
+    padding: .75rem;
+    border-radius: 9px;
+    font-size: .875rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #4f46e5, #6d28d9);
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    transition: all .2s;
+    margin-top: 1rem;
+    letter-spacing: .01em;
+  }
+  .auth-form-box .btn-primary:hover {
+    opacity: .92;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(79,70,229,.35);
+    color: #fff;
+  }
+
+  .auth-switch {
+    text-align: center;
+    font-size: .83rem;
+    color: #64748b;
+    margin-top: 1.5rem;
+  }
+  .auth-switch a { color: #4f46e5; font-weight: 700; text-decoration: none; }
+  .auth-switch a:hover { text-decoration: underline; }
+
+  .auth-back { text-align: center; margin-top: 1rem; }
+  .auth-back a {
+    font-size: .78rem; color: #94a3b8; text-decoration: none;
+    display: inline-flex; align-items: center; gap: .35rem; transition: color .15s;
+  }
+  .auth-back a:hover { color: #64748b; }
+
+  @media (max-width: 768px) {
+    .auth-shell { grid-template-columns: 1fr; }
+    .auth-panel-left { display: none; }
+    .auth-panel-right { padding: 2rem 1.5rem; }
+  }
+</style>
+
+<div class="auth-shell">
+  <!-- Left -->
+  <div class="auth-panel-left">
+    <div class="auth-brand">
+      <div class="auth-brand-icon">
+        <img src="{% static 'images/favicon.png' %}" alt="INSTAASYS" style="width:100%;height:100%;object-fit:contain;border-radius:12px;">
+      </div>
+      <div>
+        <div class="auth-brand-name">INSTAASYS</div>
+        <div class="auth-brand-sub">AI-Assisted Academic System</div>
+      </div>
+    </div>
+
+    <h1 class="auth-left-heading">Start teaching<br>smarter today</h1>
+    <p class="auth-left-sub">Create your free account and gain access to all AI-powered tools designed for modern educators.</p>
+
+    <ul class="auth-feature-list">
+      <li>
+        <div class="auth-feature-icon"><i class="bi bi-file-earmark-arrow-up"></i></div>
+        Upload syllabus, get structured curriculum
+      </li>
+      <li>
+        <div class="auth-feature-icon"><i class="bi bi-magic"></i></div>
+        AI-generated lessons in under 30 seconds
+      </li>
+      <li>
+        <div class="auth-feature-icon"><i class="bi bi-people"></i></div>
+        Enroll students and manage grades
+      </li>
+      <li>
+        <div class="auth-feature-icon"><i class="bi bi-download"></i></div>
+        Export PPTX, Excel, and grade sheets
+      </li>
+    </ul>
+  </div>
+
+  <!-- Right -->
+  <div class="auth-panel-right">
+    <div class="auth-form-box">
+      <h2 class="auth-form-title">Create account</h2>
+      <p class="auth-form-sub">Fill in your details to get started — it's free</p>
+
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger" style="border-radius:9px;font-size:.83rem;padding:.65rem .9rem;margin-bottom:1rem;">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% crispy form %}
+      </form>
+
+      <div class="auth-back">
+        <a href="{% url 'accounts:landing' %}"><i class="bi bi-arrow-left"></i> Back to home</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

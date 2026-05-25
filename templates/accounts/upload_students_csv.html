@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% block title %}Upload Students — INSTAASYS{% endblock %}
+{% block page_title %}Upload Students{% endblock %}
+{% block content %}
+
+<div style="max-width:680px;">
+
+  <!-- Upload card -->
+  <div class="page-card mb-4">
+    <h6 style="font-size:.875rem;font-weight:700;color:#0f172a;margin-bottom:.25rem;">
+      Bulk Create Student Accounts
+    </h6>
+    <p style="font-size:.82rem;color:#64748b;margin-bottom:1.5rem;">
+      Upload a CSV file to create multiple student accounts at once.
+      If a student ID already exists, the account is linked to your roster — no duplicate is created.
+    </p>
+
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div style="border:2px dashed #e2e8f0;border-radius:12px;padding:2rem;text-align:center;background:#f8fafc;margin-bottom:1.25rem;"
+           id="drop-area">
+        <div style="width:48px;height:48px;border-radius:12px;background:#eef2ff;display:flex;align-items:center;justify-content:center;margin:0 auto .875rem;font-size:1.4rem;color:#4f46e5;">
+          <i class="bi bi-filetype-csv"></i>
+        </div>
+        <div style="font-size:.875rem;font-weight:600;color:#0f172a;margin-bottom:.35rem;">
+          Choose a CSV file
+        </div>
+        <div style="font-size:.78rem;color:#94a3b8;margin-bottom:1rem;">Only .csv files are accepted</div>
+        <input type="file" name="csv_file" id="csv_file" accept=".csv" required
+               style="display:none;" onchange="showFileName(this)">
+        <label for="csv_file" class="btn btn-outline-primary btn-sm" style="cursor:pointer;">
+          <i class="bi bi-upload me-1"></i> Browse file
+        </label>
+        <div id="file-name" style="font-size:.78rem;color:#4f46e5;margin-top:.6rem;font-weight:600;"></div>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100">
+        <i class="bi bi-people-fill me-1"></i> Upload &amp; Create Accounts
+      </button>
+    </form>
+  </div>
+
+  <!-- Format guide -->
+  <div class="page-card mb-4">
+    <h6 style="font-size:.8rem;font-weight:700;color:#0f172a;margin-bottom:.875rem;">
+      <i class="bi bi-info-circle me-1 text-primary"></i> CSV Format
+    </h6>
+    <div style="overflow-x:auto;">
+      <table class="table mb-0" style="font-size:.78rem;">
+        <thead>
+          <tr>
+            <th>Column</th>
+            <th>Required</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code>first_name</code></td><td><span style="color:#10b981;font-weight:700;">Yes</span></td><td>Student's first name</td></tr>
+          <tr><td><code>last_name</code></td><td><span style="color:#10b981;font-weight:700;">Yes</span></td><td>Student's last name</td></tr>
+          <tr><td><code>username</code></td><td><span style="color:#10b981;font-weight:700;">Yes</span></td><td>Unique login username</td></tr>
+          <tr><td><code>email</code></td><td><span style="color:#10b981;font-weight:700;">Yes</span></td><td>Student's email address</td></tr>
+          <tr><td><code>student_id</code></td><td><span style="color:#94a3b8;">No</span></td><td>Used as initial password (if omitted, username is used)</td></tr>
+          <tr><td><code>department</code></td><td><span style="color:#94a3b8;">No</span></td><td>Department / program</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-top:1rem;padding:.75rem 1rem;background:#f8fafc;border-radius:8px;font-size:.75rem;color:#64748b;font-family:monospace;">
+      first_name,last_name,username,email,student_id,department<br>
+      Juan,Dela Cruz,jdelacruz,juan@email.com,2024-0001,BSIT<br>
+      Maria,Santos,msantos,maria@email.com,2024-0002,BSCS
+    </div>
+  </div>
+
+  <!-- Results -->
+  {% if results %}
+  <div class="page-card">
+    <h6 style="font-size:.875rem;font-weight:700;color:#0f172a;margin-bottom:1rem;">
+      Upload Results
+    </h6>
+
+    <!-- Summary row -->
+    <div class="row g-3 mb-4">
+      <div class="col-4">
+        <div style="border-radius:10px;padding:1rem;background:#f0fdf4;text-align:center;">
+          <div style="font-size:1.6rem;font-weight:800;color:#10b981;">{{ results.created|length }}</div>
+          <div style="font-size:.72rem;color:#166534;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Created</div>
+        </div>
+      </div>
+      <div class="col-4">
+        <div style="border-radius:10px;padding:1rem;background:#eff6ff;text-align:center;">
+          <div style="font-size:1.6rem;font-weight:800;color:#2563eb;">{{ results.linked|length }}</div>
+          <div style="font-size:.72rem;color:#1e40af;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Linked</div>
+        </div>
+      </div>
+      <div class="col-4">
+        <div style="border-radius:10px;padding:1rem;background:#fef2f2;text-align:center;">
+          <div style="font-size:1.6rem;font-weight:800;color:#ef4444;">{{ results.errors|length }}</div>
+          <div style="font-size:.72rem;color:#991b1b;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Errors</div>
+        </div>
+      </div>
+    </div>
+
+    {% if results.created %}
+    <div style="margin-bottom:1rem;">
+      <div style="font-size:.78rem;font-weight:700;color:#0f172a;margin-bottom:.5rem;">
+        <i class="bi bi-check-circle-fill text-success me-1"></i> Created accounts
+      </div>
+      <div style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
+        {% for s in results.created %}
+        <div style="display:flex;align-items:center;gap:.75rem;padding:.5rem .875rem;{% if not forloop.last %}border-bottom:1px solid #f1f5f9;{% endif %}">
+          <div style="width:30px;height:30px;border-radius:50%;background:#dcfce7;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:#166534;flex-shrink:0;">
+            {{ s.name|slice:":1" }}
+          </div>
+          <div>
+            <div style="font-size:.82rem;font-weight:600;color:#0f172a;">{{ s.name }}</div>
+            <div style="font-size:.72rem;color:#94a3b8;">@{{ s.username }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if results.linked %}
+    <div style="margin-bottom:1rem;">
+      <div style="font-size:.78rem;font-weight:700;color:#0f172a;margin-bottom:.5rem;">
+        <i class="bi bi-link-45deg text-primary me-1"></i>
+        Linked to your roster (account already existed)
+      </div>
+      <div style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
+        {% for s in results.linked %}
+        <div style="display:flex;align-items:center;gap:.75rem;padding:.5rem .875rem;{% if not forloop.last %}border-bottom:1px solid #f1f5f9;{% endif %}font-size:.82rem;color:#374151;">
+          <i class="bi bi-person-check text-primary"></i>
+          {{ s.name }} <span style="color:#94a3b8;">(@{{ s.username }})</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if results.errors %}
+    <div>
+      <div style="font-size:.78rem;font-weight:700;color:#0f172a;margin-bottom:.5rem;">
+        <i class="bi bi-x-circle-fill text-danger me-1"></i> Errors
+      </div>
+      <div style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
+        {% for e in results.errors %}
+        <div style="display:flex;align-items:center;gap:.75rem;padding:.5rem .875rem;{% if not forloop.last %}border-bottom:1px solid #f1f5f9;{% endif %}font-size:.82rem;color:#64748b;">
+          <i class="bi bi-x-circle text-danger"></i>
+          Row {{ e.row }}: {{ e.reason }}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+function showFileName(input) {
+  document.getElementById('file-name').textContent = input.files[0] ? input.files[0].name : '';
+}
+</script>
+{% endblock %}

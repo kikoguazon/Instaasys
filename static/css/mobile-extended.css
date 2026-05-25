@@ -1,0 +1,773 @@
+/*
+ * ══════════════════════════════════════════════════════════
+ *  INSTAASYS  ·  Mobile Extended Optimizations
+ *  Assessments, Presentations, E-Class Record, TOS
+ *  Depends on: tokens.css, layout.css, components.css, mobile.css
+ * ══════════════════════════════════════════════════════════
+ */
+
+/* ─── ASSESSMENTS MOBILE OPTIMIZATION ────────────────────── */
+@media (max-width: 768px) {
+  /* Question list stats */
+  .row.g-3.mb-4 {
+    gap: .75rem !important;
+  }
+  
+  .row.g-3.mb-4 .col-sm-3 {
+    width: calc(50% - .375rem);
+    margin-bottom: 0;
+  }
+  
+  .row.g-3.mb-4 .col-sm-3:last-child {
+    width: 100%;
+  }
+  
+  .row.g-3.mb-4 .col-sm-3:last-child .btn {
+    width: 100%;
+    margin-bottom: .5rem;
+  }
+  
+  .row.g-3.mb-4 .col-sm-3:last-child .d-flex {
+    flex-direction: column;
+    gap: .5rem !important;
+  }
+  
+  /* Filters */
+  .page-card.mb-3 .row.g-2 {
+    gap: .75rem !important;
+  }
+  
+  .page-card.mb-3 .col-md-3 {
+    width: 100%;
+  }
+  
+  .page-card.mb-3 .form-label {
+    font-size: .75rem !important;
+    margin-bottom: .25rem;
+  }
+  
+  .page-card.mb-3 .form-select-sm,
+  .page-card.mb-3 .form-control-sm {
+    font-size: .8rem;
+    padding: .45rem .65rem;
+  }
+  
+  .page-card.mb-3 .d-flex.gap-2 {
+    flex-direction: column;
+    gap: .5rem !important;
+  }
+  
+  .page-card.mb-3 .btn-sm {
+    width: 100%;
+  }
+  
+  /* Question accordion */
+  .accordion-item {
+    margin-bottom: .75rem !important;
+  }
+  
+  .accordion-button {
+    font-size: .8rem !important;
+    padding: .75rem !important;
+    padding-right: 4rem !important;
+  }
+  
+  .accordion-button .d-flex {
+    flex-wrap: wrap;
+    gap: .35rem !important;
+  }
+  
+  .accordion-button .badge {
+    font-size: .65rem !important;
+    padding: .15rem .4rem !important;
+  }
+  
+  .accordion-button span {
+    font-size: .8rem !important;
+  }
+  
+  /* Delete button in accordion header */
+  .accordion-header .btn-sm {
+    right: 2rem !important;
+    font-size: .75rem !important;
+    padding: .25rem .5rem !important;
+  }
+  
+  /* Accordion body */
+  .accordion-body {
+    padding: .75rem !important;
+    font-size: .8rem !important;
+  }
+  
+  .accordion-body p {
+    font-size: .85rem !important;
+  }
+  
+  /* Choice items */
+  .choice-item {
+    padding: .65rem !important;
+    font-size: .8rem !important;
+    margin-bottom: .5rem;
+  }
+  
+  .choice-letter {
+    font-size: .75rem !important;
+  }
+  
+  .choice-text {
+    font-size: .8rem !important;
+  }
+  
+  /* Answer/explanation boxes */
+  .accordion-body > div[class*="p-2"] {
+    padding: .65rem !important;
+    font-size: .75rem !important;
+    margin-bottom: .5rem !important;
+  }
+  
+  /* Action buttons */
+  .accordion-body .d-flex.gap-2 {
+    flex-wrap: wrap;
+    gap: .5rem !important;
+  }
+  
+  .accordion-body .btn-sm {
+    font-size: .75rem !important;
+    padding: .35rem .6rem !important;
+    flex: 1;
+    min-width: calc(33.333% - .35rem);
+  }
+  
+  /* Question set list */
+  .qs-search-bar {
+    padding: .65rem 1rem !important;
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: .5rem !important;
+  }
+  
+  .qs-search-bar .search-wrap {
+    width: 100% !important;
+    min-width: 100% !important;
+  }
+  
+  .qs-search-bar #qsCount {
+    text-align: center;
+  }
+  
+  /* Question set table */
+  .page-card.p-0 .table {
+    font-size: .75rem !important;
+  }
+  
+  .page-card.p-0 .table thead th {
+    font-size: .7rem !important;
+    padding: .6rem .5rem !important;
+  }
+  
+  .page-card.p-0 .table tbody td {
+    padding: .65rem .5rem !important;
+  }
+  
+  /* Hide some columns on mobile */
+  .page-card.p-0 .table thead th:nth-child(3),
+  .page-card.p-0 .table tbody td:nth-child(3),
+  .page-card.p-0 .table thead th:nth-child(4),
+  .page-card.p-0 .table tbody td:nth-child(4) {
+    display: none;
+  }
+  
+  /* Question set detail header */
+  .d-flex.justify-content-between.align-items-center {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: .75rem;
+  }
+  
+  .d-flex.justify-content-between.align-items-center h4 {
+    font-size: 1.15rem !important;
+  }
+  
+  .d-flex.justify-content-between.align-items-center .d-flex.gap-2 {
+    flex-wrap: wrap;
+  }
+  
+  .d-flex.justify-content-between.align-items-center .btn-sm {
+    flex: 1;
+    min-width: calc(50% - .25rem);
+    font-size: .75rem !important;
+  }
+  
+  .d-flex.justify-content-between.align-items-center .btn-group {
+    width: 100%;
+  }
+  
+  .d-flex.justify-content-between.align-items-center .btn-group .btn {
+    font-size: .75rem !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .row.g-3.mb-4 .col-sm-3 {
+    width: 100%;
+  }
+  
+  .accordion-button {
+    font-size: .75rem !important;
+    padding: .65rem !important;
+    padding-right: 3.5rem !important;
+  }
+  
+  .accordion-button .badge {
+    font-size: .6rem !important;
+  }
+  
+  .accordion-body .btn-sm {
+    min-width: 100%;
+  }
+  
+  .d-flex.justify-content-between.align-items-center .btn-sm {
+    min-width: 100%;
+  }
+}
+
+/* ─── PRESENTATIONS MOBILE OPTIMIZATION ──────────────────── */
+@media (max-width: 768px) {
+  /* Lesson list header */
+  .container-fluid .d-flex.justify-content-between {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: .75rem;
+  }
+  
+  .container-fluid h5.h3 {
+    font-size: 1.25rem !important;
+  }
+  
+  .container-fluid .d-flex.gap-2.flex-wrap {
+    flex-direction: column;
+    gap: .5rem !important;
+  }
+  
+  .container-fluid .btn-sm {
+    width: 100%;
+  }
+  
+  /* Search & filter card */
+  .card.border-0.shadow-sm .card-body {
+    padding: 1rem !important;
+  }
+  
+  .card.border-0.shadow-sm .row.g-3 {
+    gap: .75rem !important;
+  }
+  
+  .card.border-0.shadow-sm .col-md-7,
+  .card.border-0.shadow-sm .col-md-5 {
+    width: 100%;
+  }
+  
+  .card.border-0.shadow-sm .input-group-text {
+    padding: .5rem .75rem;
+  }
+  
+  .card.border-0.shadow-sm .form-control,
+  .card.border-0.shadow-sm .form-select {
+    font-size: .85rem;
+    padding: .5rem .75rem;
+  }
+  
+  /* Lesson grid */
+  #lessonGrid .col-md-6,
+  #lessonGrid .col-lg-4 {
+    width: 100%;
+  }
+  
+  /* Lesson card */
+  .lesson-card .card-body {
+    padding: 1rem !important;
+  }
+  
+  .lesson-card .badge {
+    font-size: .7rem !important;
+    padding: .35rem .65rem !important;
+  }
+  
+  .lesson-card .card-title {
+    font-size: 1rem !important;
+  }
+  
+  .lesson-card .card-text {
+    font-size: .8rem !important;
+  }
+  
+  .lesson-card .d-flex.gap-2 {
+    flex-direction: column;
+    gap: .5rem !important;
+  }
+  
+  .lesson-card .btn-sm {
+    width: 100%;
+  }
+  
+  /* Empty state */
+  #lessonEmpty .card-body {
+    padding: 2rem 1rem !important;
+  }
+  
+  #lessonEmpty .display-1 {
+    font-size: 3rem !important;
+  }
+  
+  #lessonEmpty h5 {
+    font-size: 1.1rem !important;
+  }
+  
+  #lessonEmpty .card-text {
+    font-size: .85rem !important;
+  }
+  
+  #lessonEmpty .d-flex.gap-2 {
+    flex-direction: column;
+    gap: .5rem !important;
+  }
+  
+  #lessonEmpty .btn {
+    width: 100%;
+  }
+}
+
+/* ─── E-CLASS RECORD MOBILE OPTIMIZATION ─────────────────── */
+@media (max-width: 1024px) {
+  /* Make e-class record horizontally scrollable */
+  .eclass-main {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -1rem;
+    padding: 0 1rem;
+  }
+  
+  .ec-table {
+    min-width: 1200px;
+    font-size: .65rem !important;
+  }
+  
+  .ec-table th,
+  .ec-table td {
+    padding: 1px 3px !important;
+  }
+  
+  .ec-table input {
+    font-size: .65rem !important;
+    min-width: 24px !important;
+  }
+  
+  /* Stats grid */
+  .eclass-stats {
+    grid-template-columns: 1fr 1fr;
+    gap: .75rem;
+  }
+  
+  .stat-box {
+    font-size: .7rem !important;
+  }
+  
+  .stat-box .stat-header {
+    font-size: .7rem !important;
+    padding: 2px 6px !important;
+  }
+  
+  .stat-box table td {
+    padding: 2px 4px !important;
+    font-size: .7rem !important;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Tabs */
+  .ec-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    flex-wrap: nowrap;
+  }
+  
+  .ec-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .ec-tab {
+    font-size: .7rem !important;
+    padding: .4rem 1rem !important;
+    white-space: nowrap;
+  }
+  
+  /* Toolbar */
+  .ec-toolbar {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: .5rem;
+  }
+  
+  .ec-toolbar .btn-group-left,
+  .ec-toolbar .btn-group-right {
+    width: 100%;
+    flex-direction: column;
+    gap: .5rem !important;
+  }
+  
+  .ec-toolbar .btn-sm {
+    width: 100%;
+    font-size: .75rem !important;
+  }
+  
+  /* E-class table */
+  .ec-table {
+    font-size: .6rem !important;
+  }
+  
+  .ec-table th,
+  .ec-table td {
+    padding: 1px 2px !important;
+  }
+  
+  .ec-table .row-section th {
+    font-size: .65rem !important;
+    padding: 3px 4px !important;
+  }
+  
+  .ec-table .row-subhdr th {
+    font-size: .6rem !important;
+  }
+  
+  .ec-table .row-hps td {
+    font-size: .6rem !important;
+  }
+  
+  .ec-table tbody.students td.td-name {
+    min-width: 120px !important;
+    font-size: .65rem !important;
+  }
+  
+  .ec-table input {
+    font-size: .6rem !important;
+    min-width: 20px !important;
+  }
+  
+  /* Stats */
+  .eclass-stats {
+    grid-template-columns: 1fr;
+  }
+  
+  /* Column editor overlay */
+  #colEditorOverlay {
+    left: 0 !important;
+  }
+  
+  #colEditorOverlay .editor-panels {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  #colEditorOverlay .editor-body {
+    padding: 1rem !important;
+  }
+  
+  #colEditorOverlay .editor-col-table {
+    font-size: .75rem !important;
+  }
+  
+  #colEditorOverlay .editor-col-table th,
+  #colEditorOverlay .editor-col-table td {
+    padding: 4px 6px !important;
+  }
+  
+  #colEditorOverlay .editor-footer {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+  
+  #colEditorOverlay .editor-footer .btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 576px) {
+  .ec-table {
+    min-width: 1000px;
+  }
+  
+  .eclass-main {
+    margin: 0 -.75rem;
+    padding: 0 .75rem;
+  }
+}
+
+/* ─── TOS MOBILE OPTIMIZATION ────────────────────────────── */
+@media (max-width: 768px) {
+  /* TOS list header */
+  .d-flex.justify-content-end.mb-4 {
+    justify-content: stretch !important;
+  }
+  
+  .d-flex.justify-content-end.mb-4 .btn {
+    width: 100%;
+  }
+  
+  /* TOS table */
+  .table.page-card {
+    font-size: .75rem !important;
+  }
+  
+  .table.page-card thead th {
+    font-size: .7rem !important;
+    padding: .6rem .5rem !important;
+  }
+  
+  .table.page-card tbody td {
+    padding: .65rem .5rem !important;
+  }
+  
+  /* Hide items column on mobile */
+  .table.page-card thead th:nth-child(2),
+  .table.page-card tbody td:nth-child(2) {
+    display: none;
+  }
+  
+  /* Action buttons */
+  .table.page-card tbody td:last-child {
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+  }
+  
+  .table.page-card .btn-sm {
+    width: 100%;
+    font-size: .7rem !important;
+    padding: .3rem .5rem !important;
+  }
+  
+  /* TOS detail */
+  .d-flex.gap-2.mb-4 {
+    flex-direction: column;
+    gap: .5rem !important;
+  }
+  
+  .d-flex.gap-2.mb-4 .btn {
+    width: 100%;
+  }
+  
+  /* TOS table detail */
+  .table-responsive {
+    margin: 0 -1rem;
+    padding: 0 1rem;
+  }
+  
+  .table.table-sm.table-bordered {
+    font-size: .7rem !important;
+    min-width: 800px;
+  }
+  
+  .table.table-sm.table-bordered th,
+  .table.table-sm.table-bordered td {
+    padding: .4rem .3rem !important;
+  }
+  
+  .table.table-sm.table-bordered thead th {
+    font-size: .65rem !important;
+  }
+  
+  /* Empty/loading states */
+  .page-card.text-center.py-5 {
+    padding: 2rem 1rem !important;
+  }
+  
+  .page-card.text-center.py-5 h6 {
+    font-size: 1rem !important;
+  }
+  
+  .page-card.text-center.py-5 p {
+    font-size: .85rem !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .table.table-sm.table-bordered {
+    font-size: .65rem !important;
+    min-width: 700px;
+  }
+  
+  .table.table-sm.table-bordered th,
+  .table.table-sm.table-bordered td {
+    padding: .3rem .25rem !important;
+  }
+}
+
+/* ─── MODAL MOBILE OPTIMIZATION ──────────────────────────── */
+@media (max-width: 768px) {
+  .modal-dialog {
+    margin: .5rem !important;
+    max-width: calc(100% - 1rem) !important;
+  }
+  
+  .modal-header {
+    padding: .875rem 1rem !important;
+  }
+  
+  .modal-header .modal-title {
+    font-size: .95rem !important;
+  }
+  
+  .modal-body {
+    padding: 1rem !important;
+    font-size: .85rem !important;
+  }
+  
+  .modal-body p {
+    font-size: .85rem !important;
+  }
+  
+  .modal-body .small {
+    font-size: .75rem !important;
+  }
+  
+  .modal-footer {
+    padding: .75rem 1rem !important;
+    flex-direction: column;
+    gap: .5rem !important;
+  }
+  
+  .modal-footer .btn {
+    width: 100%;
+    margin: 0 !important;
+  }
+}
+
+/* ─── DROPDOWN MENU MOBILE OPTIMIZATION ──────────────────── */
+@media (max-width: 768px) {
+  .dropdown-menu {
+    font-size: .8rem !important;
+    min-width: 100% !important;
+  }
+  
+  .dropdown-item {
+    padding: .65rem 1rem !important;
+  }
+  
+  .dropdown-item i {
+    font-size: .9rem !important;
+  }
+}
+
+/* ─── BUTTON GROUP MOBILE OPTIMIZATION ───────────────────── */
+@media (max-width: 576px) {
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .btn-group .btn {
+    width: 100%;
+    border-radius: var(--radius-md) !important;
+    margin-bottom: .35rem;
+  }
+  
+  .btn-group .btn:last-child {
+    margin-bottom: 0;
+  }
+  
+  .btn-group .dropdown-toggle-split {
+    border-left: 1px solid rgba(255, 255, 255, 0.2) !important;
+  }
+}
+
+/* ─── TOUCH-FRIENDLY IMPROVEMENTS ────────────────────────── */
+@media (hover: none) and (pointer: coarse) {
+  /* Ensure all interactive elements in these sections are touch-friendly */
+  .accordion-button,
+  .lesson-card .btn,
+  .ec-table input,
+  .table .btn,
+  .modal .btn,
+  .dropdown-item {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Larger tap targets for table actions */
+  .table .btn-sm {
+    min-height: 40px;
+    padding: .4rem .75rem !important;
+  }
+  
+  /* Larger inputs in e-class record */
+  .ec-table input[type="number"],
+  .ec-table input[type="text"] {
+    min-height: 32px;
+    font-size: .7rem !important;
+  }
+}
+
+/* ─── LANDSCAPE MOBILE OPTIMIZATION ──────────────────────── */
+@media (max-width: 768px) and (orientation: landscape) {
+  /* Reduce vertical padding in landscape */
+  .page-card {
+    padding: .75rem !important;
+  }
+  
+  .accordion-body {
+    padding: .65rem !important;
+  }
+  
+  .modal-body {
+    padding: .875rem !important;
+  }
+  
+  /* E-class record in landscape */
+  .eclass-layout {
+    gap: 1rem;
+  }
+  
+  .ec-toolbar {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  
+  .ec-toolbar .btn-group-left,
+  .ec-toolbar .btn-group-right {
+    flex-direction: row;
+    width: auto;
+  }
+}
+
+/* ─── PRINT STYLES ───────────────────────────────────────── */
+@media print {
+  .ec-toolbar,
+  .btn,
+  .badge,
+  .modal,
+  .dropdown-menu {
+    display: none !important;
+  }
+  
+  .ec-table {
+    font-size: 8pt !important;
+  }
+  
+  .page-card {
+    border: 1px solid #000;
+    box-shadow: none;
+    page-break-inside: avoid;
+  }
+  
+  .table {
+    page-break-inside: auto;
+  }
+  
+  .table tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+}

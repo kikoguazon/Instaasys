@@ -1,0 +1,284 @@
+/*
+ * ══════════════════════════════════════════════════════════
+ *  INSTAASYS  ·  Design Tokens
+ *  Single source of truth for every design value.
+ *  Import order: tokens → layout → components → utilities
+ * ══════════════════════════════════════════════════════════
+ */
+
+/* ── Light-mode defaults ──────────────────────────────────── */
+:root {
+
+  /* ── Brand / Palette ─────────────────────────────────── */
+  --color-primary:        #4f46e5;
+  --color-primary-dark:   #3730a3;
+  --color-primary-light:  #eef2ff;
+  --color-primary-rgb:    79, 70, 229;
+
+  --color-accent:         #06b6d4;
+  --color-accent-dark:    #0891b2;
+
+  --color-success:        #10b981;
+  --color-success-dark:   #059669;
+  --color-success-light:  #dcfce7;
+  --color-success-text:   #166534;
+
+  --color-warning:        #f59e0b;
+  --color-warning-light:  #fef3c7;
+  --color-warning-text:   #92400e;
+
+  --color-danger:         #ef4444;
+  --color-danger-dark:    #dc2626;
+  --color-danger-light:   #fef2f2;
+  --color-danger-text:    #991b1b;
+
+  --color-info:           #3b82f6;
+  --color-info-dark:      #2563eb;
+  --color-info-light:     #dbeafe;
+  --color-info-text:      #1e40af;
+
+  --color-purple-light:   #ede9fe;
+  --color-purple-text:    #5b21b6;
+
+  /* ── Neutral Scale ────────────────────────────────────── */
+  --color-white:          #ffffff;
+  --color-slate-50:       #f8fafc;
+  --color-slate-100:      #f1f5f9;
+  --color-slate-200:      #e2e8f0;
+  --color-slate-300:      #cbd5e1;
+  --color-slate-400:      #94a3b8;
+  --color-slate-500:      #64748b;
+  --color-slate-600:      #475569;
+  --color-slate-700:      #334155;
+  --color-slate-800:      #1e293b;
+  --color-slate-900:      #0f172a;
+
+  /* ── Semantic aliases (used by components) ────────────── */
+  --primary:              var(--color-primary);
+  --primary-dark:         var(--color-primary-dark);
+  --primary-light:        var(--color-primary-light);
+  --accent:               var(--color-accent);
+  --success:              var(--color-success);
+  --warning:              var(--color-warning);
+  --danger:               var(--color-danger);
+
+  --dark:                 var(--color-slate-900);
+  --text:                 var(--color-slate-800);
+  --text-muted:           var(--color-slate-500);
+  --border:               var(--color-slate-200);
+  --bg:                   var(--color-slate-100);
+  --card-bg:              var(--color-white);
+
+  /* ── AI-Ready Semantic Design Tokens ──────────────────– */
+  /* These tokens communicate intent to AI systems (content generation, code suggestions) */
+
+  /* Surface tokens: Backgrounds for different elevation levels */
+  --surface-primary:      var(--color-white);           /* Main content area background */
+  --surface-secondary:    var(--color-slate-100);       /* Secondary/grouped surfaces */
+  --surface-tertiary:     var(--color-slate-50);        /* Subtle backgrounds */
+  --surface-elevated:     var(--color-slate-50);        /* Elevated cards, modals */
+  --surface-brand:        var(--color-primary-light);   /* Brand-colored backgrounds */
+  --surface-inverted:     var(--color-slate-900);       /* Dark/inverted (e.g., navbar) */
+
+  /* Text tokens: For different text roles */
+  --text-body:            var(--color-slate-800);       /* Primary body text */
+  --text-body-muted:      var(--color-slate-500);       /* Secondary text, timestamps */
+  --text-on-brand:        var(--color-primary);         /* Text on brand backgrounds */
+  --text-on-primary:      var(--color-white);           /* Text on primary interactive */
+  --text-interactive:     var(--color-primary);         /* Links, interactive text */
+  --text-disabled:        var(--color-slate-400);       /* Disabled state text */
+  --text-inverse:         var(--color-white);           /* Text on dark backgrounds */
+
+  /* Interactive tokens: Clickable, input, button elements */
+  --interactive-primary:              var(--color-primary);       /* Main CTA buttons */
+  --interactive-primary-hover:        var(--color-primary-dark);  /* Hover state */
+  --interactive-primary-active:       #2d1b69;                    /* Active/pressed state */
+  --interactive-primary-disabled:     var(--color-slate-300);     /* Disabled button */
+  --interactive-secondary:            var(--color-accent);        /* Secondary interactive */
+  --interactive-secondary-hover:      var(--color-accent-dark);
+  --interactive-danger:               var(--color-danger);        /* Destructive actions */
+  --interactive-danger-hover:         var(--color-danger-dark);
+
+  /* Feedback tokens: Status and state communication */
+  --feedback-success:                 var(--color-success);       /* Success color */
+  --feedback-success-text:            var(--color-success-text);  /* Text on success bg */
+  --feedback-success-bg:              var(--color-success-light); /* Success background */
+  --feedback-error:                   var(--color-danger);        /* Error color */
+  --feedback-error-text:              var(--color-danger-text);   /* Text on error bg */
+  --feedback-error-bg:                var(--color-danger-light);  /* Error background */
+  --feedback-warning:                 var(--color-warning);       /* Warning color */
+  --feedback-warning-text:            var(--color-warning-text);  /* Text on warning bg */
+  --feedback-warning-bg:              var(--color-warning-light); /* Warning background */
+  --feedback-info:                    var(--color-info);          /* Info color */
+  --feedback-info-text:               var(--color-info-text);     /* Text on info bg */
+  --feedback-info-bg:                 var(--color-info-light);    /* Info background */
+
+  /* Border & divider tokens */
+  --border-subtle:        var(--color-slate-200);       /* Subtle borders, dividers */
+  --border-muted:         var(--color-slate-300);       /* Standard borders */
+  --border-strong:        var(--color-slate-400);       /* Prominent borders */
+  --divider-subtle:       var(--color-slate-100);       /* Very subtle dividers */
+
+  /* Elevation & shadow tokens */
+  --shadow-low:           var(--shadow-xs);             /* Minimal elevation */
+  --shadow-medium:        var(--shadow-md);             /* Standard elevation */
+  --shadow-high:          var(--shadow-lg);             /* High elevation (modals) */
+  --shadow-brand-low:     var(--shadow-primary-sm);     /* Brand accent shadows */
+  --shadow-brand-medium:  var(--shadow-primary-md);
+  --shadow-brand-high:    var(--shadow-primary-lg);
+
+  /* ── Sidebar ──────────────────────────────────────────── */
+  --sidebar-w:            256px;
+  --sidebar-bg:           #1e1b4b;
+  --sidebar-active:       rgba(99,102,241,.18);
+  --sidebar-hover:        rgba(255,255,255,.06);
+  --sidebar-text:         #a5b4fc;
+  --sidebar-text-active:  #ffffff;
+  --sidebar-sub-text:     #818cf8;
+  --sidebar-brand-sub:    #818cf8;
+  --sidebar-border:       rgba(255,255,255,.07);
+  --sidebar-indicator:    #6366f1;
+
+  /* ── Typography Scale ─────────────────────────────────── */
+  --font-family:          'Inter', system-ui, -apple-system, sans-serif;
+  --font-size-base:       0.9rem;
+
+  --text-2xs:   0.65rem;   /* 10.4px — tiny labels, nav section headers */
+  --text-xs:    0.7rem;    /* 11.2px — captions, timestamps, badges      */
+  --text-sm:    0.75rem;   /* 12px   — table headers, secondary meta      */
+  --text-sm2:   0.78rem;   /* 12.5px — sub-nav, form helper text         */
+  --text-md:    0.8rem;    /* 12.8px — nav links, labels, button sm       */
+  --text-md2:   0.82rem;   /* 13.1px — topbar username, sidebar links     */
+  --text-base:  0.875rem;  /* 14px   — body text, table cells             */
+  --text-lg:    0.9rem;    /* 14.4px — body/btn, sidebar brand name       */
+  --text-xl:    1rem;      /* 16px   — section headings                   */
+  --text-2xl:   1.05rem;   /* 16.8px — topbar title                       */
+  --text-3xl:   1.1rem;    /* 17.6px — descriptions, hero text            */
+  --text-4xl:   1.5rem;    /* 24px   — large headings                     */
+  --text-5xl:   2rem;      /* 32px   — stat values                        */
+  --text-6xl:   2.5rem;    /* 40px   — hero numbers                       */
+
+  /* ── Font Weights ─────────────────────────────────────── */
+  --fw-light:    300;
+  --fw-normal:   400;
+  --fw-medium:   500;
+  --fw-semibold: 600;
+  --fw-bold:     700;
+  --fw-extrabold:800;
+  --fw-black:    900;
+
+  /* ── Spacing Scale ────────────────────────────────────── */
+  --sp-0:    0;
+  --sp-1:    0.25rem;   /* 4px  */
+  --sp-2:    0.5rem;    /* 8px  */
+  --sp-3:    0.75rem;   /* 12px */
+  --sp-4:    1rem;      /* 16px */
+  --sp-5:    1.25rem;   /* 20px */
+  --sp-6:    1.5rem;    /* 24px */
+  --sp-8:    2rem;      /* 32px */
+  --sp-10:   2.5rem;    /* 40px */
+  --sp-12:   3rem;      /* 48px */
+  --sp-16:   4rem;      /* 64px */
+
+  /* ── Border Radius Scale ──────────────────────────────── */
+  --radius-xs:   4px;
+  --radius-sm:   6px;
+  --radius-md:   8px;
+  --radius-lg:   10px;
+  --radius-xl:   12px;
+  --radius-2xl:  14px;
+  --radius-3xl:  16px;
+  --radius-4xl:  20px;
+  --radius-full: 9999px;
+  --radius-circle: 50%;
+
+  /* ── Shadows ──────────────────────────────────────────── */
+  --shadow-xs:   0 1px 2px rgba(0,0,0,.04);
+  --shadow-sm:   0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:   0 4px 12px rgba(0,0,0,.08);
+  --shadow-lg:   0 8px 24px rgba(0,0,0,.12);
+  --shadow-xl:   0 16px 48px rgba(0,0,0,.16);
+  --shadow-2xl:  0 20px 60px rgba(0,0,0,.20);
+  --shadow-primary-sm: 0 4px 12px rgba(var(--color-primary-rgb),.25);
+  --shadow-primary-md: 0 8px 24px rgba(var(--color-primary-rgb),.35);
+  --shadow-primary-lg: 0 12px 32px rgba(var(--color-primary-rgb),.50);
+
+  /* ── Z-index Scale ────────────────────────────────────── */
+  --z-base:       1;
+  --z-dropdown:   100;
+  --z-topbar:     100;
+  --z-sidebar:    200;
+  --z-modal:      500;
+  --z-toast:      9999;
+
+  /* ── Transitions ──────────────────────────────────────── */
+  --transition-fast:   all .15s ease;
+  --transition-base:   all .2s ease;
+  --transition-slow:   all .3s ease;
+  --transition-spring: all .35s cubic-bezier(.175,.885,.32,1.275);
+}
+
+/* ── Dark-mode overrides ──────────────────────────────────── */
+[data-theme="dark"] {
+  --dark:     #f8fafc;
+  --text:     #e2e8f0;
+  --text-muted: #94a3b8;
+  --border:   #334155;
+  --bg:       #1e293b;
+  --card-bg:  #0f172a; /* Deeper card background */
+
+  --sidebar-bg:   #020617;
+  --color-slate-50: #1e293b;
+
+  /* Enhanced semantic colors for Dark Mode legibility */
+  --color-success-light: #064e3b;
+  --color-success-text:  #a7f3d0;
+  --color-danger-light:  #7f1d1d;
+  --color-danger-text:   #fecaca;
+  --color-warning-light: #78350f;
+  --color-warning-text:  #fde68a;
+  --color-info-light:    #1e3a8a;
+  --color-info-text:     #bfdbfe;
+  
+  --shadow-sm:   0 1px 3px rgba(0,0,0,.3), 0 1px 2px rgba(0,0,0,.2);
+  --shadow-md:   0 4px 12px rgba(0,0,0,.5);
+
+  /* Dark mode overrides for semantic tokens */
+  --surface-primary:      #0f172a;           /* Dark cards */
+  --surface-secondary:    #1e293b;           /* Slightly lighter dark */
+  --surface-tertiary:     #334155;           /* Even lighter dark */
+  --surface-elevated:     #1e293b;           /* Elevated content in dark */
+  --surface-brand:        #1e1b4b;           /* Dark indigo for brand areas */
+  --surface-inverted:     #e2e8f0;           /* Light on dark */
+
+  --text-body:            #e2e8f0;           /* Light text body */
+  --text-body-muted:      #94a3b8;           /* Muted text in dark */
+  --text-on-brand:        #e0e7ff;           /* Light text on brand */
+  --text-on-primary:      #ffffff;           /* White on primary */
+  --text-interactive:     #818cf8;           /* Light indigo for links */
+  --text-disabled:        #64748b;           /* Muted disabled text */
+  --text-inverse:         #0f172a;           /* Dark text on light backgrounds */
+
+  --interactive-primary:              #818cf8;        /* Light indigo button */
+  --interactive-primary-hover:        #a5b4fc;        /* Lighter indigo on hover */
+  --interactive-primary-active:       #6366f1;        /* Saturated indigo active */
+  --interactive-primary-disabled:     #334155;        /* Slate disabled in dark */
+  --interactive-secondary:            #22d3ee;        /* Bright cyan */
+  --interactive-secondary-hover:      #06b6d4;
+  --interactive-danger:               #f87171;        /* Light red in dark */
+  --interactive-danger-hover:         #ef4444;
+
+  --feedback-success-text:            #a7f3d0;
+  --feedback-success-bg:              #064e3b;
+  --feedback-error-text:              #fecaca;
+  --feedback-error-bg:                #7f1d1d;
+  --feedback-warning-text:            #fde68a;
+  --feedback-warning-bg:              #78350f;
+  --feedback-info-text:               #bfdbfe;
+  --feedback-info-bg:                 #1e3a8a;
+
+  --border-subtle:        #334155;           /* Dark borders */
+  --border-muted:         #475569;           /* Slightly lighter dark borders */
+  --border-strong:        #64748b;
+  --divider-subtle:       #1e293b;           /* Very subtle dark dividers */
+}

@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block page_title %}TOS — {{ tos.exam_type }}{% endblock %}
+{% block content %}
+<div class="d-flex gap-2 mb-4">
+  <a href="{% url 'tos:tos_list' course.pk %}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> All TOS
+  </a>
+  {% if tos.status == 'ready' %}
+  <a href="{% url 'tos:tos_download' course.pk tos.pk %}" class="btn btn-sm btn-success">
+    <i class="bi bi-download"></i> Download Excel
+  </a>
+  {% endif %}
+</div>
+
+{% if tos.status == 'pending' %}
+<div class="page-card text-center py-5">
+  <div class="spinner-border text-success mb-3"></div>
+  <h6 class="fw-bold">Generating your TOS…</h6>
+  <p class="text-muted" style="font-size:.875rem;">Usually takes 10–20 seconds.</p>
+</div>
+{% elif tos.status == 'failed' %}
+<div class="page-card">
+  <h6 class="fw-bold text-danger">Generation Failed</h6>
+  <p class="text-muted" style="font-size:.875rem;">{{ tos.error_msg }}</p>
+  <a href="{% url 'tos:tos_create' course.pk %}" class="btn btn-sm btn-outline-success">Try again</a>
+</div>
+{% else %}
+<div class="page-card">
+  <h6 class="fw-bold mb-1">{{ tos.exam_type }}</h6>
+  <p class="text-muted mb-4" style="font-size:.825rem;">
+    {{ course.title }} · {{ tos.total_items }} total items
+  </p>
+  {% if tos.tos_data.rows %}
+  <div class="table-responsive">
+    <table class="table table-sm table-bordered mb-0 tos-detail-table" style="font-size:.825rem;">
+      <thead style="background:#1e293b;color:#fff;">
+        <tr>
+          <th>Topic</th><th>Hrs</th>
+          <th>Remember</th><th>Understand</th><th>Apply</th>
+          <th>Analyze</th><th>Evaluate</th><th>Create</th>
+          <th class="text-center">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in tos.tos_data.rows %}
+        <tr>
+          <td>{{ row.topic }}</td>
+          <td class="text-center">{{ row.hours }}</td>
+          <td class="text-center">{{ row.remember }}</td>
+          <td class="text-center">{{ row.understand }}</td>
+          <td class="text-center">{{ row.apply }}</td>
+          <td class="text-center">{{ row.analyze }}</td>
+          <td class="text-center">{{ row.evaluate }}</td>
+          <td class="text-center">{{ row.create }}</td>
+          <td class="text-center fw-bold text-primary">{{ row.total }}</td>
+        </tr>
+        {% endfor %}
+        {% if tos.tos_data.column_totals %}
+        <tr style="background:#dbeafe;font-weight:700;">
+          <td>TOTAL</td>
+          <td class="text-center">{{ tos.tos_data.column_totals.hours }}</td>
+          <td class="text-center">{{ tos.tos_data.column_totals.remember }}</td>
+          <td class="text-center">{{ tos.tos_data.column_totals.understand }}</td>
+          <td class="text-center">{{ tos.tos_data.column_totals.apply }}</td>
+          <td class="text-center">{{ tos.tos_data.column_totals.analyze }}</td>
+          <td class="text-center">{{ tos.tos_data.column_totals.evaluate }}</td>
+          <td class="text-center">{{ tos.tos_data.column_totals.create }}</td>
+          <td class="text-center text-primary">{{ tos.tos_data.column_totals.total }}</td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if tos.status == 'pending' %}
+<script>
+(function poll() {
+  fetch("{% url 'tos:tos_status_api' tos.pk %}")
+    .then(r => r.json())
+    .then(data => {
+      if (data.status !== 'pending') location.reload();
+      else setTimeout(poll, 3000);
+    });
+})();
+</script>
+{% endif %}
+{% endblock %}

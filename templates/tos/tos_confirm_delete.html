@@ -1,0 +1,23 @@
+{% extends 'accounts/course_base.html' %}
+{% block course_content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card border-danger shadow-sm rounded-4">
+      <div class="card-header bg-danger text-white border-0 py-3 rounded-top-4">
+        <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Delete Table of Specifications</h5>
+      </div>
+      <div class="card-body p-4 text-center">
+        <p class="mb-4">Are you sure you want to delete the TOS for <strong>"{{ tos.exam_type }}"</strong>?</p>
+        <p class="text-danger small mb-4">
+          This will permanently delete this Table of Specifications with <strong>{{ tos.total_items }}</strong> items.
+        </p>
+        <form method="post" class="d-flex justify-content-center gap-2">
+          {% csrf_token %}
+          <a href="{% url 'tos:tos_list' course.pk %}" class="btn btn-outline-secondary px-4">Cancel</a>
+          <button type="submit" class="btn btn-danger px-4">Yes, Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,442 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% block page_title %}AI TOS Generator — {{ course.title }}{% endblock %}
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="page-card mb-4">
+      <h6 class="fw-bold mb-3">Step 1 — Exam Details</h6>
+      <form method="post" id="tos-form">{% csrf_token %}
+        {% crispy form %}
+    </div>
+
+    <div class="page-card">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="fw-bold mb-0">Step 2 — Topics & Hours</h6>
+        <div class="d-flex gap-2">
+          {% if course.weekly_plan %}
+          <button type="button" class="btn btn-sm btn-outline-success" id="loadSyllabusBtn"
+                  title="Auto-fill topics from your uploaded syllabus">
+            <i class="bi bi-file-earmark-text"></i> Load from Syllabus
+          </button>
+          {% endif %}
+          <button type="button" class="btn btn-sm btn-outline-primary" onclick="addTopic()">
+            <i class="bi bi-plus-lg"></i> Add Topic
+          </button>
+        </div>
+      </div>
+      <div id="topics-container"></div>
+      <p id="topics-hint" class="text-muted mb-0" style="font-size:.8rem;">
+        Click <strong>Load from Syllabus</strong> to auto-fill topics from your course plan,
+        or click <strong>Add Topic</strong> to add them manually.
+      </p>
+      <div class="mt-3">
+        <button type="submit" form="tos-form" class="btn btn-success">
+          ✦ Generate TOS
+        </button>
+      </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <!-- Workflow context -->
+    <div class="page-card mb-4" style="background:#eff6ff;border:1px solid #bfdbfe;">
+      <h6 class="fw-bold mb-2 text-primary"><i class="bi bi-diagram-3"></i> How TOS Fits the Workflow</h6>
+      <p class="mb-2" style="font-size:.825rem;color:#475569;">
+        INSTAASYS uses one connected pipeline. The TOS is the <strong>blueprint</strong>
+        that tells the assessment generator how many items each topic gets and how to
+        spread them across Bloom's levels.
+      </p>
+      <ol class="mb-0" style="font-size:.825rem;color:#475569;padding-left:1.2rem;">
+        <li class="mb-1">
+          <strong>Presentations</strong> — the AI reads your syllabus + CILOs and produces
+          slide content per week. This becomes the <em>knowledge base</em> for the course.
+        </li>
+        <li class="mb-1">
+          <strong>TOS (this page)</strong> — you specify exam type, items, topics, and
+          teaching hours. The AI builds the item distribution table.
+        </li>
+        <li class="mb-1">
+          <strong>Assessment</strong> — the quiz/exam generator pulls topic content from
+          your presentations and follows the TOS distribution to write actual questions.
+        </li>
+      </ol>
+    </div>
+
+    <div class="page-card mb-4">
+      <h6 class="fw-bold mb-3"><i class="bi bi-list-check text-primary"></i> How to Generate a TOS</h6>
+      <ol class="mb-0" style="font-size:.875rem;color:#475569;padding-left:1.2rem;">
+        <li class="mb-2">
+          <strong>Fill in Step 1 — Exam Details.</strong>
+          Choose the exam type (Prelim, Midterm, Finals) and enter the
+          <em>total number of items</em> the exam will contain.
+        </li>
+        <li class="mb-2">
+          <strong>Load topics in Step 2.</strong> Click
+          <span class="text-success fw-semibold">Load from Syllabus</span> to auto-fill
+          topics from your course's weekly plan, then select which weeks to include.
+          Or click <span class="text-primary">Add Topic</span> to add them manually.
+        </li>
+        <li class="mb-2">
+          <strong>Set teaching hours per topic.</strong>
+          Hours determine how many items each topic gets (proportional weighting).
+        </li>
+        <li class="mb-2">
+          <strong>Click ✦ Generate TOS.</strong> The AI distributes items across
+          Bloom's levels (Remember → Create) and outputs an Excel file.
+        </li>
+      </ol>
+    </div>
+
+    <div class="page-card mb-4">
+      <h6 class="fw-bold mb-3"><i class="bi bi-clipboard-check text-success"></i> Requirements Before Generating</h6>
+      <ul class="mb-0" style="font-size:.875rem;color:#475569;padding-left:1.2rem;">
+        <li class="mb-2"><strong>Exam type</strong> — selected from the dropdown.</li>
+        <li class="mb-2"><strong>Total items</strong> — at least 10. Common values: 30, 50, 60, 100.</li>
+        <li class="mb-2"><strong>At least one topic</strong> — ideally 3–8 topics for a realistic spread.</li>
+        <li class="mb-2"><strong>Teaching hours per topic</strong> — whole numbers 1–99. More hours = more items.</li>
+      </ul>
+    </div>
+
+    <div class="page-card">
+      <h6 class="fw-bold mb-3"><i class="bi bi-info-circle text-success"></i> What the AI Will Do</h6>
+      <ul class="mb-0" style="font-size:.875rem;color:#475569;padding-left:1.2rem;">
+        <li class="mb-1">Allocate items <strong>proportionally by teaching hours</strong>.</li>
+        <li class="mb-1">Distribute items across Bloom's six levels: Remember, Understand, Apply, Analyze, Evaluate, Create.</li>
+        <li class="mb-1">Ensure <strong>at least 30%</strong> of items target higher-order thinking (Analyze / Evaluate / Create).</li>
+        <li class="mb-1">Number the items per topic so totals match your exam length.</li>
+        <li class="mb-1">Output a <strong>formatted .xlsx file</strong> ready to submit.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ── Load from Syllabus Modal ─────────────────────────────────────────────── -->
+<div class="modal fade" id="syllabusModal" tabindex="-1" aria-labelledby="syllabusModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content" style="border-radius:16px;">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold" id="syllabusModalLabel">
+          <i class="bi bi-file-earmark-text text-success me-2"></i>Load Topics from Syllabus
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body pt-2">
+        <p class="text-muted mb-3" style="font-size:.875rem;">
+          Select the weeks you want to include in this exam. Each week becomes one topic row in the TOS.
+          You can edit the topic names and hours after loading.
+        </p>
+
+        <!-- Loading state -->
+        <div id="syllabusLoading" class="text-center py-4">
+          <div class="spinner-border text-success" role="status"></div>
+          <p class="text-muted mt-2 mb-0" style="font-size:.875rem;">Loading syllabus topics…</p>
+        </div>
+
+        <!-- Error state -->
+        <div id="syllabusError" class="alert alert-danger d-none" style="font-size:.875rem;"></div>
+
+        <!-- Week selection -->
+        <div id="syllabusWeeks" class="d-none">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="fw-semibold" style="font-size:.875rem;">
+              <span id="weekCount">0</span> weeks found
+            </span>
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-sm btn-outline-secondary" id="selectAllBtn">Select All</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" id="clearAllBtn">Clear All</button>
+            </div>
+          </div>
+
+          <!-- Hours per week control -->
+          <div class="d-flex align-items-center gap-3 mb-3 p-2 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;">
+            <label class="mb-0 fw-semibold" style="font-size:.825rem;white-space:nowrap;">
+              <i class="bi bi-clock me-1 text-primary"></i>Default hours/week:
+            </label>
+            <input type="number" id="defaultHours" class="form-control form-control-sm"
+                   style="max-width:80px;" min="1" max="99" value="5">
+            <span class="text-muted" style="font-size:.8rem;">Applied to all selected weeks</span>
+          </div>
+
+          <div id="weeksList" class="border rounded" style="max-height:340px;overflow-y:auto;"></div>
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-success" id="loadSelectedBtn" disabled>
+          <i class="bi bi-check2-circle me-1"></i>Load Selected Topics
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Error Modal ──────────────────────────────────────────────────────────── -->
+<div class="modal fade" id="tosErrorModal" tabindex="-1" aria-labelledby="tosErrorModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:20px;">
+      <div class="modal-body text-center py-4 px-4">
+        <div class="mb-3">
+          <div class="rounded-circle bg-danger bg-opacity-10 d-inline-flex p-3">
+            <i class="bi bi-exclamation-triangle-fill text-danger" style="font-size:1.75rem;"></i>
+          </div>
+        </div>
+        <h5 class="fw-bold mb-2" id="tosErrorModalLabel">No Topics Added</h5>
+        <p class="text-muted small mb-0">Please add at least one topic before generating the TOS. Click <strong>Add Topic</strong> or <strong>Load from Syllabus</strong> to begin.</p>
+      </div>
+      <div class="modal-footer justify-content-center border-0 pt-0 pb-4">
+        <button type="button" class="btn btn-primary px-4" data-bs-dismiss="modal">Got it</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Loading Modal ────────────────────────────────────────────────────────── -->
+<div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:20px;">
+      <div class="modal-body text-center py-4">
+        <div class="mb-3">
+          <div class="spinner-border text-primary" role="status" style="width:3rem;height:3rem;">
+            <span class="visually-hidden">Loading…</span>
+          </div>
+        </div>
+        <h5 class="fw-bold mb-2">Generating Table of Specifications</h5>
+        <p class="text-muted small mb-3" id="tosStatusMsg">Allocating items across Bloom's levels…</p>
+        <div class="progress mb-3" style="height:8px;">
+          <div id="tosProgressBar" class="progress-bar progress-bar-striped progress-bar-animated"
+               role="progressbar" style="width:0%"></div>
+        </div>
+        <div class="small text-muted">Building your item distribution table…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  #tosProgressBar { transition: width 0.5s ease; }
+  .week-check-row {
+    display: flex;
+    align-items: flex-start;
+    gap: .75rem;
+    padding: .6rem .75rem;
+    border-bottom: 1px solid #f1f5f9;
+    transition: background .15s;
+  }
+  .week-check-row:last-child { border-bottom: none; }
+  .week-check-row:hover { background: #f8fafc; }
+  .week-check-row input[type=checkbox] { margin-top: .2rem; flex-shrink: 0; }
+  .week-check-row .week-label { font-weight: 600; font-size: .825rem; color: #1e293b; }
+  .week-check-row .week-topics { font-size: .775rem; color: #64748b; margin-top: .1rem; }
+  .week-check-row .week-hours-input {
+    width: 68px; flex-shrink: 0; margin-left: auto;
+  }
+  .week-exam-badge {
+    display: inline-block;
+    font-size: .7rem;
+    font-weight: 700;
+    padding: .1rem .45rem;
+    border-radius: 20px;
+    background: #fef3c7;
+    color: #92400e;
+    margin-left: .35rem;
+  }
+</style>
+
+<script>
+// ── Manual topic management ──────────────────────────────────────────────────
+let topicCount = 0;
+const container = document.getElementById('topics-container');
+const hint = document.getElementById('topics-hint');
+
+function addTopic(name, hours) {
+  hint.style.display = 'none';
+  const idx = topicCount++;
+  const topicName = name || '';
+  const topicHours = hours || 3;
+  const row = document.createElement('div');
+  row.className = 'input-group mb-2';
+  row.id = `topic-row-${idx}`;
+  row.innerHTML = `
+    <input type="text" class="form-control topic-name" placeholder="Topic name"
+           value="${topicName.replace(/"/g, '&quot;')}" required>
+    <input type="number" class="form-control" style="max-width:90px;"
+           placeholder="Hrs" min="1" max="99" value="${topicHours}" required>
+    <button class="btn btn-outline-danger btn-sm" type="button"
+            onclick="removeTopic(${idx})">
+      <i class="bi bi-x"></i>
+    </button>`;
+  container.appendChild(row);
+}
+
+function removeTopic(idx) {
+  document.getElementById(`topic-row-${idx}`)?.remove();
+  if (!container.children.length) hint.style.display = '';
+}
+
+// ── Load from Syllabus ───────────────────────────────────────────────────────
+const SYLLABUS_API_URL = "{% url 'tos:tos_syllabus_topics_api' course.pk %}";
+let syllabusWeeksData = [];
+
+{% if course.weekly_plan %}
+document.getElementById('loadSyllabusBtn').addEventListener('click', function () {
+  const modal = new bootstrap.Modal(document.getElementById('syllabusModal'));
+
+  // Reset modal state
+  document.getElementById('syllabusLoading').classList.remove('d-none');
+  document.getElementById('syllabusError').classList.add('d-none');
+  document.getElementById('syllabusWeeks').classList.add('d-none');
+  document.getElementById('loadSelectedBtn').disabled = true;
+
+  modal.show();
+
+  fetch(SYLLABUS_API_URL)
+    .then(r => {
+      if (!r.ok) throw new Error(`Server error ${r.status}`);
+      return r.json();
+    })
+    .then(data => {
+      syllabusWeeksData = data.weeks || [];
+      const defaultHrs = data.hours_per_week || 5;
+
+      document.getElementById('defaultHours').value = defaultHrs;
+      document.getElementById('weekCount').textContent = syllabusWeeksData.length;
+      document.getElementById('syllabusLoading').classList.add('d-none');
+
+      if (!syllabusWeeksData.length) {
+        document.getElementById('syllabusError').textContent =
+          'No weekly plan found in this course. Please add topics manually.';
+        document.getElementById('syllabusError').classList.remove('d-none');
+        return;
+      }
+
+      renderWeeksList(syllabusWeeksData, defaultHrs);
+      document.getElementById('syllabusWeeks').classList.remove('d-none');
+      updateLoadBtn();
+    })
+    .catch(err => {
+      document.getElementById('syllabusLoading').classList.add('d-none');
+      document.getElementById('syllabusError').textContent =
+        'Failed to load syllabus topics: ' + err.message;
+      document.getElementById('syllabusError').classList.remove('d-none');
+    });
+});
+
+function renderWeeksList(weeks, defaultHrs) {
+  const list = document.getElementById('weeksList');
+  list.innerHTML = '';
+
+  weeks.forEach((w, i) => {
+    const isExamWeek = w.label && !w.topics_list.length;
+    const topicsPreview = w.topics_list.length
+      ? w.topics_list.slice(0, 3).join(', ') + (w.topics_list.length > 3 ? '…' : '')
+      : (w.label || '');
+
+    const row = document.createElement('div');
+    row.className = 'week-check-row';
+    row.innerHTML = `
+      <input type="checkbox" class="form-check-input week-checkbox" id="wk-${i}"
+             data-idx="${i}" ${isExamWeek ? '' : 'checked'}>
+      <label for="wk-${i}" style="flex:1;cursor:pointer;">
+        <div class="week-label">
+          Week ${w.week}
+          ${w.label ? `<span class="week-exam-badge">${w.label}</span>` : ''}
+        </div>
+        ${topicsPreview ? `<div class="week-topics">${topicsPreview}</div>` : ''}
+      </label>
+      <input type="number" class="form-control form-control-sm week-hours-input"
+             id="wk-hrs-${i}" min="1" max="99" value="${w.hours || defaultHrs}"
+             title="Teaching hours for this week">
+    `;
+    list.appendChild(row);
+  });
+
+  // Sync default hours input → all week hour inputs
+  document.getElementById('defaultHours').addEventListener('input', function () {
+    const val = parseInt(this.value) || 5;
+    document.querySelectorAll('.week-hours-input').forEach(inp => {
+      inp.value = val;
+    });
+  });
+
+  // Update load button when checkboxes change
+  list.addEventListener('change', updateLoadBtn);
+}
+
+function updateLoadBtn() {
+  const checked = document.querySelectorAll('.week-checkbox:checked').length;
+  const btn = document.getElementById('loadSelectedBtn');
+  btn.disabled = checked === 0;
+  btn.textContent = checked
+    ? `Load ${checked} Topic${checked > 1 ? 's' : ''}`
+    : 'Load Selected Topics';
+  if (checked) {
+    btn.innerHTML = `<i class="bi bi-check2-circle me-1"></i>Load ${checked} Topic${checked > 1 ? 's' : ''}`;
+  }
+}
+
+document.getElementById('selectAllBtn').addEventListener('click', function () {
+  document.querySelectorAll('.week-checkbox').forEach(cb => cb.checked = true);
+  updateLoadBtn();
+});
+
+document.getElementById('clearAllBtn').addEventListener('click', function () {
+  document.querySelectorAll('.week-checkbox').forEach(cb => cb.checked = false);
+  updateLoadBtn();
+});
+
+document.getElementById('loadSelectedBtn').addEventListener('click', function () {
+  // Clear existing topics
+  container.innerHTML = '';
+  topicCount = 0;
+  hint.style.display = 'none';
+
+  document.querySelectorAll('.week-checkbox:checked').forEach(cb => {
+    const idx = parseInt(cb.dataset.idx);
+    const w = syllabusWeeksData[idx];
+    const hrs = parseInt(document.getElementById(`wk-hrs-${idx}`).value) || 5;
+    addTopic(w.topic, hrs);
+  });
+
+  bootstrap.Modal.getInstance(document.getElementById('syllabusModal')).hide();
+});
+{% endif %}
+
+// ── Form submission ──────────────────────────────────────────────────────────
+document.getElementById('tos-form').addEventListener('submit', function(e) {
+  const rows = container.querySelectorAll('.input-group');
+  const topics = [];
+  rows.forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    const name  = inputs[0].value.trim();
+    const hours = parseInt(inputs[1].value) || 1;
+    if (name) topics.push({ name, hours });
+  });
+  if (!topics.length) {
+    e.preventDefault();
+    new bootstrap.Modal(document.getElementById('tosErrorModal')).show();
+    return;
+  }
+  document.querySelector('input[name="topics_json"]').value = JSON.stringify(topics);
+
+  const modal = new bootstrap.Modal(document.getElementById('loadingModal'));
+  modal.show();
+
+  const bar = document.getElementById('tosProgressBar');
+  const msg = document.getElementById('tosStatusMsg');
+  const steps = [
+    [300,  15, 'Allocating items across Bloom\'s levels…'],
+    [2500, 40, 'Distributing items by teaching hours…'],
+    [6000, 65, 'Applying higher-order thinking rules…'],
+    [10000, 85, 'Formatting your TOS table…'],
+  ];
+  steps.forEach(function ([delay, pct, text]) {
+    setTimeout(function () {
+      bar.style.width = pct + '%';
+      msg.textContent = text;
+    }, delay);
+  });
+});
+</script>
+{% endblock %}
