@@ -28,9 +28,9 @@ class LessonPlan(models.Model):
     created_at  = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = 'lessons_lessonplan'
+       
         ordering = ['week_number', '-created_at']
-        managed = False
+       
 
     def __str__(self):
         return f"Week {self.week_number}: {self.topic}"
